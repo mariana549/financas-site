@@ -1,0 +1,71 @@
+/* ============================================
+   COMPONENTS.CSS — Botões, Cards, Badges, Tabs
+   ============================================ */
+
+/* ── BOTÕES ── */
+.btn { padding: 7px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; font-family: var(--sans); font-weight: 500; transition: all .15s; display: flex; align-items: center; gap: 5px; }
+.btn-primary { background: var(--accent); color: #fff; font-weight: 600; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border2); }
+.btn-ghost:hover { color: var(--text); background: var(--bg4); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-danger { background: transparent; color: var(--red); border: 1px solid #ff4d4d33; }
+.btn-danger:hover { background: #ff4d4d11; }
+.btn-green { background: #4dff9122; color: var(--green); border: 1px solid #4dff9133; }
+.btn-green:hover { background: #4dff9133; }
+
+/* ── CARDS ── */
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 22px; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; transition: all .15s; }
+.card:hover { border-color: var(--border2); box-shadow: 0 2px 12px var(--shadow); }
+.card-lbl { font-size: 10px; color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase; font-family: var(--mono); margin-bottom: 7px; }
+.card-val { font-family: var(--mono); font-size: 18px; font-weight: 500; }
+.card-val.a { color: var(--accent); }
+.card-val.b { color: var(--blue); }
+.card-val.g { color: var(--green); }
+.card-val.o { color: var(--orange); }
+.card-val.p { color: var(--purple); }
+.card-val.r { color: var(--red); }
+.card-sub { font-size: 11px; color: var(--text3); margin-top: 5px; font-family: var(--mono); }
+
+/* ── GOAL BAR ── */
+.goal-bar-wrap { margin-top: 8px; }
+.goal-bar-track { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+.goal-bar-fill { height: 100%; border-radius: 2px; transition: width .6s; }
+.goal-bar-label { font-size: 10px; font-family: var(--mono); color: var(--text3); margin-top: 3px; }
+
+/* ── TABS ── */
+.inner-tabs { display: flex; gap: 3px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 3px; flex-wrap: wrap; margin-bottom: 18px; }
+.itab { padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 12px; color: var(--text2); transition: all .15s; font-family: var(--mono); }
+.itab:hover { color: var(--text); background: var(--bg3); }
+.itab.active { background: var(--bg3); color: var(--accent); }
+.bank-tabs { display: flex; gap: 3px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 3px; flex-wrap: wrap; margin-bottom: 14px; }
+.btab { padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; color: var(--text2); transition: all .15s; font-family: var(--mono); display: flex; align-items: center; gap: 5px; }
+.btab:hover { color: var(--text); background: var(--bg3); }
+.btab.active { background: var(--bg3); color: var(--accent); }
+.btab .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .8; }
+
+/* ── BADGES ── */
+.bm { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-family: var(--mono); }
+.bm-mine { background: #4d9fff15; color: var(--accent); border: 1px solid #4d9fff30; }
+.bm-other { background: #a78bfa15; color: var(--blue); border: 1px solid #a78bfa30; }
+.bm-cat { background: var(--bg3); color: var(--text2); border: 1px solid var(--border2); }
+.bm-inst { background: #ff9f4d15; color: var(--orange); border: 1px solid #ff9f4d30; }
+.bm-pix { background: #4dff9115; color: var(--green); border: 1px solid #4dff9130; }
+.bm-rec { background: #bf4dff15; color: var(--purple); border: 1px solid #bf4dff30; }
+.amt { font-family: var(--mono); font-size: 13px; }
+
+/* ── PEOPLE CARDS ── */
+.people-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.pcard { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+.pcard-name { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+.pcard-val { font-family: var(--mono); font-size: 17px; color: var(--blue); }
+.pcard-sub { font-size: 11px; color: var(--text3); font-family: var(--mono); margin-top: 3px; }
+
+/* ── SUBSCRIPTIONS CARDS ── */
+.sub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 10px; }
+.scard { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; position: relative; transition: border-color .15s; }
+.scard:hover { border-color: var(--border2); }
+.scard-name { font-size: 13px; font-weight: 500; margin-bottom: 3px; padding-right: 50px; }
+.scard-amt { font-family: var(--mono); font-size: 15px; color: var(--accent); margin-bottom: 2px; }
+.scard-det { font-size: 11px; color: var(--text3); font-family: var(--mono); }

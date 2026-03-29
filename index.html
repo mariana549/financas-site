@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finanças — Organizador Pessoal</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/tables.css">
+  <link rel="stylesheet" href="css/modals.css">
+  <link rel="stylesheet" href="css/reports.css">
+  <link rel="stylesheet" href="css/ai.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+<!-- ── AUTH SCREEN ── -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">Finanças</div>
+    <div class="auth-tagline">organizador pessoal</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Entrar</div>
+      <div class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Cadastrar</div>
+    </div>
+    <div class="auth-msg" id="authMsg"></div>
+    <div class="fg"><label>E-mail</label><input type="email" id="authEmail" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')handleAuth()"></div>
+    <div class="fg"><label>Senha</label><input type="password" id="authPassword" placeholder="mínimo 6 caracteres" onkeydown="if(event.key==='Enter')handleAuth()"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="handleAuth()" id="authBtn">Entrar</button>
+    <div class="auth-footer">Seus dados ficam protegidos</div>
+  </div>
+</div>
+
+<button class="mob-toggle" onclick="toggleSidebar()">
+  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<div class="sb-overlay" id="sbOverlay" onclick="toggleSidebar()"></div>
+
+<div class="app">
+<aside class="sidebar" id="sb">
+  <div class="logo">
+    <div><div class="logo-text">Finanças</div><div class="logo-sub">organizador pessoal</div></div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Alternar tema">🌙</button>
+  </div>
+  <div style="padding:8px 12px;border-bottom:1px solid var(--border)">
+    <div class="user-bar">
+      <div class="user-email" id="userEmail">—</div>
+      <div class="sync-indicator"><div class="sync-dot" id="syncDot"></div><span id="syncLabel">ok</span></div>
+      <button class="logout-btn" onclick="logout()" title="Sair">sair</button>
+    </div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Meses</div>
+    <div id="monthList"></div>
+    <button class="add-btn" onclick="openModal('mMonth')">
+      <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>novo mês
+    </button>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-item active" onclick="showView('dash')" id="nav-dash">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Visão Geral
+    </div>
+    <div class="nav-item" onclick="showView('subs')" id="nav-subs">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Assinaturas
+    </div>
+    <div class="nav-item" onclick="showView('reports')" id="nav-reports">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Relatórios
+    </div>
+    <div class="nav-item" onclick="showView('year')" id="nav-year">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Resumo Anual
+    </div>
+    <div class="nav-item" onclick="showView('history')" id="nav-history">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Histórico Pessoas
+    </div>
+    <div class="divider" style="margin:8px 0;"></div>
+    <div class="nav-item" onclick="openBackup()">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Backup
+    </div>
+  </nav>
+</aside>
+
+<main class="main">
+  <div class="topbar" id="mainTopbar">
+    <div><div class="topbar-title" id="tbTitle">Selecione um mês</div><div class="topbar-sub" id="tbSub">nenhum mês selecionado</div></div>
+    <div class="topbar-actions" id="tbActions"></div>
+  </div>
+  <div class="content">
+    <div class="view active" id="view-dash"><div id="dashContent"><div class="empty">selecione ou crie um mês<br>para começar</div></div></div>
+    <div class="view" id="view-subs">
+      <div style="padding:0 0 20px;border-bottom:1px solid var(--border);margin-bottom:24px;display:flex;align-items:center;justify-content:space-between">
+        <div><div class="topbar-title">Assinaturas</div><div class="topbar-sub">por banco · com datas</div></div>
+      </div>
+      <div id="subsContent"></div>
+    </div>
+    <div class="view" id="view-reports">
+      <div style="margin-bottom:22px"><div class="topbar-title">Relatórios</div><div class="topbar-sub" id="repSub">selecione um mês</div></div>
+      <div id="repContent"></div>
+    </div>
+    <div class="view" id="view-year">
+      <div style="margin-bottom:22px"><div class="topbar-title">Resumo Anual</div><div class="topbar-sub" id="yearSub">visão geral do ano</div></div>
+      <div id="yearContent"></div>
+    </div>
+    <div class="view" id="view-history">
+      <div style="margin-bottom:22px"><div class="topbar-title">Histórico de Pessoas</div><div class="topbar-sub">quem comprou no seu cartão · todos os meses</div></div>
+      <div id="historyContent"></div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- ══ MODALS ══ -->
+<!-- Month -->
+<div class="modal-overlay" id="mMonth"><div class="modal modal-sm">
+  <div class="modal-title">Novo Mês <button class="modal-close" onclick="closeModal('mMonth')">×</button></div>
+  <div class="fr">
+    <div class="fg"><label>Mês</label><select id="mSel"><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select></div>
+    <div class="fg"><label>Ano</label><input type="number" id="mYear" value="2025" min="2020" max="2035"></div>
+  </div>
+  <div class="fg"><label>Meta de gastos (R$) — opcional</label><input type="number" id="mGoal" step="0.01" placeholder="ex: 3000,00"></div>
+  <div class="modal-actions">
+    <button class="btn btn-ghost btn-sm" onclick="copyLastMonth()">📋 Copiar mês anterior</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mMonth')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="addMonth()">Criar</button>
+  </div>
+</div></div>
+
+<!-- Bank -->
+<div class="modal-overlay" id="mBank"><div class="modal modal-sm">
+  <div class="modal-title">Novo Banco <button class="modal-close" onclick="closeModal('mBank')">×</button></div>
+  <div class="fg"><label>Nome</label><input type="text" id="bName" placeholder="Nubank, Will, Mercado Livre..."></div>
+  <div class="fg"><label>Cor</label><div class="color-grid" id="colorGrid"></div></div>
+  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mBank')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="addBank()">Adicionar</button></div>
+</div></div>
+
+<!-- Entry -->
+<div class="modal-overlay" id="mEntry"><div class="modal">
+  <div class="modal-title" id="entryTitle">Novo Lançamento <button class="modal-close" onclick="closeModal('mEntry')">×</button></div>
+  <div class="fg"><label>Descrição</label><input type="text" id="eDesc" placeholder="ex: Mercado, iFood, Gasolina..."></div>
+  <div class="fr">
+    <div class="fg"><label>Valor (R$)</label><input type="number" id="eAmt" step="0.01" placeholder="0,00"></div>
+    <div class="fg"><label>Data</label><input type="date" id="eDate"></div>
+  </div>
+  <div class="fg"><label>Tipo</label>
+    <div class="tgl">
+      <div class="tgl-o active" id="tNormal" onclick="setEType('normal')">Normal</div>
+      <div class="tgl-o" id="tInstall" onclick="setEType('installment')">Parcelado</div>
+      <div class="tgl-o" id="tPix" onclick="setEType('pix')">Pix</div>
+    </div>
+  </div>
+  <div id="installGroup" style="display:none">
+    <div class="fr">
+      <div class="fg"><label>Total parcelas</label><input type="number" id="eInstTotal" min="2" max="60" placeholder="ex: 12"></div>
+      <div class="fg"><label>Parcela atual</label><input type="number" id="eInstCur" min="1" value="1"></div>
+    </div>
+    <div style="background:var(--bg3);border-radius:6px;padding:9px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">⚡ Próximas parcelas aparecem automaticamente nos meses seguintes.</div>
+  </div>
+  <div class="fg"><label>De quem</label>
+    <div class="tgl"><div class="tgl-o active" id="tMine" onclick="setOwner('mine')">Meu</div><div class="tgl-o" id="tOther" onclick="setOwner('other')">Outra pessoa</div></div>
+  </div>
+  <div id="personGroup" style="display:none">
+    <div class="fg"><label>Nome da Pessoa</label><input type="text" id="ePerson" placeholder="Sogra, Pai, Mãe..."></div>
+    <div class="chips" id="personChips"></div>
+  </div>
+  <div class="fg"><label>Categoria</label>
+    <div class="chips" id="catChips">
+      <div class="chip" onclick="pickCat(this)">Mercado</div><div class="chip" onclick="pickCat(this)">Moto</div>
+      <div class="chip" onclick="pickCat(this)">Notebook</div><div class="chip" onclick="pickCat(this)">Saúde</div>
+      <div class="chip" onclick="pickCat(this)">Lazer</div><div class="chip" onclick="pickCat(this)">Transporte</div>
+      <div class="chip" onclick="pickCat(this)">Alimentação</div><div class="chip" onclick="pickCat(this)">Outros</div>
+    </div>
+    <input type="text" id="eCat" placeholder="ou digite..." style="margin-top:7px" oninput="document.querySelectorAll('#catChips .chip').forEach(c=>c.classList.remove('sel'))">
+  </div>
+  <div class="fg"><label>Observação</label><textarea id="eNote" placeholder="detalhes adicionais..."></textarea></div>
+  <div class="fg"><label>Banco</label><select id="eBank"></select></div>
+  <input type="hidden" id="editEntryId"><input type="hidden" id="editBankName">
+  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mEntry')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveEntry()">Salvar</button></div>
+</div></div>
+
+<!-- Entry Detail -->
+<div class="modal-overlay" id="mDetail"><div class="modal modal-sm">
+  <div class="modal-title" id="detailTitle">Detalhes <button class="modal-close" onclick="closeModal('mDetail')">×</button></div>
+  <div id="detailContent"></div>
+  <div class="modal-actions" id="detailActions"></div>
+</div></div>
+
+<!-- Income -->
+<div class="modal-overlay" id="mIncome"><div class="modal">
+  <div class="modal-title" id="incomeTitle">Nova Entrada <button class="modal-close" onclick="closeModal('mIncome')">×</button></div>
+  <div class="fg"><label>Descrição</label><input type="text" id="incDesc" placeholder="Salário, Freela, Transferência..."></div>
+  <div class="fr">
+    <div class="fg"><label>Valor (R$)</label><input type="number" id="incAmt" step="0.01" placeholder="0,00"></div>
+    <div class="fg"><label>Data</label><input type="date" id="incDate"></div>
+  </div>
+  <div class="fg"><label>Tipo</label>
+    <div class="chips" id="incTypeChips">
+      <div class="chip sel" onclick="pickIncType(this)">Salário</div>
+      <div class="chip" onclick="pickIncType(this)">Freela</div>
+      <div class="chip" onclick="pickIncType(this)">Transferência</div>
+      <div class="chip" onclick="pickIncType(this)">Outros</div>
+    </div>
+  </div>
+  <div class="fg"><label>Origem (opcional)</label><input type="text" id="incFrom" placeholder="empresa, cliente..."></div>
+  <div class="fg"><label>É dinheiro seu ou de outra pessoa?</label>
+    <div class="tgl"><div class="tgl-o active" id="incMine" onclick="setIncOwner('mine')">Meu</div><div class="tgl-o" id="incOther" onclick="setIncOwner('other')">De outra pessoa</div></div>
+  </div>
+  <div id="incPersonGroup" style="display:none">
+    <div class="fg"><label>Nome da pessoa</label><input type="text" id="incPerson" placeholder="quem vai me pagar..."></div>
+  </div>
+  <input type="hidden" id="editIncomeId">
+  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mIncome')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveIncome()">Salvar</button></div>
+</div></div>
+
+<!-- Recurrent -->
+<div class="modal-overlay" id="mRec"><div class="modal modal-sm">
+  <div class="modal-title">Conta Fixa <button class="modal-close" onclick="closeModal('mRec')">×</button></div>
+  <div class="fg"><label>Descrição</label><input type="text" id="rDesc" placeholder="Aluguel, Água, Luz..."></div>
+  <div class="fr">
+    <div class="fg"><label>Valor (R$)</label><input type="number" id="rAmt" step="0.01" placeholder="0,00"></div>
+    <div class="fg"><label>Venc. (dia)</label><input type="number" id="rDay" min="1" max="31" placeholder="ex: 10"></div>
+  </div>
+  <div class="fg"><label>Observação</label><textarea id="rObs" placeholder="detalhes..."></textarea></div>
+  <input type="hidden" id="editRecId">
+  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mRec')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveRec()">Salvar</button></div>
+</div></div>
+
+<!-- Pix -->
+<div class="modal-overlay" id="mPix"><div class="modal modal-sm">
+  <div class="modal-title">Pix Enviado <button class="modal-close" onclick="closeModal('mPix')">×</button></div>
+  <div class="fg"><label>Para quem</label><input type="text" id="pxTo" placeholder="nome ou descrição..."></div>
+  <div class="fr">
+    <div class="fg"><label>Valor (R$)</label><input type="number" id="pxAmt" step="0.01" placeholder="0,00"></div>
+    <div class="fg"><label>Data</label><input type="date" id="pxDate"></div>
+  </div>
+  <div class="fg"><label>Banco de origem</label><select id="pxBank"></select></div>
+  <div class="fg"><label>Motivo (opcional)</label><input type="text" id="pxObs" placeholder="rachar conta, presente..."></div>
+  <input type="hidden" id="editPixId">
+  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mPix')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="savePix()">Salvar</button></div>
+</div></div>
+
+<!-- Sub -->
+<div class="modal-overlay" id="mSub"><div class="modal modal-sm">
+  <div class="modal-title" id="subTitle">Nova Assinatura <button class="modal-close" onclick="closeModal('mSub')">×</button></div>
+  <div class="fg"><label>Serviço</label><input type="text" id="sName" placeholder="Netflix, Spotify, iCloud..."></div>
+  <div class="fr">
+    <div class="fg"><label>Valor (R$)</label><input type="number" id="sAmt" step="0.01" placeholder="0,00"></div>
+    <div class="fg"><label>Ciclo</label><select id="sCycle"><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="semanal">Semanal</option></select></div>
+  </div>
+  <div class="fr">
+    <div class="fg"><label>Banco / Cartão</label><input type="text" id="sBank" placeholder="Nubank, Will..."></div>
+    <div class="fg"><label>Dia de cobrança</label><input type="number" id="sDay" min="1" max="31" placeholder="ex: 5"></div>
+  </div>
+  <div class="fr">
+    <div class="fg"><label>Data de início</label><input type="month" id="sStart"></div>
+    <div class="fg"><label>Cancelado em</label><input type="month" id="sEnd" placeholder="vazio = ativa"></div>
+  </div>
+  <input type="hidden" id="editSubId">
+  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mSub')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveSub()">Salvar</button></div>
+</div></div>
+
+<!-- Inst Detail -->
+<div class="modal-overlay" id="mInstDet"><div class="modal modal-sm">
+  <div class="modal-title">Parcelamento <button class="modal-close" onclick="closeModal('mInstDet')">×</button></div>
+  <div id="instDetContent"></div>
+  <div class="modal-actions" id="instDetActions"></div>
+</div></div>
+
+<!-- Goal -->
+<div class="modal-overlay" id="mGoal"><div class="modal modal-sm">
+  <div class="modal-title">Meta de Gastos <button class="modal-close" onclick="closeModal('mGoal')">×</button></div>
+  <div class="fg"><label>Valor limite (R$)</label><input type="number" id="goalAmt" step="0.01" placeholder="ex: 3000,00"></div>
+  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mGoal')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveGoal()">Salvar</button></div>
+</div></div>
+
+<!-- Backup -->
+<div class="modal-overlay" id="mBackup"><div class="modal modal-sm">
+  <div class="modal-title">Backup & Restauração <button class="modal-close" onclick="closeModal('mBackup')">×</button></div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <button class="btn btn-ghost" onclick="exportBackup()">⬇️ Exportar dados (JSON)</button>
+    <div class="fg" style="margin-bottom:0">
+      <label>Restaurar backup</label>
+      <input type="file" id="backupFile" accept=".json" onchange="importBackup(this)" style="padding:8px">
+    </div>
+  </div>
+  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mBackup')">Fechar</button></div>
+</div></div>
+
+<!-- AI Import -->
+<div class="modal-overlay" id="mAI"><div class="modal">
+  <div class="modal-title">📄 Importar Extrato com IA <button class="modal-close" onclick="closeModal('mAI')">×</button></div>
+  <div class="fg"><label>Mês de destino</label><select id="aiMonthSel" onchange="updateAIBankSel()"></select></div>
+  <div class="fg"><label>Banco</label><select id="aiBankSel"></select></div>
+  <div class="fg">
+    <label>Cole o texto do extrato</label>
+    <textarea id="aiText" placeholder="eu: 55 + 25 + 44&#10;Sogra 13 + 44&#10;iFood 32,00&#10;Moto 195¹°" style="min-height:120px"></textarea>
+  </div>
+  <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:10px" onclick="runAI()">
+    <span id="aiBtnText">✨ Interpretar com IA</span>
+  </button>
+  <div id="aiResult" style="display:none">
+    <div class="ai-box-title" style="margin-bottom:6px">Selecione os que deseja importar:</div>
+    <div id="aiEntryList" class="ai-entry-list"></div>
+    <div class="modal-actions" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('mAI')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="importAIEntries()">Importar Selecionados</button>
+    </div>
+  </div>
+  <div class="modal-actions" id="aiBaseActions">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mAI')">Fechar</button>
+  </div>
+</div></div>
+
+<!-- Logout Confirm -->
+<div class="modal-overlay" id="mLogout"><div class="modal modal-sm">
+  <div class="modal-title">Sair da conta <button class="modal-close" onclick="closeModal('mLogout')">×</button></div>
+  <div style="text-align:center;padding:10px 0 20px">
+    <div style="font-size:32px;margin-bottom:12px">👋</div>
+    <p style="color:var(--text2);font-size:13px;margin-bottom:4px">Tem certeza que deseja sair?</p>
+    <p style="color:var(--text3);font-size:11px;font-family:var(--mono)">Seus dados ficam salvos no servidor</p>
+  </div>
+  <div class="modal-actions" style="justify-content:center;gap:12px">
+    <button class="btn btn-ghost" onclick="closeModal('mLogout')">Cancelar</button>
+    <button class="btn btn-danger" onclick="confirmLogout()">🚪 Sair</button>
+  </div>
+</div></div>
+
+
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- JS (ordem importa!) -->
+<script src="js/supabase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/state.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/months.js"></script>
+<script src="js/banks.js"></script>
+<script src="js/entries.js"></script>
+<script src="js/installments.js"></script>
+<script src="js/pix.js"></script>
+<script src="js/recurrents.js"></script>
+<script src="js/income.js"></script>
+<script src="js/subscriptions.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/ai-engine.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>

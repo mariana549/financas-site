@@ -1,0 +1,27 @@
+/* ============================================
+   RESPONSIVE.CSS — Mobile (max-width: 768px)
+   ============================================ */
+
+.mob-toggle { display: none; position: fixed; top: 12px; right: 12px; z-index: 200; background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 8px; cursor: pointer; color: var(--text); }
+.sb-overlay { display: none; position: fixed; inset: 0; z-index: 99; }
+
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .sb-overlay.open { display: block; }
+  .main { margin-left: 0; }
+  .content { padding: 16px 12px; }
+  .topbar { padding: 12px 52px 12px 14px; }
+  .mob-toggle { display: flex; }
+  .summary-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .fr { grid-template-columns: 1fr; }
+  table th:nth-child(n+4), table td:nth-child(n+4) { display: none; }
+  .tbl-block { overflow-x: auto; }
+  .foot-row { gap: 6px; }
+  .inner-tabs, .bank-tabs { gap: 2px; }
+  .itab, .btab { padding: 5px 10px; font-size: 11px; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .color-grid { grid-template-columns: repeat(6, 1fr); }
+  .people-grid { grid-template-columns: 1fr 1fr; }
+  .sub-grid { grid-template-columns: 1fr 1fr; }
+}
