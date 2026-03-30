@@ -1,4 +1,4 @@
-const CACHE_NAME = 'financas-v7';
+const CACHE_NAME = 'financas-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -32,7 +32,6 @@ const ASSETS = [
   './js/backup.js',
   './js/ai-engine.js',
   './js/main.js'
-  // ← Google Fonts REMOVIDO daqui
 ];
 
 self.addEventListener('install', e => {
