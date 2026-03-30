@@ -22,14 +22,18 @@ function renderDash() {
   const recL = S.recurrents[S.currentMonth] || [];
   const incL = S.incomes[S.currentMonth] || [];
 
-  const myT = allE.filter(e => e.owner === 'mine').reduce((s, e) => s + e.amount, 0);
+  const myT  = allE.filter(e => e.owner === 'mine').reduce((s, e) => s + e.amount, 0);
   const othT = allE.filter(e => e.owner === 'other').reduce((s, e) => s + e.amount, 0);
   const pixT = pixL.reduce((s, p) => s + p.amount, 0);
   const recT = recL.reduce((s, r) => s + r.amount, 0);
   const totalGasto = myT + othT + pixT + recT;
-  const incMyT = incL.filter(i => i.owner === 'mine').reduce((s, i) => s + i.amount, 0);
+
+  // ── FEATURE 1.3: Meta considera apenas gastos do usuário (owner: 'mine') ──
+  const metaGasto = myT + pixT + recT;
+
+  const incMyT  = incL.filter(i => i.owner === 'mine').reduce((s, i) => s + i.amount, 0);
   const incOthT = incL.filter(i => i.owner === 'other').reduce((s, i) => s + i.amount, 0);
-  const saldo = incMyT - (myT + pixT + recT);
+  const saldo = incMyT - metaGasto;
 
   const pplMap = {};
   allE.filter(e => e.owner === 'other').forEach(e => {
@@ -51,26 +55,36 @@ function renderDash() {
   const bk = m.banks.find(b => b.name === S.currentBank) || m.banks[0];
   if (bk) S.currentBank = bk.name;
 
-  // ── Barra de meta ──
-  const goalBar = m.goal ? `
-    <div class="goal-bar-wrap" style="margin-top:6px">
-      <div class="goal-bar-track">
-        <div class="goal-bar-fill" style="width:${Math.min(totalGasto / m.goal * 100, 100).toFixed(1)}%;
-          background:${totalGasto > m.goal ? 'var(--red)' : totalGasto / m.goal > .8 ? 'var(--orange)' : 'var(--green)'}">
+  // ── Barra de meta — usa metaGasto (só owner: 'mine') ──
+  const goalBar = m.goal ? (() => {
+    const pct = metaGasto / m.goal * 100;
+    const cor = metaGasto > m.goal
+      ? 'var(--red)'
+      : pct > 80
+        ? 'var(--orange)'
+        : 'var(--green)';
+    const restam = m.goal - metaGasto;
+    return `
+      <div class="goal-bar-wrap" style="margin-top:6px">
+        <div class="goal-bar-track">
+          <div class="goal-bar-fill" style="width:${Math.min(pct, 100).toFixed(1)}%;background:${cor}"></div>
         </div>
-      </div>
-      <div class="goal-bar-label">
-        ${(totalGasto / m.goal * 100).toFixed(0)}% da meta ·
-        R$ ${fmt(m.goal - totalGasto > 0 ? m.goal - totalGasto : 0)} restam
-      </div>
-    </div>` : '';
+        <div class="goal-bar-label">
+          ${pct.toFixed(0)}% da meta ·
+          ${restam > 0 ? `R$ ${fmt(restam)} restam` : `R$ ${fmt(Math.abs(restam))} acima`}
+        </div>
+      </div>`;
+  })() : '';
 
-  // ── Alertas ──
+  // ── Alertas — usa metaGasto ──
   let alerts = '';
-  if (m.goal && totalGasto / m.goal > .8 && totalGasto <= m.goal)
-    alerts += `<div class="alert-banner">⚠️ Você usou ${(totalGasto / m.goal * 100).toFixed(0)}% da sua meta de gastos este mês.</div>`;
-  if (m.goal && totalGasto > m.goal)
-    alerts += `<div class="alert-banner" style="background:#ff4d4d18;border-color:#ff4d4d44;color:var(--red)">🚨 Meta ultrapassada em R$ ${fmt(totalGasto - m.goal)}.</div>`;
+  if (m.goal) {
+    const pct = metaGasto / m.goal;
+    if (pct > 0.8 && metaGasto <= m.goal)
+      alerts += `<div class="alert-banner">⚠️ Você usou ${(pct * 100).toFixed(0)}% da sua meta de gastos este mês.</div>`;
+    if (metaGasto > m.goal)
+      alerts += `<div class="alert-banner" style="background:#ff4d4d18;border-color:#ff4d4d44;color:var(--red)">🚨 Meta ultrapassada em R$ ${fmt(metaGasto - m.goal)}.</div>`;
+  }
   const today_d = new Date();
   (recL || []).forEach(r => {
     if (r.day) {
@@ -114,7 +128,7 @@ function renderDash() {
       if (bk) {
         const sorted = [...bk.entries].sort((a, b_) => new Date(b_.date) - new Date(a.date));
         const bMine = sorted.filter(e => e.owner === 'mine').reduce((s, e) => s + e.amount, 0);
-        const bOth = sorted.filter(e => e.owner === 'other').reduce((s, e) => s + e.amount, 0);
+        const bOth  = sorted.filter(e => e.owner === 'other').reduce((s, e) => s + e.amount, 0);
         const rows = sorted.length ? sorted.map(e => {
           const ib = e.type === 'installment'
             ? `<span class="bm bm-inst">📦${e.installCurrent}/${e.installTotal}</span>` : '';
@@ -228,8 +242,12 @@ function renderDash() {
   el.innerHTML = `
     ${alerts}
     <div class="summary-grid">
-      <div class="card"><div class="card-lbl">Total Gastos</div><div class="card-val">R$ ${fmt(totalGasto)}</div>${goalBar}</div>
-      <div class="card"><div class="card-lbl">Meus Gastos</div><div class="card-val a">R$ ${fmt(myT + pixT + recT)}</div></div>
+      <div class="card">
+        <div class="card-lbl">Total Gastos</div>
+        <div class="card-val">R$ ${fmt(totalGasto)}</div>
+        ${goalBar}
+      </div>
+      <div class="card"><div class="card-lbl">Meus Gastos</div><div class="card-val a">R$ ${fmt(metaGasto)}</div></div>
       <div class="card"><div class="card-lbl">A Receber</div><div class="card-val b">R$ ${fmt(othT)}</div><div class="card-sub">${Object.keys(pplMap).length} pessoa(s)</div></div>
       <div class="card"><div class="card-lbl">Entradas</div><div class="card-val g">R$ ${fmt(incMyT + incOthT)}</div></div>
       <div class="card"><div class="card-lbl">Saldo</div><div class="card-val ${saldo >= 0 ? 'g' : 'r'}">R$ ${fmt(saldo)}</div></div>
