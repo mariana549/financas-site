@@ -16,3 +16,10 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.log('SW falhou:', err));
   });
 }
+
+// ── Detecta atualização do SW e recarrega automaticamente ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
+}
