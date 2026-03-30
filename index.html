@@ -335,6 +335,53 @@
   </div>
 </div></div>
 
+<!-- Editar Mês -->
+<div class="modal-overlay" id="mEditMonth"><div class="modal modal-sm">
+  <div class="modal-title">Editar Mês <button class="modal-close" onclick="closeModal('mEditMonth')">×</button></div>
+  <div class="fr">
+    <div class="fg"><label>Mês</label>
+      <select id="editMSel">
+        <option>Janeiro</option><option>Fevereiro</option><option>Março</option>
+        <option>Abril</option><option>Maio</option><option>Junho</option>
+        <option>Julho</option><option>Agosto</option><option>Setembro</option>
+        <option>Outubro</option><option>Novembro</option><option>Dezembro</option>
+      </select>
+    </div>
+    <div class="fg"><label>Ano</label>
+      <input type="number" id="editMYear" min="2020" max="2035">
+    </div>
+  </div>
+  <div class="fg"><label>Meta de gastos (R$)</label>
+    <input type="number" id="editMGoal" step="0.01" placeholder="ex: 3000,00">
+  </div>
+  <input type="hidden" id="editMKey">
+  <div style="background:var(--bg3);border-radius:6px;padding:9px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">
+    ⚠️ Mudar o nome/ano recria a chave do mês — todos os dados são migrados automaticamente.
+  </div>
+  <div class="modal-actions">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mEditMonth')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="saveEditMonth()">Salvar</button>
+  </div>
+</div></div>
+
+<!-- Confirmar Exclusão de Mês -->
+<div class="modal-overlay" id="mDeleteMonth"><div class="modal modal-sm">
+  <div class="modal-title">Excluir Mês <button class="modal-close" onclick="closeModal('mDeleteMonth')">×</button></div>
+  <div style="text-align:center;padding:10px 0 20px">
+    <div style="font-size:32px;margin-bottom:12px">🗑️</div>
+    <p style="font-size:14px;font-weight:600;margin-bottom:6px" id="deleteMonthLabel">—</p>
+    <p style="font-size:12px;color:var(--red);font-family:var(--mono)" id="deleteMonthTotal">—</p>
+    <p style="font-size:12px;color:var(--text3);margin-top:10px">
+      Todos os lançamentos, bancos, pix, contas fixas e entradas deste mês serão <strong>permanentemente excluídos</strong>.
+    </p>
+  </div>
+  <input type="hidden" id="deleteMonthKey">
+  <div class="modal-actions" style="justify-content:center;gap:12px">
+    <button class="btn btn-ghost" onclick="closeModal('mDeleteMonth')">Cancelar</button>
+    <button class="btn btn-danger" onclick="executeDeleteMonth()">🗑 Excluir tudo</button>
+  </div>
+</div></div>
+
 
 <!-- Supabase CDN -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

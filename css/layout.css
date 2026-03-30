@@ -40,3 +40,17 @@
 .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
 .sync-dot.syncing { background: var(--orange); animation: pulse .8s infinite; }
 @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .4 } }
+
+/* ── Botões de ação do mês (aparecem no hover) ── */
+.month-item .month-actions {
+  display: none;
+  align-items: center;
+}
+
+.month-item:hover .month-actions {
+  display: flex;
+}
+
+.month-item:hover .badge {
+  display: none;
+}
