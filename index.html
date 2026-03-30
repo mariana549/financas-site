@@ -149,33 +149,28 @@
   <div class="modal-title" id="entryTitle">Novo Lançamento <button class="modal-close" onclick="closeModal('mEntry')">×</button></div>
   <div class="fg"><label>Descrição</label><input type="text" id="eDesc" placeholder="ex: Mercado, iFood, Gasolina..."></div>
   <div class="fr">
-    <div class="fg"><label>Valor Total da Compra(R$)</label><input type="number" id="eAmt" step="0.01" placeholder="0,00"></div>
+    <div class="fg">
+      <label>Valor Total da Compra (R$)</label>
+      <input type="number" id="eAmt" step="0.01" placeholder="0,00" oninput="updateInstallHint()">
+      <div id="installHint" style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;display:none"></div>
+    </div>
     <div class="fg"><label>Data</label><input type="date" id="eDate"></div>
   </div>
   <div class="fg"><label>Tipo</label>
     <div class="tgl">
       <div class="tgl-o active" id="tNormal" onclick="setEType('normal')">Normal</div>
-    <div class="tgl-o" id="tInstall" onclick="setEType('installment')">Parcelado</div>
-    <div class="tgl-o" id="tPix" onclick="setEType('pix')">Pix</div>
+      <div class="tgl-o" id="tInstall" onclick="setEType('installment')">Parcelado</div>
+      <div class="tgl-o" id="tPix" onclick="setEType('pix')">Pix</div>
     </div>
   </div>
   <div id="installGroup" style="display:none">
     <div class="fr">
-      <!-- Campo de valor — mude o label -->
-    <div class="fg">
-      <label for="eAmt">Valor <span id="eAmtLabel" style="color:var(--text3)">(total da compra se parcelado)</span></label>
-      <input type="number" id="eAmt" placeholder="0,00" step="0.01" min="0"
-        oninput="updateInstallHint()">
-      <div id="installHint" style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;display:none"></div>
-    </div>
-
-<!-- Campo de total de parcelas — adiciona oninput -->
-<input type="number" id="eInstTotal" placeholder="ex: 12" min="2"
-  oninput="updateInstallHint()">
-      <div class="fg"><label>Total parcelas</label><input type="number" id="eInstTotal" min="2" max="60" placeholder="ex: 12"></div>
+      <div class="fg"><label>Total parcelas</label><input type="number" id="eInstTotal" min="2" max="60" placeholder="ex: 12" oninput="updateInstallHint()"></div>
       <div class="fg"><label>Parcela atual</label><input type="number" id="eInstCur" min="1" value="1"></div>
     </div>
-    <div style="background:var(--bg3);border-radius:6px;padding:9px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">⚡ Próximas parcelas aparecem automaticamente nos meses seguintes.</div>
+    <div style="background:var(--bg3);border-radius:6px;padding:9px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">
+      ⚡ Próximas parcelas aparecem automaticamente nos meses seguintes.
+    </div>
   </div>
   <div class="fg"><label>De quem</label>
     <div class="tgl"><div class="tgl-o active" id="tMine" onclick="setOwner('mine')">Meu</div><div class="tgl-o" id="tOther" onclick="setOwner('other')">Outra pessoa</div></div>
@@ -186,18 +181,29 @@
   </div>
   <div class="fg"><label>Categoria</label>
     <div class="chips" id="catChips">
-      <div class="chip" onclick="pickCat(this)">Mercado</div><div class="chip" onclick="pickCat(this)">Moto</div>
-      <div class="chip" onclick="pickCat(this)">Notebook</div><div class="chip" onclick="pickCat(this)">Saúde</div>
-      <div class="chip" onclick="pickCat(this)">Lazer</div><div class="chip" onclick="pickCat(this)">Transporte</div>
-      <div class="chip" onclick="pickCat(this)">Alimentação</div><div class="chip" onclick="pickCat(this)">Outros</div>
+      <div class="chip" onclick="pickCat(this)">Mercado</div>
+      <div class="chip" onclick="pickCat(this)">Moto</div>
+      <div class="chip" onclick="pickCat(this)">Notebook</div>
+      <div class="chip" onclick="pickCat(this)">Saúde</div>
+      <div class="chip" onclick="pickCat(this)">Lazer</div>
+      <div class="chip" onclick="pickCat(this)">Transporte</div>
+      <div class="chip" onclick="pickCat(this)">Alimentação</div>
+      <div class="chip" onclick="pickCat(this)">Compras Online</div>
+      <div class="chip" onclick="pickCat(this)">Outros</div>
     </div>
-    <input type="text" id="eCat" placeholder="ou digite..." style="margin-top:7px" oninput="document.querySelectorAll('#catChips .chip').forEach(c=>c.classList.remove('sel'))">
+    <input type="text" id="eCat" placeholder="ou digite..." style="margin-top:7px"
+      oninput="document.querySelectorAll('#catChips .chip').forEach(c=>c.classList.remove('sel'))">
   </div>
   <div class="fg"><label>Observação</label><textarea id="eNote" placeholder="detalhes adicionais..."></textarea></div>
   <div class="fg"><label>Banco</label><select id="eBank"></select></div>
-  <input type="hidden" id="editEntryId"><input type="hidden" id="editBankName">
-  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mEntry')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveEntry()">Salvar</button></div>
+  <input type="hidden" id="editEntryId">
+  <input type="hidden" id="editBankName">
+  <div class="modal-actions">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mEntry')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="saveEntry()">Salvar</button>
+  </div>
 </div></div>
+
 
 <!-- Entry Detail -->
 <div class="modal-overlay" id="mDetail"><div class="modal modal-sm">
@@ -285,13 +291,6 @@
   <div class="modal-title">Parcelamento <button class="modal-close" onclick="closeModal('mInstDet')">×</button></div>
   <div id="instDetContent"></div>
   <div class="modal-actions" id="instDetActions"></div>
-</div></div>
-
-<!-- Goal -->
-<div class="modal-overlay" id="mGoal"><div class="modal modal-sm">
-  <div class="modal-title">Meta de Gastos <button class="modal-close" onclick="closeModal('mGoal')">×</button></div>
-  <div class="fg"><label>Valor limite (R$)</label><input type="number" id="goalAmt" step="0.01" placeholder="ex: 3000,00"></div>
-  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mGoal')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveGoal()">Salvar</button></div>
 </div></div>
 
 <!-- Backup -->
@@ -393,6 +392,30 @@
   </div>
 </div></div>
 
+<!-- ══ MODAL META ══ -->
+<div class="modal-overlay" id="mGoal">
+  <div class="modal modal-sm">
+    <div class="modal-title">
+      🎯 Meta de Gastos
+      <button class="modal-close" onclick="closeModal('mGoal')">×</button>
+    </div>
+
+    <div class="fg">
+      <label for="goalAmt">Valor da meta mensal (R$)</label>
+      <input type="number" id="goalAmt" placeholder="ex: 700,00"
+        step="0.01" min="0">
+    </div>
+
+    <p style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:16px">
+      A meta considera apenas seus gastos pessoais (owner: mine), ignorando lançamentos de terceiros.
+    </p>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('mGoal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveGoal()">Salvar Meta</button>
+    </div>
+  </div>
+</div>
 
 <!-- Supabase CDN -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
