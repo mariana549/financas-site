@@ -76,13 +76,6 @@ function renderPersonChips() {
   ).join('');
 }
 
-function getAllPeople() {
-  const s = new Set();
-  S.months.forEach(m => m.banks.forEach(b => b.entries.forEach(e => {
-    if (e.person) s.add(e.person);
-  })));
-  return [...s];
-}
 
 async function saveEntry() {
   const desc = document.getElementById('eDesc').value.trim();

@@ -1,8 +1,4 @@
-// ══════════════════════════════════════════════════
-// SW.JS — Service Worker (PWA + Cache Offline)
-// ══════════════════════════════════════════════════
-
-const CACHE_NAME = 'financas-v2';
+const CACHE_NAME = 'financas-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -35,8 +31,8 @@ const ASSETS = [
   './js/reports.js',
   './js/backup.js',
   './js/ai-engine.js',
-  './js/main.js',
-  'https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@400;500;600;700&display=swap'
+  './js/main.js'
+  // ← Google Fonts REMOVIDO daqui
 ];
 
 self.addEventListener('install', e => {
@@ -56,9 +52,28 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Ignora extensões do Chrome e não-GET
   if (!e.request.url.startsWith('http') || e.request.method !== 'GET') return;
-  
+
+  // ── Fontes Google: cache separado, stale-while-revalidate ──
+  if (
+    e.request.url.includes('fonts.googleapis.com') ||
+    e.request.url.includes('fonts.gstatic.com')
+  ) {
+    e.respondWith(
+      caches.open('financas-fonts').then(cache =>
+        cache.match(e.request).then(cached => {
+          const fetchPromise = fetch(e.request).then(res => {
+            cache.put(e.request, res.clone());
+            return res;
+          });
+          return cached || fetchPromise; // usa cache se tiver, senão busca
+        })
+      )
+    );
+    return;
+  }
+
+  // ── Demais assets: cache first ──
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;

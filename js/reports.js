@@ -82,7 +82,8 @@ function renderReports() {
     </div>
     <div class="comp-bar">
       <span class="comp-label">${prevM.label.slice(0, 3)} ${prevM.year}</span>
-      <div class<div class="comp-fill" style="width:${(prevTotal / maxComp * 100).toFixed(1)}%;background:var(--text3)">
+      <div class="comp-track">
+        <div class="comp-fill" style="width:${(prevTotal / maxComp * 100).toFixed(1)}%;background:var(--text3)">
           <span class="comp-val">R$ ${fmt(prevTotal)}</span>
         </div>
       </div>

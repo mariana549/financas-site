@@ -2,13 +2,6 @@
 // MAIN.JS — Inicialização do App
 // ══════════════════════════════════════════════════
 
-// ── Fechar modais clicando fora ──
-document.querySelectorAll('.modal-overlay').forEach(m => {
-  m.addEventListener('click', e => {
-    if (e.target === m) m.classList.remove('open');
-  });
-});
-
 // ── Aplicar tema salvo ──
 applyTheme();
 
