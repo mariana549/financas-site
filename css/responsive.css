@@ -25,3 +25,24 @@
   .people-grid { grid-template-columns: 1fr 1fr; }
   .sub-grid { grid-template-columns: 1fr 1fr; }
 }
+/* ── Bug 1: month-actions sempre visível no mobile (sem depender de :hover) ── */
+@media (max-width: 768px) {
+  .month-item .month-actions {
+    display: flex;
+  }
+  .month-item .badge {
+    display: none;
+  }
+}
+
+/* ── Bug 4: filter-presets adaptado para sidebar estreita no mobile ── */
+@media (max-width: 768px) {
+  .filter-presets {
+    padding: 6px 8px 4px;
+    gap: 3px;
+  }
+  .filter-chip {
+    font-size: 9px;
+    padding: 2px 7px;
+  }
+}

@@ -3,16 +3,6 @@
 // ══════════════════════════════════════════════════
 
 
-// ── Wrapper offline: se sem conexão, enfileira a operação ──
-async function dbRun(fn, queueOp) {
-  if (!currentUser) return;
-  if (typeof isOnline === 'function' && !isOnline()) {
-    if (typeof queueAdd === 'function' && queueOp) queueAdd(queueOp);
-    return;
-  }
-  return await fn();
-}
-
 async function loadAllFromSupabase() {
   if (!currentUser) return;
   setSyncing(true);

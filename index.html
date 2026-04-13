@@ -424,36 +424,6 @@
   <div id="mCobrancaContent"></div>
 </div></div>
 
-<!-- ══ MODAL OFFLINE ══ -->
-<div class="modal-overlay" id="mOffline"><div class="modal modal-sm">
-  <div class="modal-title">🔌 Sem conexão</div>
-  <p style="font-size:13px;color:var(--text2);margin-bottom:8px">Você está offline. Suas alterações serão salvas localmente e sincronizadas quando a conexão voltar.</p>
-  <p style="font-size:12px;font-family:var(--mono);color:var(--text3)" id="offlinePendingCount"></p>
-  <div class="modal-actions" style="margin-top:16px">
-    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="closeModal('mOffline')">Entendido</button>
-  </div>
-</div></div>
-
-<!-- ══ MODAL SINCRONIZANDO ══ -->
-<div class="modal-overlay" id="mSyncing"><div class="modal modal-sm">
-  <div class="modal-title">🔄 Sincronizando</div>
-  <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Enviando alterações salvas offline...</p>
-  <div style="background:var(--bg3);border-radius:4px;height:6px;overflow:hidden;margin-bottom:8px">
-    <div id="syncProgressBar" style="height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width .3s"></div>
-  </div>
-  <p style="font-size:11px;font-family:var(--mono);color:var(--text3)" id="syncProgressCount">0 de 0 enviados</p>
-</div></div>
-
-<!-- ══ MODAL ERRO SYNC ══ -->
-<div class="modal-overlay" id="mSyncError"><div class="modal modal-sm">
-  <div class="modal-title">❌ Erro de sincronização</div>
-  <p style="font-size:13px;color:var(--text2);margin-bottom:8px" id="syncErrorDetail">Não foi possível salvar algumas alterações.</p>
-  <div class="modal-actions">
-    <button class="btn btn-ghost" onclick="closeModal('mSyncError')">Fechar</button>
-    <button class="btn btn-primary" onclick="closeModal('mSyncError');syncQueue()">Tentar Novamente</button>
-  </div>
-</div></div>
-
 <!-- Supabase CDN -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -462,7 +432,6 @@
 <script src="js/utils.js"></script>
 <script src="js/state.js"></script>
 <script src="js/theme.js"></script>
-<script src="js/offline-queue.js"></script>
 <script src="js/db.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/months.js"></script>
