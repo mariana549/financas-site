@@ -129,6 +129,10 @@ function monthTotal(m) {
 }
 
 function selectMonth(key, render = true) {
+  // ── Fecha sidebar no mobile ao selecionar mês ──
+  const sb = document.getElementById('sb');
+  if (sb && sb.classList.contains('open')) toggleSidebar();
+
   S.currentMonth = key;
   const m = getMonth();
   if (!m) return;

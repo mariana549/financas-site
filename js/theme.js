@@ -21,6 +21,11 @@ function toggleSidebar() {
 
 function showView(v) {
   S.currentView = v;
+
+  // ── Fecha sidebar no mobile ao trocar de view ──
+  const sb = document.getElementById('sb');
+  if (sb && sb.classList.contains('open')) toggleSidebar();
+
   document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
   document.getElementById('view-' + v).classList.add('active');
