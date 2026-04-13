@@ -116,10 +116,10 @@ function renderDash() {
         <div class="sec-title" style="margin-bottom:10px">A Receber</div>
         <div class="people-grid" style="margin-bottom:18px">
           ${Object.entries(pplMap).map(([n, d]) => `
-            <div class="pcard">
+            <div class="pcard" onclick="openCobranca('${n}')" style="cursor:pointer" title="Cobrar ${n}">
               <div class="pcard-name">${n}</div>
               <div class="pcard-val">R$ ${fmt(d.total)}</div>
-              <div class="pcard-sub">${d.count} item(s)</div>
+              <div class="pcard-sub">${d.count} item(s) · toque para cobrar</div>
             </div>`).join('')}
         </div>`;
 

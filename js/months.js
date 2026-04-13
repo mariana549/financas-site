@@ -94,33 +94,6 @@ async function deleteMonth(key) {
   }
 }
 
-function renderMonthList() {
-  const el = document.getElementById('monthList');
-  if (!el) return;
-  if (!S.months.length) {
-    el.innerHTML = '<div style="padding:8px 12px;font-size:12px;color:var(--text3);font-family:var(--mono)">nenhum mês</div>';
-    return;
-  }
-el.innerHTML = S.months.map(m => `
-  <div class="month-item ${S.currentMonth === m.key ? 'active' : ''}"
-    onclick="selectMonth('${m.key}')">
-    <span>${m.label.slice(0, 3)} ${m.year}</span>
-    <div class="month-actions">
-      <button onclick="event.stopPropagation();openEditMonth('${m.key}')"
-        style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0 3px;line-height:1;transition:color .15s"
-        onmouseover="this.style.color='var(--accent)'"
-        onmouseout="this.style.color='var(--text3)'"
-        title="Editar mês">✎</button>
-      <button onclick="event.stopPropagation();openDeleteMonth('${m.key}')"
-        style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0 3px;line-height:1;transition:color .15s"
-        onmouseover="this.style.color='var(--red)'"
-        onmouseout="this.style.color='var(--text3)'"
-        title="Excluir mês">×</button>
-    </div>
-    <span class="badge">R$${fmt(monthTotal(m))}</span>
-  </div>`).join('');
-}
-
 function monthTotal(m) {
   let t = m.banks.reduce((s, b) => s + b.entries.reduce((ss, e) => ss + e.amount, 0), 0);
   t += (S.recurrents[m.key] || []).reduce((s, r) => s + r.amount, 0);
