@@ -82,6 +82,21 @@ function showToast(msg, type = 'ok') {
   toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
 }
 
+// ── Skeleton Screens ──
+function renderSkeleton() {
+  const card = (w1, w2) =>
+    `<div class="card"><div class="skel" style="width:${w1}%;height:10px;margin-bottom:10px"></div><div class="skel" style="width:${w2}%;height:22px"></div></div>`;
+  return `
+    <div class="summary-grid" style="margin-bottom:22px">
+      ${card(55,80)}${card(65,70)}${card(50,85)}${card(60,75)}
+    </div>
+    <div class="skel" style="height:38px;border-radius:8px;margin-bottom:18px"></div>
+    <div class="skel" style="height:48px;border-radius:8px;margin-bottom:10px"></div>
+    <div class="skel" style="height:48px;border-radius:8px;margin-bottom:10px"></div>
+    <div class="skel" style="height:48px;border-radius:8px"></div>
+  `;
+}
+
 // ── Fechar modal ao clicar fora ──
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });

@@ -109,7 +109,18 @@ function renderDash() {
   // ── Tabela de entradas do banco ──
   let gastoHTML = '';
   if (!m.banks.length && !recL.length && !pixL.length) {
-    gastoHTML = '<div class="empty">nenhum lançamento ainda</div>';
+    gastoHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="opacity:.35">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <line x1="2" y1="10" x2="22" y2="10"/>
+          </svg>
+        </div>
+        <div class="empty-state-title">Nenhum lançamento ainda</div>
+        <div class="empty-state-sub">Comece registrando seu primeiro gasto do mês.</div>
+        <button class="btn btn-primary" onclick="openEntryM()" style="margin-top:18px">+ Adicionar Lançamento</button>
+      </div>`;
   } else {
     if (Object.keys(pplMap).length)
       gastoHTML += `
@@ -251,7 +262,11 @@ function renderDash() {
       <div class="card"><div class="card-lbl">A Receber</div><div class="card-val b">R$ ${fmt(othT)}</div><div class="card-sub">${Object.keys(pplMap).length} pessoa(s)</div></div>
       <div class="card"><div class="card-lbl">Entradas</div><div class="card-val g">R$ ${fmt(incMyT + incOthT)}</div></div>
       <div class="card"><div class="card-lbl">Saldo</div><div class="card-val ${saldo >= 0 ? 'g' : 'r'}">R$ ${fmt(saldo)}</div></div>
-      ${subM > 0 ? `<div class="card"><div class="card-lbl">Assinaturas</div><div class="card-val p">R$ ${fmt(subM)}</div></div>` : ''}
+      ${subM > 0 ? `<div class="card card-link" onclick="showView('subs')" title="Gerenciar assinaturas">
+        <div class="card-lbl">Assinaturas ↗</div>
+        <div class="card-val p">R$ ${fmt(subM)}</div>
+        <div class="card-sub">${(S.subscriptions||[]).filter(s=>!s.endDate&&s.cycle==='mensal').length} ativa(s) · clique para gerenciar</div>
+      </div>` : ''}
     </div>
     <div class="inner-tabs">
       <div class="itab active" id="itab-gastos" onclick="setInnerTab('gastos')">Gastos</div>

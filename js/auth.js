@@ -59,6 +59,11 @@ async function onLoginSuccess() {
   document.getElementById('authScreen').style.display = 'none';
   const emailEl = document.getElementById('userEmail');
   if (emailEl) emailEl.textContent = currentUser.email;
+
+  // Skeleton enquanto carrega do Supabase
+  const dashEl = document.getElementById('dashContent');
+  if (dashEl) dashEl.innerHTML = renderSkeleton();
+
   await loadAllFromSupabase();
   renderMonthList();
   renderSubs();
