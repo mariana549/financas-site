@@ -10,7 +10,7 @@ async function registerFutureInst({desc, partAmt, total, cur, bankName, owner, p
   // Registra na tabela installments
   for (let p = cur + 1; p <= total; p++) {
     const inst = {
-      id: 'i_' + Date.now() + '_' + p,
+      id: 'i_' + Date.now() + '_' + p + '_' + Math.random().toString(36).slice(2, 7),
       gId, desc, amount: partAmt, total, partNum: p,
       bankName, owner, person, cat,
       offset: p - cur, startKey, date, done: false

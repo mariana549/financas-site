@@ -168,6 +168,16 @@ if (type === 'installment') {
       startKey: S.currentMonth, date
     });
   }
+} else {
+  // ── Lançamento normal ou pix ──
+  const entry = {
+    id: editId ? String(editId) : String(Date.now()),
+    desc, amount: amtRaw, date,
+    owner: S.entryOwner, person, category: cat, note,
+    type, installCurrent: null, installTotal: null, groupId: null
+  };
+  bank.entries.push(entry);
+  await dbSaveEntry(m.key, bankName, entry);
 }
   setSyncing(false);
   renderDash();
