@@ -71,6 +71,7 @@ async function saveIncome() {
   setSyncing(false);
   renderDash();
   closeModal('mIncome');
+  showToast('✓ Entrada salva');
 }
 
 async function deleteIncome(id) {
@@ -80,6 +81,7 @@ async function deleteIncome(id) {
   await dbDeleteIncome(id);
   setSyncing(false);
   renderDash();
+  showToast('Entrada excluída');
 }
 
 // ── Meta de Gastos ──
@@ -94,4 +96,5 @@ async function saveGoal() {
   renderDash();
   renderMonthList();
   closeModal('mGoal');
+  showToast('✓ Meta salva');
 }

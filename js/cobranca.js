@@ -105,19 +105,3 @@ function copiarCobranca(tipo) {
   }
 }
 
-function showToast(msg) {
-  let toast = document.getElementById('appToast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'appToast';
-    toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);' +
-      'background:var(--bg3);border:1px solid var(--border2);color:var(--text);' +
-      'padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;' +
-      'font-family:var(--mono);white-space:nowrap;pointer-events:none;transition:opacity .3s';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = msg;
-  toast.style.opacity = '1';
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
-}

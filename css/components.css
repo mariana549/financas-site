@@ -69,3 +69,18 @@
 .scard-name { font-size: 13px; font-weight: 500; margin-bottom: 3px; padding-right: 50px; }
 .scard-amt { font-family: var(--mono); font-size: 15px; color: var(--accent); margin-bottom: 2px; }
 .scard-det { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+
+/* ── MODO PRIVACIDADE ── */
+html[data-privacy="on"] .card-val,
+html[data-privacy="on"] .amt,
+html[data-privacy="on"] .pcard-val,
+html[data-privacy="on"] .tbl-total,
+html[data-privacy="on"] .foot-amt,
+html[data-privacy="on"] .scard-amt,
+html[data-privacy="on"] .goal-bar-label,
+html[data-privacy="on"] .goal-bar-fill,
+html[data-privacy="on"] .detail-amount {
+  filter: blur(7px);
+  user-select: none;
+  transition: filter .2s;
+}

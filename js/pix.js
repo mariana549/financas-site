@@ -45,6 +45,7 @@ async function savePix() {
   setSyncing(false);
   renderDash();
   closeModal('mPix');
+  showToast('✓ Pix salvo');
 }
 
 async function deletePix(id) {
@@ -54,4 +55,5 @@ async function deletePix(id) {
   await dbDeletePix(id);
   setSyncing(false);
   renderDash();
+  showToast('Pix excluído');
 }

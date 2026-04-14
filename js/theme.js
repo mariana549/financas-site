@@ -19,6 +19,18 @@ function toggleSidebar() {
   document.getElementById('sbOverlay').classList.toggle('open');
 }
 
+function togglePrivacy() {
+  const isOn = document.documentElement.getAttribute('data-privacy') === 'on';
+  applyPrivacy(!isOn);
+  localStorage.setItem('fin_privacy', !isOn ? 'on' : 'off');
+}
+
+function applyPrivacy(on) {
+  document.documentElement.setAttribute('data-privacy', on ? 'on' : 'off');
+  const btn = document.getElementById('privacyBtn');
+  if (btn) btn.textContent = on ? '🙈' : '👁';
+}
+
 function showView(v) {
   S.currentView = v;
 

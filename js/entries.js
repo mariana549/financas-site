@@ -172,6 +172,7 @@ if (type === 'installment') {
   setSyncing(false);
   renderDash();
   closeModal('mEntry');
+  showToast('✓ Lançamento salvo');
 }
 
 async function deleteEntry(bankName, id) {
@@ -186,6 +187,7 @@ async function deleteEntry(bankName, id) {
   setSyncing(false);
   renderDash();
   closeModal('mDetail');
+  showToast('Lançamento excluído');
 }
 
 function showEntryDetail(entry, bankName) {

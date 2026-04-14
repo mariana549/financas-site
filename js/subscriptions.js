@@ -54,6 +54,7 @@ async function saveSub() {
   setSyncing(false);
   renderSubs();
   closeModal('mSub');
+  showToast('✓ Assinatura salva');
 }
 
 async function deleteSub(id) {
@@ -63,6 +64,7 @@ async function deleteSub(id) {
   await dbDeleteSub(id);
   setSyncing(false);
   renderSubs();
+  showToast('Assinatura excluída');
 }
 
 function renderSubs() {

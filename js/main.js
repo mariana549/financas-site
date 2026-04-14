@@ -5,6 +5,9 @@
 // ── Aplicar tema salvo ──
 applyTheme();
 
+// ── Aplicar modo privacidade salvo ──
+applyPrivacy(localStorage.getItem('fin_privacy') === 'on');
+
 // ── Inicializar color grid ──
 buildColorGrid();
 

@@ -18,6 +18,7 @@ async function addMonth() {
   selectMonth(key);
   closeModal('mMonth');
   document.getElementById('mGoalNew').value = '';
+  showToast('✓ Mês criado');
 }
 
 async function copyLastMonth() {

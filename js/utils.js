@@ -38,6 +38,14 @@ function openModal(id) {
   const el = document.getElementById(id);
   if (el) el.classList.add('open');
   if (id === 'mBank') buildColorGrid();
+  if (id === 'mMonth') {
+    const now = new Date();
+    const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const mSel = document.getElementById('mSel');
+    const mYear = document.getElementById('mYear');
+    if (mSel) mSel.value = months[now.getMonth()];
+    if (mYear) mYear.value = now.getFullYear();
+  }
 }
 
 function closeModal(id) {
@@ -51,6 +59,27 @@ function getAllPeople() {
     if (e.person) s.add(e.person);
   })));
   return [...s];
+}
+
+// ── Toast global ──
+function showToast(msg, type = 'ok') {
+  let toast = document.getElementById('appToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'appToast';
+    toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);' +
+      'padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;' +
+      'font-family:var(--mono);white-space:nowrap;pointer-events:none;transition:opacity .3s';
+    document.body.appendChild(toast);
+  }
+  const isErr = type === 'error';
+  toast.style.background = isErr ? '#1a0a0a' : 'var(--bg3)';
+  toast.style.border = `1px solid ${isErr ? '#ff4d4d55' : 'var(--border2)'}`;
+  toast.style.color = isErr ? 'var(--red)' : 'var(--text)';
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
 }
 
 // ── Fechar modal ao clicar fora ──

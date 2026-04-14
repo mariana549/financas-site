@@ -38,6 +38,7 @@ async function saveRec() {
   setSyncing(false);
   renderDash();
   closeModal('mRec');
+  showToast('✓ Conta fixa salva');
 }
 
 async function deleteRec(id) {
@@ -47,4 +48,5 @@ async function deleteRec(id) {
   await dbDeleteRecurrent(id);
   setSyncing(false);
   renderDash();
+  showToast('Conta fixa excluída');
 }

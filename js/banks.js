@@ -35,6 +35,7 @@ async function addBank() {
   buildActions();
   closeModal('mBank');
   document.getElementById('bName').value = '';
+  showToast('✓ Banco criado');
 }
 
 function selectBank(n) {
@@ -77,4 +78,5 @@ async function deleteBank(name) {
   setSyncing(false);
   renderDash();
   buildActions();
+  showToast('Banco excluído');
 }
