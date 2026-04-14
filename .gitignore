@@ -1,5 +1,13 @@
-node_modules/
+# ── Credenciais e segredos ──
+.env
+.env.*
+!.env.example
+js/supabase-config.js
+
+# ── Playwright ──
 .auth/
 playwright-report/
 test-results/
-.env.test
+
+# ── Node ──
+node_modules/
