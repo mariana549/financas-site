@@ -122,6 +122,7 @@ async function saveEntry() {
 
   const m = getMonth();
   const bank = m.banks.find(b => b.name === bankName);
+  if (!bank) { alert('Banco não encontrado. Selecione um banco válido.'); return; }
 
   if (editId && editBank) {
     const oldBank = m.banks.find(b => b.name === editBank);
