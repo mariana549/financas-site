@@ -4,7 +4,7 @@
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity .2s; }
 .modal-overlay.open { opacity: 1; pointer-events: all; }
-.modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; padding: 24px; width: 500px; max-width: 96vw; transform: translateY(8px); transition: transform .2s, background .2s; max-height: 92vh; overflow-y: auto; }
+.modal { background: var(--modal-bg, var(--bg2)); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); border: 1px solid var(--border2); border-radius: 12px; padding: 24px; width: 500px; max-width: 96vw; transform: translateY(8px); transition: transform .2s, background .2s; max-height: 92vh; overflow-y: auto; }
 .modal-overlay.open .modal { transform: translateY(0); }
 .modal-sm { width: 380px; }
 .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }

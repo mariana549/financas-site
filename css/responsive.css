@@ -117,3 +117,17 @@
     font-size: 10px;
   }
 }
+
+/* ── iOS Safe Area (iPhone notch / home bar) ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .sidebar {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .content {
+    padding-bottom: calc(28px + env(safe-area-inset-bottom));
+  }
+  .mob-toggle {
+    top: calc(12px + env(safe-area-inset-top));
+    right: calc(12px + env(safe-area-inset-right));
+  }
+}

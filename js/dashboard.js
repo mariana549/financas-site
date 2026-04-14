@@ -2,6 +2,13 @@
 // DASHBOARD.JS — Renderização do Dashboard Principal
 // ══════════════════════════════════════════════════
 
+function filterEntries(q) {
+  const v = q.toLowerCase().trim();
+  document.querySelectorAll('#view-dash .entry-row').forEach(row => {
+    row.style.display = !v || row.textContent.toLowerCase().includes(v) ? '' : 'none';
+  });
+}
+
 function setInnerTab(t) {
   S.currentInnerTab = t;
   document.querySelectorAll('.itab').forEach(x => x.classList.remove('active'));
@@ -267,6 +274,11 @@ function renderDash() {
         <div class="card-val p">R$ ${fmt(subM)}</div>
         <div class="card-sub">${(S.subscriptions||[]).filter(s=>!s.endDate&&s.cycle==='mensal').length} ativa(s) · clique para gerenciar</div>
       </div>` : ''}
+    </div>
+    <div style="position:relative;margin-bottom:14px">
+      <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text3)" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="globalSearch" placeholder="Buscar lançamento..." oninput="filterEntries(this.value)"
+        style="padding-left:34px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;width:100%;box-sizing:border-box;font-size:13px;color:var(--text)">
     </div>
     <div class="inner-tabs">
       <div class="itab active" id="itab-gastos" onclick="setInnerTab('gastos')">Gastos</div>
