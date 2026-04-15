@@ -165,6 +165,18 @@ function renderYear() {
     const incAnual = mths.reduce((s, m) => s + (S.incomes[m.key] || []).reduce((ss, i) => ss + i.amount, 0), 0);
     const saldoAnual = incAnual - totalAnual;
 
+    // ── Top categorias do ano ──
+    const catAnual = {};
+    mths.forEach(m => {
+      m.banks.forEach(b => {
+        b.entries.filter(e => e.category).forEach(e => {
+          catAnual[e.category] = (catAnual[e.category] || 0) + e.amount;
+        });
+      });
+    });
+    const topCats = Object.entries(catAnual).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const maxCat = topCats.length ? topCats[0][1] : 1;
+
     html += `
       <div style="margin-bottom:32px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
@@ -190,6 +202,21 @@ function renderYear() {
                 </span>`
               : ''}
           </div>`).join('')}
+
+        ${topCats.length ? `
+          <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+            <div class="sec-title" style="margin-bottom:10px;font-size:10px">Top Categorias ${y}</div>
+            ${topCats.map(([cat, val]) => `
+              <div class="bar-wrap" style="margin-bottom:7px">
+                <div class="bar-lbl">
+                  <span style="font-size:12px">${getCategoryIcon(cat, cat)} ${cat}</span>
+                  <span style="font-family:var(--mono);font-size:11px">R$ ${fmt(val)}</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width:${(val / maxCat * 100).toFixed(1)}%;background:var(--purple)"></div>
+                </div>
+              </div>`).join('')}
+          </div>` : ''}
       </div>`;
   });
 

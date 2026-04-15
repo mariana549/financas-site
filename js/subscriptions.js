@@ -2,6 +2,22 @@
 // SUBSCRIPTIONS.JS — Assinaturas
 // ══════════════════════════════════════════════════
 
+function calcAnualTotal(subs) {
+  return subs.reduce((t, s) => {
+    if (s.cycle === 'mensal')   return t + s.amount * 12;
+    if (s.cycle === 'anual')    return t + s.amount;
+    if (s.cycle === 'semanal')  return t + s.amount * 52;
+    return t + s.amount * 12;
+  }, 0);
+}
+
+function toggleSubProjection() {
+  const el = document.getElementById('subProjection');
+  if (!el) return;
+  const hidden = el.style.display === 'none';
+  el.style.display = hidden ? 'block' : 'none';
+}
+
 function openSubM(editId = null) {
   clr('sName', 'sAmt', 'sBank', 'sDay', 'sStart', 'sEnd');
   document.getElementById('sCycle').value = 'mensal';
@@ -123,15 +139,54 @@ function renderSubs() {
         <div class="card-val a">R$ ${fmt(mensal)}</div>
         <div class="card-sub">${active.filter(s => s.cycle === 'mensal').length} ativa(s)</div>
       </div>
-      <div class="card">
-        <div class="card-lbl">Projeção Anual</div>
-        <div class="card-val">R$ ${fmt(mensal * 12)}</div>
+      <div class="card card-link" onclick="toggleSubProjection()" title="Ver detalhes por serviço">
+        <div class="card-lbl">Projeção Anual ↗</div>
+        <div class="card-val">R$ ${fmt(calcAnualTotal(active))}</div>
+        <div class="card-sub">clique para detalhar</div>
       </div>
       ${cancelled.length ? `
       <div class="card">
         <div class="card-lbl">Canceladas</div>
         <div class="card-val" style="color:var(--text3)">${cancelled.length}</div>
       </div>` : ''}
+    </div>`;
+
+  // ── Projeção Anual Detalhada ──
+  const projList = [...active]
+    .map(s => {
+      const anual = s.cycle === 'anual' ? s.amount : s.cycle === 'semanal' ? s.amount * 52 : s.amount * 12;
+      const mensal_val = s.cycle === 'anual' ? s.amount / 12 : s.cycle === 'semanal' ? s.amount * 52 / 12 : s.amount;
+      return { ...s, anual, mensal_val };
+    })
+    .sort((a, b) => b.anual - a.anual);
+  const maxProj = Math.max(...projList.map(s => s.anual), 1);
+
+  html += `
+    <div id="subProjection" style="display:none;margin-bottom:24px">
+      <div class="sec-title" style="margin-bottom:12px">Projeção por Serviço (12 meses)</div>
+      <div class="tbl-block">
+        <table>
+          <thead><tr><th>Serviço</th><th>Ciclo</th><th style="text-align:right">Mensal</th><th style="text-align:right">Anual</th></tr></thead>
+          <tbody>
+            ${projList.map(s => `
+              <tr>
+                <td>
+                  ${s.name}
+                  <div style="margin-top:4px;height:4px;border-radius:2px;background:var(--bg4);overflow:hidden">
+                    <div style="height:100%;width:${(s.anual / maxProj * 100).toFixed(1)}%;background:var(--accent);border-radius:2px"></div>
+                  </div>
+                </td>
+                <td><span class="bm bm-cat">${s.cycle}</span></td>
+                <td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--text2)">R$ ${fmt(s.mensal_val)}</td>
+                <td style="text-align:right;font-family:var(--mono);font-size:13px;color:var(--accent)">R$ ${fmt(s.anual)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="foot-row">
+          <div class="foot-grp"><span class="foot-lbl">Total Anual</span><span class="foot-amt" style="color:var(--accent)">R$ ${fmt(calcAnualTotal(active))}</span></div>
+          <div class="foot-grp"><span class="foot-lbl">Média Mensal</span><span class="foot-amt">R$ ${fmt(calcAnualTotal(active) / 12)}</span></div>
+        </div>
+      </div>
     </div>`;
 
   Object.entries(byBank).forEach(([bank, subs]) => {

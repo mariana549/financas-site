@@ -135,7 +135,7 @@
     <div class="fg"><label>Mês</label><select id="mSel"><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select></div>
     <div class="fg"><label>Ano</label><input type="number" id="mYear" value="2025" min="2020" max="2035"></div>
   </div>
-  <div class="fg"><label>Meta de gastos (R$) — opcional</label><input type="number" id="mGoal" step="0.01" placeholder="ex: 3000,00"></div>
+  <div class="fg"><label>Meta de gastos (R$) — opcional <span class="tip" data-tip="Quanto você quer gastar no mês.&#10;Só conta seus gastos (Meu).&#10;Gastos de terceiros não entram.">?</span></label><input type="number" id="mGoal" step="0.01" placeholder="ex: 3000,00"></div>
   <div class="modal-actions">
     <button class="btn btn-ghost btn-sm" onclick="copyLastMonth()">📋 Copiar mês anterior</button>
     <button class="btn btn-ghost btn-sm" onclick="closeModal('mMonth')">Cancelar</button>
@@ -157,7 +157,7 @@
   <div class="fg"><label>Descrição</label><input type="text" id="eDesc" placeholder="ex: Mercado, iFood, Gasolina..."></div>
   <div class="fr">
     <div class="fg">
-      <label>Valor Total da Compra (R$)</label>
+      <label>Valor Total da Compra (R$) <span class="tip" data-tip="Digite o valor total.&#10;Para parcelado, o app divide&#10;automaticamente por parcela.">?</span></label>
       <input type="number" id="eAmt" step="0.01" placeholder="0,00" oninput="updateInstallHint()">
       <div id="installHint" style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;display:none"></div>
     </div>
@@ -172,14 +172,14 @@
   </div>
   <div id="installGroup" style="display:none">
     <div class="fr">
-      <div class="fg"><label>Total parcelas</label><input type="number" id="eInstTotal" min="2" max="60" placeholder="ex: 12" oninput="updateInstallHint()"></div>
+      <div class="fg"><label>Total parcelas <span class="tip" data-tip="Quantas parcelas no total.&#10;Ex: 12x → o app lança R$ X/12&#10;nos próximos 12 meses.">?</span></label><input type="number" id="eInstTotal" min="2" max="60" placeholder="ex: 12" oninput="updateInstallHint()"></div>
       <div class="fg"><label>Parcela atual</label><input type="number" id="eInstCur" min="1" value="1"></div>
     </div>
     <div style="background:var(--bg3);border-radius:6px;padding:9px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">
       ⚡ Próximas parcelas aparecem automaticamente nos meses seguintes.
     </div>
   </div>
-  <div class="fg"><label>De quem</label>
+  <div class="fg"><label>De quem <span class="tip" data-tip="Meu = entra na sua meta.&#10;Outra pessoa = entra em A Receber.&#10;Dividido = metade na sua meta,&#10;metade em A Receber.">?</span></label>
     <div class="tgl">
       <div class="tgl-o active" id="tMine" onclick="setOwner('mine')">Meu</div>
       <div class="tgl-o" id="tOther" onclick="setOwner('other')">Outra pessoa</div>
@@ -194,7 +194,7 @@
     <div class="fg"><label>Nome da Pessoa</label><input type="text" id="eSplitPerson" placeholder="Sogra, Pai, Mãe..."></div>
     <div class="fr">
       <div class="fg">
-        <label>Minha parte (%)</label>
+        <label>Minha parte (%) <span class="tip" data-tip="50 = metade pra você.&#10;70 = você paga 70%, a pessoa 30%.&#10;O valor dela vai para A Receber.">?</span></label>
         <input type="number" id="eSplitRatio" min="1" max="99" value="50" placeholder="50"
           oninput="updateSplitHint()">
       </div>

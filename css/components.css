@@ -2,6 +2,12 @@
    COMPONENTS.CSS — Botões, Cards, Badges, Tabs
    ============================================ */
 
+/* ── TOOLTIPS DE AJUDA ── */
+.tip { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; background: var(--bg4); border: 1px solid var(--border2); color: var(--text3); font-size: 9px; font-family: var(--mono); cursor: help; position: relative; vertical-align: middle; margin-left: 4px; flex-shrink: 0; transition: border-color .15s, color .15s; }
+.tip:hover { border-color: var(--accent); color: var(--accent); }
+.tip::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%); background: var(--bg4); border: 1px solid var(--border2); color: var(--text); font-size: 11px; font-family: var(--sans); line-height: 1.5; padding: 7px 10px; border-radius: 7px; white-space: pre-wrap; width: max-content; max-width: 220px; pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 999; box-shadow: 0 4px 16px var(--shadow); }
+.tip:hover::after { opacity: 1; }
+
 /* ── BOTÕES ── */
 .btn { padding: 7px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; font-family: var(--sans); font-weight: 500; transition: all .15s; display: flex; align-items: center; gap: 5px; }
 .btn-primary { background: var(--accent); color: #fff; font-weight: 600; }
