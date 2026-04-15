@@ -3,7 +3,7 @@
    ============================================ */
 
 /* ── TOOLTIPS DE AJUDA ── */
-.tip { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; background: var(--bg4); border: 1px solid var(--border2); color: var(--text3); font-size: 9px; font-family: var(--mono); cursor: help; position: relative; vertical-align: middle; margin-left: 4px; flex-shrink: 0; transition: border-color .15s, color .15s; }
+.tip { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; background: var(--bg4); border: 1px solid var(--border2); color: var(--text3); font-size: 9px; font-family: var(--mono); cursor: help; position: relative; vertical-align: middle; flex-shrink: 0; transition: border-color .15s, color .15s; }
 .tip:hover { border-color: var(--accent); color: var(--accent); }
 .tip::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%); background: var(--bg4); border: 1px solid var(--border2); color: var(--text); font-size: 11px; font-family: var(--sans); line-height: 1.5; padding: 7px 10px; border-radius: 7px; white-space: pre-wrap; width: max-content; max-width: min(220px, calc(100vw - 32px)); pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 1100; box-shadow: 0 4px 16px var(--shadow); }
 .tip:hover::after { opacity: 1; }
