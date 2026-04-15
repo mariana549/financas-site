@@ -46,7 +46,19 @@
   }
 
   .topbar {
-    padding: 12px 52px 12px 14px;
+    padding: 10px 52px 10px 14px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .topbar-actions {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .topbar-actions .btn {
+    font-size: 11px;
+    padding: 4px 8px;
   }
 
   .mob-toggle {
@@ -101,8 +113,8 @@
   .sub-grid {
     grid-template-columns: 1fr 1fr;
   }
-}
 
+  /* ── Mês na sidebar: ações visíveis, badge oculto ── */
   .month-item .month-actions {
     display: flex;
   }
@@ -111,8 +123,24 @@
     display: none;
   }
 
+  /* ── Filtros menores ── */
   .filter-chip {
     font-size: 10px;
+    width: 88px;
+  }
+
+  /* ── Cards de resumo menores ── */
+  .card {
+    padding: 12px;
+  }
+
+  .card-val {
+    font-size: 16px;
+  }
+
+  /* ── People/pcard compacto ── */
+  .pcard-val {
+    font-size: 15px;
   }
 }
 

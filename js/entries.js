@@ -135,26 +135,48 @@ function renderSplitNamesContainer() {
   const count = S.splitCount || 2;
   const people = S.splitPeople || [];
 
-  const chipsHtml = known.length ? `
-    <div style="font-size:11px;color:var(--text3);margin-bottom:5px">Pessoas já cadastradas — clique para preencher:</div>
-    <div class="chips" style="margin-bottom:12px">${known.map(p =>
-      `<div class="chip" onclick="fillSplitName('${p.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'">${p}</div>`
-    ).join('')}</div>` : '';
-
+  // Monta HTML dos campos de nome (sem onclick inline)
   const fieldsHtml = Array.from({ length: count - 1 }, (_, i) => {
     const val = (people[i] || '').replace(/"/g, '&quot;');
-    const clearBtn = val ? `<button type="button" onclick="clearSplitPerson(${i})"
-      style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;
-      color:var(--text3);cursor:pointer;font-size:16px;padding:0;line-height:1">×</button>` : '';
-    return `<div class="fg" style="margin-bottom:6px;position:relative">
+    return `<div class="fg" style="margin-bottom:6px;position:relative" data-split-field="${i}">
       <input type="text" placeholder="Nome da pessoa ${i + 1}" value="${val}"
-        oninput="S.splitPeople[${i}]=this.value;updateSplitHint()"
+        data-split-idx="${i}"
         style="padding-right:${val ? 28 : 10}px">
-      ${clearBtn}
+      ${val ? `<button type="button" data-split-clear="${i}"
+        style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;
+        color:var(--text3);cursor:pointer;font-size:16px;padding:0;line-height:1">×</button>` : ''}
     </div>`;
   }).join('');
 
-  wrap.innerHTML = chipsHtml + fieldsHtml;
+  wrap.innerHTML =
+    (known.length ? `
+      <div style="font-size:11px;color:var(--text3);margin-bottom:5px">Pessoas já cadastradas — clique para preencher:</div>
+      <div class="chips" id="splitKnownChips" style="margin-bottom:12px"></div>` : '') +
+    fieldsHtml;
+
+  // Chips: event listeners (evita problemas de escaping com qualquer nome)
+  const chipsDiv = document.getElementById('splitKnownChips');
+  if (chipsDiv) {
+    known.forEach(p => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = p;
+      chip.addEventListener('click', () => fillSplitName(p));
+      chipsDiv.appendChild(chip);
+    });
+  }
+
+  // Inputs: atualizam S.splitPeople sem re-renderizar
+  wrap.querySelectorAll('input[data-split-idx]').forEach(inp => {
+    const idx = parseInt(inp.dataset.splitIdx);
+    inp.addEventListener('input', () => { S.splitPeople[idx] = inp.value; updateSplitHint(); });
+  });
+
+  // Botões ×: limpam campo e re-renderizam
+  wrap.querySelectorAll('button[data-split-clear]').forEach(btn => {
+    const idx = parseInt(btn.dataset.splitClear);
+    btn.addEventListener('click', () => clearSplitPerson(idx));
+  });
 }
 
 function fillSplitName(name) {
