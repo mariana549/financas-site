@@ -151,7 +151,10 @@ function renderDash() {
         const bOth  = sorted.filter(e => e.owner === 'other').reduce((s, e) => s + e.amount, 0);
         const rows = sorted.length ? sorted.map(e => {
           const ib = e.type === 'installment'
-            ? `<span class="bm bm-inst">📦${e.installCurrent}/${e.installTotal}</span>` : '';
+            ? `<span class="bm bm-inst">${e.installCurrent}/${e.installTotal}</span>`
+            : e.type === 'pix' ? `<span class="bm bm-pix">pix</span>`
+            : e.type === 'debit' ? `<span class="bm bm-debit">débito</span>`
+            : e.type === 'cash' ? `<span class="bm bm-cash">dinheiro</span>` : '';
           const wb = e.owner === 'split'
             ? `<span class="bm bm-split">÷${Math.round((e.splitRatio ?? 0.5) * 100)}%</span>`
             : e.owner === 'other'

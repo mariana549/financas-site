@@ -60,6 +60,8 @@
 .bm-pix { background: #4dff9115; color: var(--green); border: 1px solid #4dff9130; }
 .bm-rec { background: #bf4dff15; color: var(--purple); border: 1px solid #bf4dff30; }
 .bm-split { background: #ff6eb415; color: var(--pink); border: 1px solid #ff6eb430; }
+.bm-debit { background: #2dd4bf15; color: var(--teal); border: 1px solid #2dd4bf30; }
+.bm-cash  { background: #facc1515; color: var(--yellow); border: 1px solid #facc1530; }
 .amt { font-family: var(--mono); font-size: 13px; }
 
 /* ── PEOPLE CARDS ── */

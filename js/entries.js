@@ -58,11 +58,11 @@ function openEntryM(editId = null, editBank = null) {
 
 function setEType(t) {
   S.entryType = t;
-  ['tNormal', 'tInstall', 'tPix'].forEach(id => {
+  ['tNormal', 'tInstall', 'tPix', 'tDebit', 'tCash'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
-  const map = { normal: 'tNormal', installment: 'tInstall', pix: 'tPix' };
+  const map = { normal: 'tNormal', installment: 'tInstall', pix: 'tPix', debit: 'tDebit', cash: 'tCash' };
   const el = document.getElementById(map[t]);
   if (el) el.classList.add('active');
   const installGroup = document.getElementById('installGroup');
@@ -168,6 +168,7 @@ if (type === 'installment') {
   const total = parseInt(document.getElementById('eInstTotal').value) || 0;
   const cur = parseInt(document.getElementById('eInstCur').value) || 1;
   if (total < 2) { alert('Informe o total de parcelas.'); setSyncing(false); return; }
+  if (cur > total) { alert(`Parcela atual (${cur}) não pode ser maior que o total (${total}).`); setSyncing(false); return; }
 
   const partAmt = parseFloat((amtRaw / total).toFixed(2));
   const gId = editId ? ('grp_' + editId) : 'grp_' + Date.now();
@@ -281,10 +282,10 @@ function showEntryDetail(entry, bankName) {
         <div class="detail-item-label">Parcela</div>
         <div class="detail-item-val">${entry.installCurrent}/${entry.installTotal} · R$ ${fmt(entry.amount * entry.installTotal)} total</div>
       </div>` : ''}
-      ${entry.type === 'pix' ? `
+      ${(entry.type === 'pix' || entry.type === 'debit' || entry.type === 'cash') ? `
       <div class="detail-item">
         <div class="detail-item-label">Tipo</div>
-        <div class="detail-item-val">Pix</div>
+        <div class="detail-item-val">${entry.type === 'pix' ? 'Pix' : entry.type === 'debit' ? 'Débito' : 'Dinheiro'}</div>
       </div>` : ''}
     </div>
     ${entry.note ? `<div class="note-box">${entry.note}</div>` : ''}`;

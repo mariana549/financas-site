@@ -53,9 +53,11 @@ function renderReports() {
   const maxComp = Math.max(totalGasto, prevTotal || 0, 1);
 
   // ── Tipo de gasto ──
-  const typeMap = { normal: 0, installment: 0, pix: pixT };
+  const typeMap = { normal: 0, installment: 0, pix: pixT, debit: 0, cash: 0 };
   allE.forEach(e => {
     if (e.type === 'installment') typeMap.installment += e.amount;
+    else if (e.type === 'debit') typeMap.debit += e.amount;
+    else if (e.type === 'cash') typeMap.cash += e.amount;
     else typeMap.normal += e.amount;
   });
   typeMap.normal += recT;
@@ -114,7 +116,9 @@ function renderReports() {
     ${[
       { label: 'Normal / Fixo', val: typeMap.normal, color: 'var(--accent)' },
       { label: 'Parcelado', val: typeMap.installment, color: 'var(--orange)' },
-      { label: 'Pix', val: typeMap.pix, color: 'var(--green)' }
+      { label: 'Pix', val: typeMap.pix, color: 'var(--green)' },
+      { label: 'Débito', val: typeMap.debit, color: 'var(--teal)' },
+      { label: 'Dinheiro', val: typeMap.cash, color: 'var(--yellow)' }
     ].filter(t => t.val > 0).map(t => `
       <div class="bar-wrap">
         <div class="bar-lbl"><span>${t.label}</span><span>R$ ${fmt(t.val)}</span></div>
