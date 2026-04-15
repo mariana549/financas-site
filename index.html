@@ -254,7 +254,7 @@
     </div>
   </div>
   <div class="fg"><label>Origem (opcional)</label><input type="text" id="incFrom" placeholder="empresa, cliente..."></div>
-  <div class="fg"><label>É dinheiro seu ou de outra pessoa?</label>
+  <div class="fg"><label>É dinheiro seu ou de outra pessoa? <span class="tip" data-tip="Meu = entra no seu saldo do mês.&#10;De outra pessoa = registra que&#10;alguém te deve, mas não conta&#10;como sua renda.">?</span></label>
     <div class="tgl"><div class="tgl-o active" id="incMine" onclick="setIncOwner('mine')">Meu</div><div class="tgl-o" id="incOther" onclick="setIncOwner('other')">De outra pessoa</div></div>
   </div>
   <div id="incPersonGroup" style="display:none">
@@ -270,7 +270,7 @@
   <div class="fg"><label>Descrição</label><input type="text" id="rDesc" placeholder="Aluguel, Água, Luz..."></div>
   <div class="fr">
     <div class="fg"><label>Valor (R$)</label><input type="number" id="rAmt" step="0.01" placeholder="0,00"></div>
-    <div class="fg"><label>Venc. (dia)</label><input type="number" id="rDay" min="1" max="31" placeholder="ex: 10"></div>
+    <div class="fg"><label>Venc. (dia) <span class="tip" data-tip="Dia do mês em que vence.&#10;Só para controle visual,&#10;não bloqueia pagamento.">?</span></label><input type="number" id="rDay" min="1" max="31" placeholder="ex: 10"></div>
   </div>
   <div class="fg"><label>Observação</label><textarea id="rObs" placeholder="detalhes..."></textarea></div>
   <input type="hidden" id="editRecId">
@@ -285,7 +285,7 @@
     <div class="fg"><label>Valor (R$)</label><input type="number" id="pxAmt" step="0.01" placeholder="0,00"></div>
     <div class="fg"><label>Data</label><input type="date" id="pxDate"></div>
   </div>
-  <div class="fg"><label>Banco de origem</label><select id="pxBank"></select></div>
+  <div class="fg"><label>Banco de origem <span class="tip" data-tip="De qual cartão ou conta&#10;o Pix foi enviado.">?</span></label><select id="pxBank"></select></div>
   <div class="fg"><label>Motivo (opcional)</label><input type="text" id="pxObs" placeholder="rachar conta, presente..."></div>
   <input type="hidden" id="editPixId">
   <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mPix')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="savePix()">Salvar</button></div>
@@ -297,15 +297,15 @@
   <div class="fg"><label>Serviço</label><input type="text" id="sName" placeholder="Netflix, Spotify, iCloud..."></div>
   <div class="fr">
     <div class="fg"><label>Valor (R$)</label><input type="number" id="sAmt" step="0.01" placeholder="0,00"></div>
-    <div class="fg"><label>Ciclo</label><select id="sCycle"><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="semanal">Semanal</option></select></div>
+    <div class="fg"><label>Ciclo <span class="tip" data-tip="Mensal = cobrado todo mês.&#10;Anual = cobrado 1x por ano.&#10;Semanal = cobrado todo semana.&#10;Afeta o cálculo da projeção anual.">?</span></label><select id="sCycle"><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="semanal">Semanal</option></select></div>
   </div>
   <div class="fr">
     <div class="fg"><label>Banco / Cartão</label><input type="text" id="sBank" placeholder="Nubank, Will..."></div>
-    <div class="fg"><label>Dia de cobrança</label><input type="number" id="sDay" min="1" max="31" placeholder="ex: 5"></div>
+    <div class="fg"><label>Dia de cobrança <span class="tip" data-tip="Dia do mês em que é cobrado.&#10;Só informativo, não cria lançamento automático.">?</span></label><input type="number" id="sDay" min="1" max="31" placeholder="ex: 5"></div>
   </div>
   <div class="fr">
     <div class="fg"><label>Data de início</label><input type="month" id="sStart"></div>
-    <div class="fg"><label>Cancelado em</label><input type="month" id="sEnd" placeholder="vazio = ativa"></div>
+    <div class="fg"><label>Cancelado em <span class="tip" data-tip="Deixe vazio se ainda está ativa.&#10;Preencha para marcar como cancelada&#10;e tirá-la do total mensal.">?</span></label><input type="month" id="sEnd" placeholder="vazio = ativa"></div>
   </div>
   <input type="hidden" id="editSubId">
   <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mSub')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveSub()">Salvar</button></div>

@@ -20,7 +20,8 @@
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 99;
+  z-index: 150;
+  background: rgba(0,0,0,.35);
 }
 
 @media (max-width: 768px) {
@@ -102,7 +103,6 @@
   }
 }
 
-@media (max-width: 768px) {
   .month-item .month-actions {
     display: flex;
   }
@@ -110,11 +110,17 @@
   .month-item .badge {
     display: none;
   }
-}
 
-@media (max-width: 768px) {
   .filter-chip {
     font-size: 10px;
+  }
+}
+
+/* ── Reduzir movimento (acessibilidade) ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
   }
 }
 
