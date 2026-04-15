@@ -1,4 +1,4 @@
-const CACHE_NAME = 'financas-v11';
+const CACHE_NAME = 'financas-v12';
 const ASSETS = [
   './',
   './index.html',
@@ -13,9 +13,11 @@ const ASSETS = [
   './css/reports.css',
   './css/ai.css',
   './css/responsive.css',
+  './js/lib/supabase.min.js',
   './js/supabase-config.js',
   './js/utils.js',
   './js/state.js',
+  './js/filter.js',
   './js/theme.js',
   './js/db.js',
   './js/auth.js',
@@ -28,6 +30,7 @@ const ASSETS = [
   './js/income.js',
   './js/subscriptions.js',
   './js/dashboard.js',
+  './js/cobranca.js',
   './js/reports.js',
   './js/backup.js',
   './js/ai-engine.js',
