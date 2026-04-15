@@ -194,12 +194,16 @@
   </div>
   <div id="splitGroup" style="display:none">
     <div class="fg">
-      <label>Com quem divide? <span class="tip" data-tip="Selecione quem divide a conta.&#10;O valor é dividido igualmente&#10;entre você e todos selecionados.">?</span></label>
-      <div class="chips" id="splitPeopleChips" style="min-height:26px;margin-bottom:4px"></div>
-      <input type="text" id="eSplitNew" placeholder="Adicionar outra pessoa..." style="margin-top:4px"
-        onkeydown="if(event.key==='Enter'){addSplitPersonNew();event.preventDefault()}">
+      <label>Total de pessoas (incluindo você) <span class="tip" data-tip="Quantas pessoas ao todo dividem este gasto, contando com você. Ex: você + 2 amigos = 3 pessoas.">?</span></label>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:6px;margin-bottom:14px">
+        <button class="btn btn-ghost" style="padding:4px 15px;font-size:20px;line-height:1;border-radius:6px;min-width:36px" onclick="adjustSplitCount(-1)">−</button>
+        <span id="splitCountVal" style="font-family:var(--mono);font-size:26px;font-weight:700;min-width:36px;text-align:center;color:var(--accent)">2</span>
+        <button class="btn btn-ghost" style="padding:4px 15px;font-size:20px;line-height:1;border-radius:6px;min-width:36px" onclick="adjustSplitCount(1)">+</button>
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">pessoas no total</span>
+      </div>
     </div>
-    <div id="splitHint" style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:-4px;margin-bottom:12px;line-height:1.9">—</div>
+    <div id="splitNamesWrap"></div>
+    <div id="splitHint" style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;margin-bottom:12px;line-height:1.9">—</div>
   </div>
   <div class="fg"><label>Categoria</label>
     <div class="chips" id="catChips">

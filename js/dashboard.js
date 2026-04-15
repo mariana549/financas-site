@@ -50,6 +50,17 @@ function renderDash() {
     pplMap[e.person].total += e.amount;
     pplMap[e.person].count++;
   });
+  allE.filter(e => e.owner === 'split').forEach(e => {
+    const people = (e.splitPeople || (e.person ? e.person.split(', ') : [])).filter(Boolean);
+    if (!people.length) return;
+    const count = e.splitCount || (people.length + 1);
+    const share = e.amount / count;
+    people.forEach(p => {
+      if (!pplMap[p]) pplMap[p] = { total: 0, count: 0 };
+      pplMap[p].total += share;
+      pplMap[p].count++;
+    });
+  });
 
   const incPplMap = {};
   incL.filter(i => i.owner === 'other').forEach(i => {

@@ -245,6 +245,19 @@ function renderHistory() {
         pplAll[e.person].months[m.key].total += e.amount;
         pplAll[e.person].months[m.key].items.push(e);
       });
+      b.entries.filter(e => e.owner === 'split').forEach(e => {
+        const people = (e.splitPeople || (e.person ? e.person.split(', ') : [])).filter(Boolean);
+        if (!people.length) return;
+        const count = e.splitCount || (people.length + 1);
+        const share = e.amount / count;
+        people.forEach(p => {
+          if (!pplAll[p]) pplAll[p] = { total: 0, months: {} };
+          pplAll[p].total += share;
+          if (!pplAll[p].months[m.key]) pplAll[p].months[m.key] = { total: 0, items: [] };
+          pplAll[p].months[m.key].total += share;
+          pplAll[p].months[m.key].items.push({ ...e, desc: e.desc + ' (dividido)', amount: share });
+        });
+      });
     });
   });
 
