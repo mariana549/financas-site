@@ -5,7 +5,16 @@
 function openIncomeM(editId = null) {
   document.getElementById('editIncomeId').value = '';
   clr('incDesc', 'incAmt', 'incFrom', 'incPerson');
-  document.getElementById('incDate').value = today();
+  // Restringe data ao mês da pasta
+  const _mi = getMonth();
+  if (_mi) {
+    const { min, max } = getMonthDateRange(_mi);
+    const dateEl = document.getElementById('incDate');
+    dateEl.setAttribute('min', min);
+    dateEl.setAttribute('max', max);
+    const t = today();
+    dateEl.value = (t >= min && t <= max) ? t : min;
+  }
   const titleEl = document.getElementById('incomeTitle');
   if (titleEl) titleEl.firstChild.textContent = editId ? 'Editar Entrada ' : 'Nova Entrada ';
   document.querySelectorAll('#incTypeChips .chip').forEach((c, i) => c.classList.toggle('sel', i === 0));

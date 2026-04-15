@@ -41,10 +41,17 @@ function openModal(id) {
   if (id === 'mMonth') {
     const now = new Date();
     const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    let mo = now.getMonth(); // 0-based
+    let yr = now.getFullYear();
+    // Se o mês atual já existe, sugere o próximo
+    if (S.months.find(x => x.key === months[mo] + '/' + yr)) {
+      mo = (mo + 1) % 12;
+      if (mo === 0) yr++;
+    }
     const mSel = document.getElementById('mSel');
     const mYear = document.getElementById('mYear');
-    if (mSel) mSel.value = months[now.getMonth()];
-    if (mYear) mYear.value = now.getFullYear();
+    if (mSel) mSel.value = months[mo];
+    if (mYear) mYear.value = yr;
   }
 }
 
@@ -56,9 +63,25 @@ function closeModal(id) {
 function getAllPeople() {
   const s = new Set();
   S.months.forEach(m => m.banks.forEach(b => b.entries.forEach(e => {
-    if (e.person) s.add(e.person);
+    if (e.owner === 'other' && e.person) s.add(e.person);
+    if (e.splitPeople) e.splitPeople.filter(Boolean).forEach(p => s.add(p));
   })));
   return [...s];
+}
+
+const MONTH_NUM = {
+  'Janeiro':1,'Fevereiro':2,'Março':3,'Abril':4,'Maio':5,'Junho':6,
+  'Julho':7,'Agosto':8,'Setembro':9,'Outubro':10,'Novembro':11,'Dezembro':12
+};
+
+function getMonthDateRange(m) {
+  const mn = MONTH_NUM[m.label] || 1;
+  const yr = parseInt(m.year);
+  const pad = n => String(n).padStart(2, '0');
+  const min = `${yr}-${pad(mn)}-01`;
+  const lastDay = new Date(yr, mn, 0).getDate();
+  const max = `${yr}-${pad(mn)}-${pad(lastDay)}`;
+  return { min, max };
 }
 
 // ── Toast global ──

@@ -54,7 +54,8 @@ function renderDash() {
     const people = (e.splitPeople || (e.person ? e.person.split(', ') : [])).filter(Boolean);
     if (!people.length) return;
     const count = e.splitCount || (people.length + 1);
-    const share = e.amount / count;
+    const myRatio = e.splitRatio ?? (1 / count);
+    const share = e.amount * (1 - myRatio) / people.length;
     people.forEach(p => {
       if (!pplMap[p]) pplMap[p] = { total: 0, count: 0 };
       pplMap[p].total += share;

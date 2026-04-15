@@ -12,11 +12,22 @@ function openEntryM(editId = null, editBank = null) {
   const titleEl = document.getElementById('entryTitle');
   if (titleEl) titleEl.firstChild.textContent = editId ? 'Editar Lançamento ' : 'Novo Lançamento ';
   clr('eDesc', 'eAmt', 'ePerson', 'eCat', 'eNote');
-  document.getElementById('eDate').value = today();
+  // Restringe data ao mês da pasta
+  const _m = getMonth();
+  if (_m) {
+    const { min, max } = getMonthDateRange(_m);
+    const dateEl = document.getElementById('eDate');
+    dateEl.setAttribute('min', min);
+    dateEl.setAttribute('max', max);
+    const t = today();
+    dateEl.value = (t >= min && t <= max) ? t : min;
+  }
   document.getElementById('eInstTotal').value = '';
   document.getElementById('eInstCur').value = '1';
   S.splitPeople = [];
   S.splitCount = 2;
+  S.splitCustomPct = false;
+  S.splitMyPct = null;
   setEType('normal');
   setOwner('mine');
   document.querySelectorAll('#catChips .chip').forEach(c => c.classList.remove('sel'));
@@ -41,9 +52,15 @@ function openEntryM(editId = null, editBank = null) {
       if (en.owner === 'split') {
         S.splitPeople = en.splitPeople || (en.person ? en.person.split(', ').filter(Boolean) : []);
         S.splitCount = S.splitPeople.length + 1 || 2;
+        const expectedRatio = 1 / S.splitCount;
+        const storedRatio = en.splitRatio ?? expectedRatio;
+        S.splitCustomPct = Math.abs(storedRatio - expectedRatio) > 0.001;
+        S.splitMyPct = S.splitCustomPct ? Math.round(storedRatio * 100) : null;
       } else {
         S.splitPeople = [];
         S.splitCount = 2;
+        S.splitCustomPct = false;
+        S.splitMyPct = null;
       }
       setEType(en.type || 'normal');
       setOwner(en.owner || 'mine');
@@ -84,10 +101,18 @@ function setOwner(o) {
   if (o === 'split') {
     if (!S.splitPeople) S.splitPeople = [];
     if (!S.splitCount || S.splitCount < 2) S.splitCount = 2;
-    // sync array length to count
     while (S.splitPeople.length < S.splitCount - 1) S.splitPeople.push('');
     S.splitPeople = S.splitPeople.slice(0, S.splitCount - 1);
     document.getElementById('splitCountVal').textContent = S.splitCount;
+    // Restaura estado de porcentagem personalizada
+    const cb = document.getElementById('splitCustomPct');
+    if (cb) cb.checked = S.splitCustomPct || false;
+    const pctRow = document.getElementById('splitPctRow');
+    if (pctRow) pctRow.style.display = S.splitCustomPct ? 'block' : 'none';
+    if (S.splitCustomPct && S.splitMyPct) {
+      const pctIn = document.getElementById('splitMyPct');
+      if (pctIn) pctIn.value = S.splitMyPct;
+    }
     renderSplitNamesContainer();
     updateSplitHint();
   }
@@ -113,7 +138,7 @@ function renderSplitNamesContainer() {
   const chipsHtml = known.length ? `
     <div style="font-size:11px;color:var(--text3);margin-bottom:5px">Pessoas já cadastradas — clique para preencher:</div>
     <div class="chips" style="margin-bottom:12px">${known.map(p =>
-      `<div class="chip" onclick="fillSplitName(${JSON.stringify(p)})">${p}</div>`
+      `<div class="chip" onclick="fillSplitName('${p.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'">${p}</div>`
     ).join('')}</div>` : '';
 
   const fieldsHtml = Array.from({ length: count - 1 }, (_, i) => {
@@ -150,6 +175,18 @@ function clearSplitPerson(i) {
   updateSplitHint();
 }
 
+function toggleSplitCustomPct(checked) {
+  S.splitCustomPct = checked;
+  if (!checked) S.splitMyPct = null;
+  const pctRow = document.getElementById('splitPctRow');
+  if (pctRow) pctRow.style.display = checked ? 'block' : 'none';
+  if (!checked) {
+    const pctIn = document.getElementById('splitMyPct');
+    if (pctIn) pctIn.value = '';
+  }
+  updateSplitHint();
+}
+
 function updateSplitHint() {
   if (S.entryOwner !== 'split') return;
   const hint = document.getElementById('splitHint');
@@ -157,16 +194,21 @@ function updateSplitHint() {
   const count = S.splitCount || 2;
   const people = (S.splitPeople || []).filter(Boolean);
   const amt = parseFloat(document.getElementById('eAmt')?.value) || 0;
-  const share = amt > 0 ? amt / count : 0;
+
+  // Calcula partes
+  const myRatio = (S.splitCustomPct && S.splitMyPct) ? S.splitMyPct / 100 : 1 / count;
+  const myAmt = amt * myRatio;
+  const othersTotal = amt * (1 - myRatio);
+  const eachOther = count > 1 ? othersTotal / (count - 1) : 0;
 
   if (amt <= 0) {
     hint.textContent = `Dividindo entre ${count} pessoa${count > 1 ? 's' : ''} · informe o valor acima`;
     return;
   }
-  const lines = [`<span style="color:var(--accent)">Eu: R$ ${fmt(share)}</span>`];
-  people.forEach(p => lines.push(`<span style="color:var(--blue)">${p}: R$ ${fmt(share)}</span>`));
+  const lines = [`<span style="color:var(--accent)">Eu: R$ ${fmt(myAmt)}</span>`];
+  people.forEach(p => lines.push(`<span style="color:var(--blue)">${p}: R$ ${fmt(eachOther)}</span>`));
   const unnamed = count - 1 - people.length;
-  for (let i = 0; i < unnamed; i++) lines.push(`<span style="color:var(--text3)">Pessoa ${people.length + i + 1}: R$ ${fmt(share)}</span>`);
+  for (let i = 0; i < unnamed; i++) lines.push(`<span style="color:var(--text3)">Pessoa ${people.length + i + 1}: R$ ${fmt(eachOther)}</span>`);
   hint.innerHTML = `<span style="color:var(--text3)">÷${count} ·</span> ${lines.join(' · ')}`;
 }
 
@@ -219,7 +261,9 @@ async function saveEntry() {
     : S.entryOwner === 'split'
       ? splitPeople.join(', ')
       : null;
-  const splitRatio = S.entryOwner === 'split' ? 1 / (splitCount || 2) : null;
+  const splitRatio = S.entryOwner === 'split'
+    ? ((S.splitCustomPct && S.splitMyPct) ? S.splitMyPct / 100 : 1 / (splitCount || 2))
+    : null;
   const cat = document.getElementById('eCat').value.trim() || null;
   const note = document.getElementById('eNote').value.trim() || null;
   const type = S.entryType;

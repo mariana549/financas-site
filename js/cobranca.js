@@ -14,6 +14,22 @@ function openCobranca(person) {
       .map(e => ({ ...e, bankName: b.name, _tipo: 'cartao' }))
   );
 
+  const splitCartao = m.banks.flatMap(b =>
+    b.entries
+      .filter(e => {
+        if (e.owner !== 'split') return false;
+        const people = (e.splitPeople || (e.person ? e.person.split(', ') : [])).filter(Boolean);
+        return people.includes(person);
+      })
+      .map(e => {
+        const people = (e.splitPeople || (e.person ? e.person.split(', ') : [])).filter(Boolean);
+        const count = e.splitCount || (people.length + 1);
+        const myRatio = e.splitRatio ?? (1 / count);
+        const share = e.amount * (1 - myRatio) / people.length;
+        return { ...e, amount: share, bankName: b.name, _tipo: 'cartao', desc: e.desc + ' (dividido)' };
+      })
+  );
+
   const pix = (S.pixEntries[m.key] || [])
     .filter(p => p.to === person)
     .map(p => ({
@@ -23,7 +39,7 @@ function openCobranca(person) {
       installCurrent: null, installTotal: null
     }));
 
-  const allItems = [...cartao, ...pix];
+  const allItems = [...cartao, ...splitCartao, ...pix];
   const total    = allItems.reduce((s, e) => s + e.amount, 0);
 
   _cobData = { person, items: allItems, total, month: m };
