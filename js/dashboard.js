@@ -155,8 +155,9 @@ function renderDash() {
             : e.type === 'pix' ? `<span class="bm bm-pix">pix</span>`
             : e.type === 'debit' ? `<span class="bm bm-debit">débito</span>`
             : e.type === 'cash' ? `<span class="bm bm-cash">dinheiro</span>` : '';
+          const splitN = (e.splitPeople?.length ?? (e.person ? 1 : 0)) + 1;
           const wb = e.owner === 'split'
-            ? `<span class="bm bm-split">÷${Math.round((e.splitRatio ?? 0.5) * 100)}%</span>`
+            ? `<span class="bm bm-split">÷${splitN}</span>`
             : e.owner === 'other'
               ? `<span class="bm bm-other">${e.person}</span>`
               : `<span class="bm bm-mine">eu</span>`;
@@ -274,9 +275,12 @@ function renderDash() {
       <div class="card">
         <div class="card-lbl">Total Gastos</div>
         <div class="card-val">R$ ${fmt(totalGasto)}</div>
+      </div>
+      <div class="card">
+        <div class="card-lbl">Meus Gastos</div>
+        <div class="card-val a">R$ ${fmt(metaGasto)}</div>
         ${goalBar}
       </div>
-      <div class="card"><div class="card-lbl">Meus Gastos</div><div class="card-val a">R$ ${fmt(metaGasto)}</div></div>
       <div class="card"><div class="card-lbl">A Receber</div><div class="card-val b">R$ ${fmt(othT)}</div><div class="card-sub">${Object.keys(pplMap).length} pessoa(s)</div></div>
       <div class="card"><div class="card-lbl">Entradas</div><div class="card-val g">R$ ${fmt(incMyT + incOthT)}</div></div>
       <div class="card"><div class="card-lbl">Saldo</div><div class="card-val ${saldo >= 0 ? 'g' : 'r'}">R$ ${fmt(saldo)}</div></div>

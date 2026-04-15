@@ -11,11 +11,11 @@ function openEntryM(editId = null, editBank = null) {
   document.getElementById('editBankName').value = '';
   const titleEl = document.getElementById('entryTitle');
   if (titleEl) titleEl.firstChild.textContent = editId ? 'Editar Lançamento ' : 'Novo Lançamento ';
-  clr('eDesc', 'eAmt', 'ePerson', 'eSplitPerson', 'eCat', 'eNote');
+  clr('eDesc', 'eAmt', 'ePerson', 'eSplitNew', 'eCat', 'eNote');
   document.getElementById('eDate').value = today();
   document.getElementById('eInstTotal').value = '';
   document.getElementById('eInstCur').value = '1';
-  document.getElementById('eSplitRatio').value = '50';
+  S.splitPeople = [];
   setEType('normal');
   setOwner('mine');
   document.querySelectorAll('#catChips .chip').forEach(c => c.classList.remove('sel'));
@@ -37,13 +37,14 @@ function openEntryM(editId = null, editBank = null) {
       document.getElementById('eBank').value = editBank;
       document.getElementById('eCat').value = en.category || '';
       document.getElementById('eNote').value = en.note || '';
+      if (en.owner === 'split') {
+        S.splitPeople = en.splitPeople || (en.person ? en.person.split(', ').filter(Boolean) : []);
+      } else {
+        S.splitPeople = [];
+      }
       setEType(en.type || 'normal');
       setOwner(en.owner || 'mine');
-      if (en.owner === 'split') {
-        if (en.person) document.getElementById('eSplitPerson').value = en.person;
-        document.getElementById('eSplitRatio').value = Math.round((en.splitRatio ?? 0.5) * 100);
-        updateSplitHint();
-      } else if (en.person) {
+      if (en.owner !== 'split' && en.person) {
         document.getElementById('ePerson').value = en.person;
       }
       if (en.installTotal) {
@@ -77,19 +78,70 @@ function setOwner(o) {
   document.getElementById('tSplit').classList.toggle('active', o === 'split');
   document.getElementById('personGroup').style.display = o === 'other' ? 'block' : 'none';
   document.getElementById('splitGroup').style.display = o === 'split' ? 'block' : 'none';
-  if (o === 'split') updateSplitHint();
+  if (o === 'split') {
+    if (!S.splitPeople) S.splitPeople = [];
+    renderSplitChips();
+    updateSplitHint();
+  }
+}
+
+function renderSplitChips() {
+  const el = document.getElementById('splitPeopleChips');
+  if (!el) return;
+  const known = getAllPeople();
+  const selected = S.splitPeople || [];
+  const all = [...new Set([...known, ...selected])];
+  if (!all.length) {
+    el.innerHTML = '<span style="font-size:11px;color:var(--text3);font-family:var(--mono)">Nenhuma pessoa cadastrada ainda — digite abaixo</span>';
+    return;
+  }
+  el.innerHTML = all.map(p =>
+    `<div class="chip ${selected.includes(p) ? 'sel' : ''}" onclick="toggleSplitPerson(${JSON.stringify(p)})">${p}</div>`
+  ).join('');
+}
+
+function toggleSplitPerson(name) {
+  if (!S.splitPeople) S.splitPeople = [];
+  const idx = S.splitPeople.indexOf(name);
+  if (idx >= 0) S.splitPeople.splice(idx, 1);
+  else S.splitPeople.push(name);
+  renderSplitChips();
+  updateSplitHint();
+}
+
+function addSplitPersonNew() {
+  const input = document.getElementById('eSplitNew');
+  if (!input) return;
+  const name = input.value.trim();
+  if (!name) return;
+  if (!S.splitPeople) S.splitPeople = [];
+  if (!S.splitPeople.includes(name)) S.splitPeople.push(name);
+  input.value = '';
+  renderSplitChips();
+  updateSplitHint();
 }
 
 function updateSplitHint() {
+  if (S.entryOwner !== 'split') return;
   const hint = document.getElementById('splitHint');
   if (!hint) return;
-  const ratio = Math.min(99, Math.max(1, parseInt(document.getElementById('eSplitRatio')?.value) || 50)) / 100;
+  const people = S.splitPeople || [];
+  const n = people.length + 1;
   const amt = parseFloat(document.getElementById('eAmt')?.value) || 0;
-  if (amt > 0) {
-    hint.innerHTML = `<span style="color:var(--accent)">Meu: R$ ${fmt(amt * ratio)}</span> · <span style="color:var(--blue)">Deles: R$ ${fmt(amt * (1 - ratio))}</span>`;
-  } else {
-    hint.textContent = 'Digite o valor acima';
+  if (people.length === 0) {
+    hint.innerHTML = '<span style="color:var(--orange)">Selecione ao menos uma pessoa acima</span>';
+    return;
   }
+  if (amt <= 0) {
+    hint.textContent = `Dividindo entre ${n} pessoas · informe o valor acima`;
+    return;
+  }
+  const share = amt / n;
+  const lines = [
+    `<span style="color:var(--accent)">Eu: R$ ${fmt(share)}</span>`,
+    ...people.map(p => `<span style="color:var(--blue)">${p}: R$ ${fmt(share)}</span>`)
+  ];
+  hint.innerHTML = `<span style="color:var(--text3)">Dividido entre ${n} pessoas ·</span> ${lines.join(' · ')}`;
 }
 
 function pickCat(el) {
@@ -134,13 +186,14 @@ async function saveEntry() {
   const amtRaw = parseFloat(document.getElementById('eAmt').value);
   const date = document.getElementById('eDate').value;
   const bankName = document.getElementById('eBank').value;
+  const splitPeople = S.entryOwner === 'split' ? (S.splitPeople || []) : [];
   const person = S.entryOwner === 'other'
     ? document.getElementById('ePerson').value.trim()
     : S.entryOwner === 'split'
-      ? document.getElementById('eSplitPerson').value.trim()
+      ? splitPeople.join(', ')
       : null;
-  const splitRatio = S.entryOwner === 'split'
-    ? Math.min(99, Math.max(1, parseInt(document.getElementById('eSplitRatio').value) || 50)) / 100
+  const splitRatio = S.entryOwner === 'split' && splitPeople.length > 0
+    ? 1 / (splitPeople.length + 1)
     : null;
   const cat = document.getElementById('eCat').value.trim() || null;
   const note = document.getElementById('eNote').value.trim() || null;
@@ -150,7 +203,7 @@ async function saveEntry() {
 
   if (!desc || isNaN(amtRaw) || amtRaw <= 0) { alert('Preencha descrição e valor.'); return; }
   if (S.entryOwner === 'other' && !person) { alert('Informe o nome da pessoa.'); return; }
-  if (S.entryOwner === 'split' && !person) { alert('Informe o nome de quem divide.'); return; }
+  if (S.entryOwner === 'split' && splitPeople.length === 0) { alert('Selecione ao menos uma pessoa para dividir.'); return; }
 
   const m = getMonth();
   const bank = m.banks.find(b => b.name === bankName);
@@ -178,6 +231,7 @@ if (type === 'installment') {
     const entry = {
       id: editId, desc, amount: partAmt, date,
       owner: S.entryOwner, person,
+      splitPeople: S.entryOwner === 'split' ? splitPeople : null,
       splitRatio: S.entryOwner === 'split' ? splitRatio : null,
       category: cat, note,
       type: 'installment', installCurrent: cur, installTotal: total, groupId: gId
@@ -194,6 +248,7 @@ if (type === 'installment') {
     const entry = {
       id: Date.now(), desc, amount: partAmt, date,
       owner: S.entryOwner, person,
+      splitPeople: S.entryOwner === 'split' ? splitPeople : null,
       splitRatio: S.entryOwner === 'split' ? splitRatio : null,
       category: cat, note,
       type: 'installment', installCurrent: cur, installTotal: total, groupId: gId
@@ -212,7 +267,8 @@ if (type === 'installment') {
     id: editId ? String(editId) : String(Date.now()),
     desc, amount: amtRaw, date,
     owner: S.entryOwner, person,
-    splitRatio: S.entryOwner === 'split' ? splitRatio : null,
+    splitPeople: S.entryOwner === 'split' ? splitPeople : null,
+    splitRatio,
     category: cat, note,
     type, installCurrent: null, installTotal: null, groupId: null
   };
@@ -259,19 +315,25 @@ function showEntryDetail(entry, bankName) {
         <div class="detail-item-label">De quem</div>
         <div class="detail-item-val">${
           entry.owner === 'split'
-            ? `Dividido com ${entry.person} (${Math.round((entry.splitRatio ?? 0.5) * 100)}% meu)`
+            ? `Dividido com ${(entry.splitPeople || (entry.person ? [entry.person] : [])).filter(Boolean).join(', ')}`
             : entry.owner === 'other' ? entry.person : 'Meu'
         }</div>
       </div>
-      ${entry.owner === 'split' ? `
+      ${entry.owner === 'split' ? (() => {
+        const ratio = entry.splitRatio ?? 0.5;
+        const myPart = entry.amount * ratio;
+        const numOthers = entry.splitPeople?.length || 1;
+        const eachPart = entry.amount * (1 - ratio) / numOthers;
+        return `
       <div class="detail-item">
         <div class="detail-item-label">Minha parte</div>
-        <div class="detail-item-val" style="color:var(--accent)">R$ ${fmt(entry.amount * (entry.splitRatio ?? 0.5))}</div>
+        <div class="detail-item-val" style="color:var(--accent)">R$ ${fmt(myPart)}</div>
       </div>
       <div class="detail-item">
-        <div class="detail-item-label">Parte deles</div>
-        <div class="detail-item-val" style="color:var(--blue)">R$ ${fmt(entry.amount * (1 - (entry.splitRatio ?? 0.5)))}</div>
-      </div>` : ''}
+        <div class="detail-item-label">Parte de cada um</div>
+        <div class="detail-item-val" style="color:var(--blue)">R$ ${fmt(eachPart)}</div>
+      </div>`;
+      })() : ''}
       ${entry.category ? `
       <div class="detail-item">
         <div class="detail-item-label">Categoria</div>

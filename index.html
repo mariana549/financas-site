@@ -193,18 +193,13 @@
     <div class="chips" id="personChips"></div>
   </div>
   <div id="splitGroup" style="display:none">
-    <div class="fg"><label>Nome da Pessoa</label><input type="text" id="eSplitPerson" placeholder="Sogra, Pai, Mãe..."></div>
-    <div class="fr">
-      <div class="fg">
-        <label>Minha parte (%) <span class="tip" data-tip="50 = metade pra você.&#10;70 = você paga 70%, a pessoa 30%.&#10;O valor dela vai para A Receber.">?</span></label>
-        <input type="number" id="eSplitRatio" min="1" max="99" value="50" placeholder="50"
-          oninput="updateSplitHint()">
-      </div>
-      <div class="fg" style="flex:1.4">
-        <label>Preview da divisão</label>
-        <div id="splitHint" style="font-size:11px;color:var(--text3);font-family:var(--mono);padding-top:10px">—</div>
-      </div>
+    <div class="fg">
+      <label>Com quem divide? <span class="tip" data-tip="Selecione quem divide a conta.&#10;O valor é dividido igualmente&#10;entre você e todos selecionados.">?</span></label>
+      <div class="chips" id="splitPeopleChips" style="min-height:26px;margin-bottom:4px"></div>
+      <input type="text" id="eSplitNew" placeholder="Adicionar outra pessoa..." style="margin-top:4px"
+        onkeydown="if(event.key==='Enter'){addSplitPersonNew();event.preventDefault()}">
     </div>
+    <div id="splitHint" style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:-4px;margin-bottom:12px;line-height:1.9">—</div>
   </div>
   <div class="fg"><label>Categoria</label>
     <div class="chips" id="catChips">
