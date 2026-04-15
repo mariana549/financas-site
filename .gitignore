@@ -11,3 +11,7 @@ test-results/
 
 # ── Node ──
 node_modules/
+
+# ── Bibliotecas locais (geradas por download-supabase.js) ──
+js/lib/
+download-supabase.js
