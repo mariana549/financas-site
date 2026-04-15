@@ -53,6 +53,7 @@
 .bm-inst { background: #ff9f4d15; color: var(--orange); border: 1px solid #ff9f4d30; }
 .bm-pix { background: #4dff9115; color: var(--green); border: 1px solid #4dff9130; }
 .bm-rec { background: #bf4dff15; color: var(--purple); border: 1px solid #bf4dff30; }
+.bm-split { background: #ff6eb415; color: var(--pink); border: 1px solid #ff6eb430; }
 .amt { font-family: var(--mono); font-size: 13px; }
 
 /* ── PEOPLE CARDS ── */

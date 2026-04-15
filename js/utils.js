@@ -97,6 +97,104 @@ function renderSkeleton() {
   `;
 }
 
+// ── Ícones automáticos por categoria/descrição ──
+function getCategoryIcon(desc, cat) {
+  const MAP = [
+    [/uber|99|cabify|táxi|taxi|lyft/i,                            '🚗'],
+    [/ifood|rappi|delivery|pizza|lanche|hamburguer|burger|sushi/i,'🍕'],
+    [/restaurante|almoço|almoco|jantar|bar |boteco/i,             '🍽️'],
+    [/mercado|supermercado|carrefour|atacado|feira|hortifruti/i,  '🛒'],
+    [/netflix|spotify|prime|disney|hbo|streaming/i,               '📺'],
+    [/farmácia|farmacia|remédio|remedio|drogaria|saúde|saude|médico|medico|hospital|plano.saúde/i, '💊'],
+    [/academia|gym|fitness|crossfit/i,                            '💪'],
+    [/gasolina|combustível|combustivel|posto|etanol|álcool.carro/i,'⛽'],
+    [/luz|energia|elétrica|eletrica|cpfl|cemig|enel|coelba/i,    '💡'],
+    [/água|agua|saneamento|sabesp|cagece/i,                       '💧'],
+    [/internet|tim|claro|vivo|oi |net |telefone|celular|plano.móvel|plano.movel/i,'📱'],
+    [/aluguel|condomínio|condominio|iptu|moradia/i,               '🏠'],
+    [/escola|faculdade|curso|livro|educação|educacao|ensino/i,    '📚'],
+    [/viagem|hotel|airbnb|passagem|voo|turismo|pousada/i,         '✈️'],
+    [/roupa|calçado|calcado|moda|zara|hm |riachuelo|lojas/i,     '👕'],
+    [/cinema|teatro|show|ingresso|entretenimento|jogo /i,         '🎬'],
+    [/pet|veterinário|veterinario|ração|racao|petshop/i,          '🐾'],
+    [/cabelo|salão|salao|barbearia|manicure|estética|estetica/i,  '💈'],
+    [/pix /i,                                                     '💸'],
+    [/cartão|cartao|anuidade/i,                                   '💳'],
+    [/padaria|café|cafe|cafeteria|cafézinho/i,                    '☕'],
+    [/presente|gift|natal|aniversário|aniversario/i,              '🎁'],
+    [/seguro/i,                                                   '🛡️'],
+    [/imposto|ir |irpf|receita.federal/i,                         '🏛️'],
+  ];
+  const text = `${desc || ''} ${cat || ''}`;
+  for (const [re, icon] of MAP) {
+    if (re.test(text)) return icon;
+  }
+  return '';
+}
+
+// ── Swipe to delete/edit em linhas de lançamento ──
+function initSwipeRows() {
+  const THRESHOLD = 75;
+  document.querySelectorAll('#view-dash .entry-row[data-entry-id]').forEach(row => {
+    let startX = 0, startY = 0, dx = 0, moved = false;
+    const cells = () => row.querySelectorAll('td');
+
+    // Bloqueia o click se houve movimento horizontal
+    row.addEventListener('click', e => {
+      if (moved) { e.stopImmediatePropagation(); moved = false; }
+    }, true);
+
+    row.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      dx = 0; moved = false;
+      row.style.transition = 'none';
+    }, { passive: true });
+
+    row.addEventListener('touchmove', e => {
+      const cx = e.touches[0].clientX;
+      const cy = e.touches[0].clientY;
+      const ddx = cx - startX;
+      const ddy = cy - startY;
+      if (!moved && Math.abs(ddx) < 10) return;
+      if (!moved && Math.abs(ddy) > Math.abs(ddx)) return; // scroll vertical
+      moved = true;
+      dx = ddx;
+      row.style.transform = `translateX(${dx}px)`;
+      const pct = Math.min(Math.abs(dx) / THRESHOLD, 1);
+      cells().forEach(td => {
+        td.style.background = dx < 0
+          ? `rgba(255,77,77,${(pct * 0.22).toFixed(2)})`
+          : `rgba(77,160,255,${(pct * 0.22).toFixed(2)})`;
+      });
+    }, { passive: true });
+
+    row.addEventListener('touchend', () => {
+      const tr = 'transform .22s ease, background .22s ease';
+      row.style.transition = tr;
+      if (dx < -THRESHOLD) {
+        cells().forEach(td => td.style.background = 'rgba(255,77,77,0.22)');
+        setTimeout(() => {
+          row.style.transform = '';
+          cells().forEach(td => td.style.background = '');
+          deleteEntry(row.dataset.bank, row.dataset.entryId);
+        }, 220);
+      } else if (dx > THRESHOLD) {
+        cells().forEach(td => td.style.background = 'rgba(77,160,255,0.22)');
+        setTimeout(() => {
+          row.style.transform = '';
+          cells().forEach(td => td.style.background = '');
+          openEntryM(row.dataset.entryId, row.dataset.bank);
+        }, 220);
+      } else {
+        row.style.transform = '';
+        cells().forEach(td => td.style.background = '');
+      }
+      dx = 0;
+    });
+  });
+}
+
 // ── Fechar modal ao clicar fora ──
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });

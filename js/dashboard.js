@@ -29,8 +29,10 @@ function renderDash() {
   const recL = S.recurrents[S.currentMonth] || [];
   const incL = S.incomes[S.currentMonth] || [];
 
-  const myT  = allE.filter(e => e.owner === 'mine').reduce((s, e) => s + e.amount, 0);
-  const othT = allE.filter(e => e.owner === 'other').reduce((s, e) => s + e.amount, 0);
+  const myT  = allE.filter(e => e.owner === 'mine').reduce((s, e) => s + e.amount, 0)
+    + allE.filter(e => e.owner === 'split').reduce((s, e) => s + e.amount * (e.splitRatio ?? 0.5), 0);
+  const othT = allE.filter(e => e.owner === 'other').reduce((s, e) => s + e.amount, 0)
+    + allE.filter(e => e.owner === 'split').reduce((s, e) => s + e.amount * (1 - (e.splitRatio ?? 0.5)), 0);
   const pixT = pixL.reduce((s, p) => s + p.amount, 0);
   const recT = recL.reduce((s, r) => s + r.amount, 0);
   const totalGasto = myT + othT + pixT + recT;
@@ -150,13 +152,19 @@ function renderDash() {
         const rows = sorted.length ? sorted.map(e => {
           const ib = e.type === 'installment'
             ? `<span class="bm bm-inst">📦${e.installCurrent}/${e.installTotal}</span>` : '';
-          const wb = e.owner === 'other'
-            ? `<span class="bm bm-other">${e.person}</span>`
-            : `<span class="bm bm-mine">eu</span>`;
-          return `<tr class="entry-row" onclick='showEntryDetail(${JSON.stringify(e).replace(/'/g, "&#39;").replace(/"/g, "&quot;")}, "${bk.name}")'>
-            <td>${e.desc} ${ib}</td>
+          const wb = e.owner === 'split'
+            ? `<span class="bm bm-split">÷${Math.round((e.splitRatio ?? 0.5) * 100)}%</span>`
+            : e.owner === 'other'
+              ? `<span class="bm bm-other">${e.person}</span>`
+              : `<span class="bm bm-mine">eu</span>`;
+          const amtColor = e.owner === 'other' ? 'var(--blue)' : e.owner === 'split' ? 'var(--purple)' : 'var(--text)';
+          const icon = getCategoryIcon(e.desc, e.category);
+          const safeE = JSON.stringify(e).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+          return `<tr class="entry-row" data-entry-id="${e.id}" data-bank="${bk.name}"
+            onclick='showEntryDetail(${safeE}, "${bk.name}")'>
+            <td>${icon ? icon + ' ' : ''}${e.desc} ${ib}</td>
             <td>${wb}</td>
-            <td><span class="amt" style="color:${e.owner === 'other' ? 'var(--blue)' : 'var(--text)'}">R$ ${fmt(e.amount)}</span></td>
+            <td><span class="amt" style="color:${amtColor}">R$ ${fmt(e.amount)}</span></td>
           </tr>`;
         }).join('') : `<tr><td colspan="3"><div class="empty" style="padding:20px">nenhum lançamento</div></td></tr>`;
 
@@ -301,4 +309,6 @@ function renderDash() {
     document.getElementById('itabc-gastos').style.display = 'none';
     document.getElementById('itabc-entradas').style.display = 'block';
   }
+
+  initSwipeRows();
 }
