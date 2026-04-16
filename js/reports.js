@@ -52,6 +52,14 @@ function renderReports() {
   const prevTotal = prevM ? monthTotal(prevM) : null;
   const maxComp = Math.max(totalGasto, prevTotal || 0, 1);
 
+  // ── Tipo de entrada ──
+  const incTypeMap = {};
+  incL.forEach(i => {
+    const t = i.incType || 'Outros';
+    incTypeMap[t] = (incTypeMap[t] || 0) + i.amount;
+  });
+  const maxIncType = Math.max(...Object.values(incTypeMap), 1);
+
   // ── Tipo de gasto ──
   const typeMap = { normal: 0, installment: 0, pix: pixT, debit: 0, cash: 0 };
   allE.forEach(e => {
@@ -147,7 +155,21 @@ function renderReports() {
         <div class="bar-track">
           <div class="bar-fill" style="width:${(t / maxC * 100).toFixed(1)}%;background:var(--purple)"></div>
         </div>
-      </div>`).join('')}` : ''}`;
+      </div>`).join('')}` : ''}
+
+    ${Object.keys(incTypeMap).length ? `
+    <div class="divider"></div>
+    <div class="sec-title" style="margin-bottom:12px">Entradas por Tipo</div>
+    ${Object.entries(incTypeMap).sort((a, b) => b[1] - a[1]).map(([t, v]) => {
+      const color = t === 'Pix' ? 'var(--green)' : t === 'Débito' ? 'var(--teal)' : t === 'Dinheiro' ? 'var(--yellow)' : t === 'Salário' ? 'var(--accent)' : t === 'Freela' ? 'var(--blue)' : 'var(--text3)';
+      return `
+      <div class="bar-wrap">
+        <div class="bar-lbl"><span>${t}</span><span>R$ ${fmt(v)}</span></div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${(v / maxIncType * 100).toFixed(1)}%;background:${color}"></div>
+        </div>
+      </div>`;
+    }).join('')}` : ''}`;
 }
 
 // ══════════════════════════════════════════════════

@@ -163,7 +163,7 @@ function renderDash() {
         const bOth  = sorted.filter(e => e.owner === 'other').reduce((s, e) => s + e.amount, 0);
         const rows = sorted.length ? sorted.map(e => {
           const ib = e.type === 'installment'
-            ? `<span class="bm bm-inst">${e.installCurrent}/${e.installTotal}</span>`
+            ? `<span class="bm bm-inst">${e.installCurrent ?? '?'}/${e.installTotal ?? '?'}</span>`
             : e.type === 'pix' ? `<span class="bm bm-pix">pix</span>`
             : e.type === 'debit' ? `<span class="bm bm-debit">débito</span>`
             : e.type === 'cash' ? `<span class="bm bm-cash">dinheiro</span>` : '';
@@ -243,13 +243,18 @@ function renderDash() {
       </div>
       <div class="empty">nenhuma entrada</div>`;
   } else {
-    const rows = [...incL].sort((a, b_) => new Date(b_.date) - new Date(a.date)).map(i => `
-      <tr class="entry-row" onclick="openIncomeM(${i.id})">
-        <td>${i.desc} <span class="bm bm-cat">${i.incType || 'Outros'}</span>
-          ${i.from ? ` <span style="color:var(--text3);font-size:11px">· ${i.from}</span>` : ''}</td>
+    const rows = [...incL].sort((a, b_) => new Date(b_.date) - new Date(a.date)).map(i => {
+      const incType = i.incType || 'Outros';
+      const typeBadge = incType === 'Pix' ? `<span class="bm bm-pix">pix</span>`
+        : incType === 'Débito' ? `<span class="bm bm-debit">débito</span>`
+        : incType === 'Dinheiro' ? `<span class="bm bm-cash">dinheiro</span>`
+        : `<span class="bm bm-cat">${incType}</span>`;
+      return `<tr class="entry-row" onclick="openIncomeM(${i.id})">
+        <td>${i.desc} ${typeBadge}${i.from ? ` <span style="color:var(--text3);font-size:11px">· ${i.from}</span>` : ''}</td>
         <td>${i.owner === 'other' ? `<span class="bm bm-other">${i.person}</span>` : `<span class="bm bm-mine">meu</span>`}</td>
         <td><span class="amt" style="color:var(--green)">R$ ${fmt(i.amount)}</span></td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
 
     if (Object.keys(incPplMap).length)
       entradaHTML += `
