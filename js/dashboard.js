@@ -35,10 +35,37 @@ function renderDash() {
     + allE.filter(e => e.owner === 'split').reduce((s, e) => s + e.amount * (1 - (e.splitRatio ?? 0.5)), 0);
   const pixT = pixL.reduce((s, p) => s + p.amount, 0);
   const recT = recL.reduce((s, r) => s + r.amount, 0);
+
+  // ── Assinaturas: calcular partes e A Receber de terceiros ──
+  let mySubM = 0, othSubM = 0;
+  const subPplMap = {};
+  (S.subscriptions || []).filter(s => !s.endDate && s.cycle === 'mensal').forEach(s => {
+    const owner = s.owner || 'mine';
+    const myPart = calcMySubPart(s);
+    mySubM += myPart;
+    if (owner === 'other') {
+      const person = (s.splitPeople || ['?'])[0];
+      othSubM += s.amount;
+      if (!subPplMap[person]) subPplMap[person] = { total: 0, count: 0 };
+      subPplMap[person].total += s.amount;
+      subPplMap[person].count++;
+    } else if (owner === 'split') {
+      const othPart = s.amount - myPart;
+      othSubM += othPart;
+      const people = s.splitPeople || [];
+      people.forEach((p, i) => {
+        const share = s.splitValues ? (s.splitValues[i] || 0) : othPart / people.length;
+        if (!subPplMap[p]) subPplMap[p] = { total: 0, count: 0 };
+        subPplMap[p].total += share;
+        subPplMap[p].count++;
+      });
+    }
+  });
+  const subM = mySubM + othSubM;
   const totalGasto = myT + othT + pixT + recT;
 
-  // ── FEATURE 1.3: Meta considera apenas gastos do usuário (owner: 'mine') ──
-  const metaGasto = myT + pixT + recT;
+  // ── Meta considera gastos do usuário + minha parte das assinaturas mensais ──
+  const metaGasto = myT + pixT + recT + mySubM;
 
   const incMyT  = incL.filter(i => i.owner === 'mine').reduce((s, i) => s + i.amount, 0);
   const incOthT = incL.filter(i => i.owner === 'other').reduce((s, i) => s + i.amount, 0);
@@ -62,16 +89,18 @@ function renderDash() {
       pplMap[p].count++;
     });
   });
+  // Mescla assinaturas de terceiros no pplMap principal
+  Object.entries(subPplMap).forEach(([p, d]) => {
+    if (!pplMap[p]) pplMap[p] = { total: 0, count: 0 };
+    pplMap[p].total += d.total;
+    pplMap[p].count += d.count;
+  });
 
   const incPplMap = {};
   incL.filter(i => i.owner === 'other').forEach(i => {
     if (!incPplMap[i.person]) incPplMap[i.person] = 0;
     incPplMap[i.person] += i.amount;
   });
-
-  const subM = (S.subscriptions || [])
-    .filter(s => !s.endDate && s.cycle === 'mensal')
-    .reduce((t, s) => t + s.amount, 0);
 
   const bk = m.banks.find(b => b.name === S.currentBank) || m.banks[0];
   if (bk) S.currentBank = bk.name;
@@ -304,7 +333,7 @@ function renderDash() {
       ${subM > 0 ? `<div class="card card-link" onclick="showView('subs')" title="Gerenciar assinaturas">
         <div class="card-lbl">Assinaturas ↗</div>
         <div class="card-val p">R$ ${fmt(subM)}</div>
-        <div class="card-sub">${(S.subscriptions||[]).filter(s=>!s.endDate&&s.cycle==='mensal').length} ativa(s) · clique para gerenciar</div>
+        <div class="card-sub">${mySubM > 0 ? `meu: R$ ${fmt(mySubM)}` : ''}${othSubM > 0 ? ` · terceiros: R$ ${fmt(othSubM)}` : ''}</div>
       </div>` : ''}
     </div>
     <div style="position:relative;margin-bottom:14px">

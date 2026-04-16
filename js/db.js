@@ -65,10 +65,25 @@ async function loadAllFromSupabase() {
       });
     });
 
-    const subscriptions = (sRes.data || []).map(s => ({
-      id: s.id, name: s.name, amount: parseFloat(s.amount), cycle: s.cycle,
-      bank: s.bank_name, day: s.due_day, startDate: s.start_date, endDate: s.end_date
-    }));
+    const subscriptions = (sRes.data || []).map(s => {
+      const parsePeople = v => {
+        if (!v) return null;
+        if (Array.isArray(v)) return v;
+        try { return JSON.parse(v); } catch { return v.split(',').map(x => x.trim()); }
+      };
+      const parseValues = v => {
+        if (!v) return null;
+        if (Array.isArray(v)) return v.map(Number);
+        try { return JSON.parse(v).map(Number); } catch { return null; }
+      };
+      return {
+        id: s.id, name: s.name, amount: parseFloat(s.amount), cycle: s.cycle,
+        bank: s.bank_name, day: s.due_day, startDate: s.start_date, endDate: s.end_date,
+        owner: s.owner || 'mine',
+        splitPeople: parsePeople(s.split_people),
+        splitValues: parseValues(s.split_values)
+      };
+    });
 
     const installments = (instRes.data || []).map(i => ({
       id: i.id, gId: i.group_id, desc: i.description, amount: parseFloat(i.amount),
@@ -174,7 +189,10 @@ async function dbSaveSub(sub) {
   await sb.from('subscriptions').upsert({
     id: String(sub.id), user_id: currentUser.id, name: sub.name, amount: sub.amount,
     cycle: sub.cycle, bank_name: sub.bank || null, due_day: sub.day || null,
-    start_date: sub.startDate || null, end_date: sub.endDate || null
+    start_date: sub.startDate || null, end_date: sub.endDate || null,
+    owner: sub.owner || 'mine',
+    split_people: sub.splitPeople ? JSON.stringify(sub.splitPeople) : null,
+    split_values: sub.splitValues ? JSON.stringify(sub.splitValues) : null
   }, { onConflict: 'id' });
 }
 

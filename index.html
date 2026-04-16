@@ -307,12 +307,35 @@
 </div></div>
 
 <!-- Sub -->
-<div class="modal-overlay" id="mSub"><div class="modal modal-sm">
+<div class="modal-overlay" id="mSub"><div class="modal">
   <div class="modal-title" id="subTitle">Nova Assinatura <button class="modal-close" onclick="closeModal('mSub')">×</button></div>
   <div class="fg"><label>Serviço</label><input type="text" id="sName" placeholder="Netflix, Spotify, iCloud..."></div>
   <div class="fr">
-    <div class="fg"><label>Valor (R$)</label><input type="number" id="sAmt" step="0.01" placeholder="0,00"></div>
+    <div class="fg"><label>Valor (R$)</label><input type="number" id="sAmt" step="0.01" placeholder="0,00" oninput="updateSubSplitHint()"></div>
     <div class="fg"><label>Ciclo <span class="tip" data-tip="Mensal = cobrado todo mês.&#10;Anual = cobrado 1x por ano.&#10;Semanal = cobrado todo semana.&#10;Afeta o cálculo da projeção anual.">?</span></label><select id="sCycle"><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="semanal">Semanal</option></select></div>
+  </div>
+  <div class="fg"><label>De quem é?</label>
+    <div class="tgl">
+      <div class="tgl-o active" id="sOwnerMine" onclick="setSubOwner('mine')">Meu</div>
+      <div class="tgl-o" id="sOwnerOther" onclick="setSubOwner('other')">De outra pessoa</div>
+      <div class="tgl-o" id="sOwnerSplit" onclick="setSubOwner('split')">Em conjunto</div>
+    </div>
+  </div>
+  <div id="sOtherGroup" style="display:none">
+    <div class="fg"><label>Nome da pessoa</label><input type="text" id="sOtherPerson" placeholder="de quem é esta assinatura..."></div>
+  </div>
+  <div id="sSplitGroup" style="display:none">
+    <div class="fg"><label>Pessoas</label>
+      <div id="sSplitPeopleWrap"></div>
+    </div>
+    <div class="fg"><label>Divisão</label>
+      <div class="tgl">
+        <div class="tgl-o active" id="sSplitEqual" onclick="setSubSplitType('equal')">Igual</div>
+        <div class="tgl-o" id="sSplitFixed" onclick="setSubSplitType('fixed')">Valor fixo por pessoa</div>
+      </div>
+    </div>
+    <div id="sFixedValuesWrap" style="display:none;margin-top:8px"></div>
+    <div id="sSplitHint" style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:6px;min-height:16px"></div>
   </div>
   <div class="fr">
     <div class="fg"><label>Banco / Cartão</label><input type="text" id="sBank" placeholder="Nubank, Will..."></div>

@@ -52,6 +52,18 @@ function renderReports() {
   const prevTotal = prevM ? monthTotal(prevM) : null;
   const maxComp = Math.max(totalGasto, prevTotal || 0, 1);
 
+  // ── Assinaturas para composição de gastos ──
+  let mySubRep = 0, splitSubRep = 0;
+  (S.subscriptions || []).filter(s => !s.endDate && s.cycle === 'mensal').forEach(s => {
+    const owner = s.owner || 'mine';
+    if (owner === 'mine') { mySubRep += s.amount; }
+    else if (owner === 'split') {
+      const myPart = calcMySubPart(s);
+      mySubRep += myPart;
+      splitSubRep += s.amount - myPart;
+    }
+  });
+
   // ── Tipo de entrada ──
   const incTypeMap = {};
   incL.forEach(i => {
@@ -126,7 +138,9 @@ function renderReports() {
       { label: 'Parcelado', val: typeMap.installment, color: 'var(--orange)' },
       { label: 'Pix', val: typeMap.pix, color: 'var(--green)' },
       { label: 'Débito', val: typeMap.debit, color: 'var(--teal)' },
-      { label: 'Dinheiro', val: typeMap.cash, color: 'var(--yellow)' }
+      { label: 'Dinheiro', val: typeMap.cash, color: 'var(--yellow)' },
+      { label: 'Assinaturas', val: mySubRep, color: 'var(--purple)' },
+      { label: 'Assinaturas em conjunto', val: splitSubRep, color: 'var(--pink)' }
     ].filter(t => t.val > 0).map(t => `
       <div class="bar-wrap">
         <div class="bar-lbl"><span>${t.label}</span><span>R$ ${fmt(t.val)}</span></div>
@@ -284,6 +298,32 @@ function renderHistory() {
     });
   });
 
+  // ── Assinaturas de outras pessoas e em conjunto ──
+  (S.subscriptions || []).filter(s => !s.endDate).forEach(s => {
+    const owner = s.owner || 'mine';
+    const monthlyAmt = s.cycle === 'mensal' ? s.amount : s.cycle === 'anual' ? s.amount / 12 : s.amount * 52 / 12;
+    if (owner === 'other') {
+      const person = (s.splitPeople || ['?'])[0];
+      if (!pplAll[person]) pplAll[person] = { total: 0, months: {} };
+      if (!pplAll[person].months['assinaturas']) pplAll[person].months['assinaturas'] = { total: 0, items: [] };
+      pplAll[person].months['assinaturas'].total += monthlyAmt;
+      pplAll[person].months['assinaturas'].items.push({ desc: s.name, amount: monthlyAmt, isSub: true });
+      pplAll[person].total += monthlyAmt;
+    } else if (owner === 'split') {
+      const people = s.splitPeople || [];
+      const count = people.length + 1;
+      people.forEach((p, i) => {
+        const share = s.splitValues ? (s.splitValues[i] || 0) : monthlyAmt * people.length / count / people.length;
+        const perPerson = s.splitValues ? share : monthlyAmt / count;
+        if (!pplAll[p]) pplAll[p] = { total: 0, months: {} };
+        if (!pplAll[p].months['assinaturas']) pplAll[p].months['assinaturas'] = { total: 0, items: [] };
+        pplAll[p].months['assinaturas'].total += perPerson;
+        pplAll[p].months['assinaturas'].items.push({ desc: s.name, amount: perPerson, isSub: true });
+        pplAll[p].total += perPerson;
+      });
+    }
+  });
+
   if (!Object.keys(pplAll).length) {
     el.innerHTML = '<div class="empty">nenhum lançamento de outras pessoas ainda</div>';
     return;
@@ -302,9 +342,11 @@ function renderHistory() {
           <tbody>
             ${Object.entries(data.months).map(([mk, md]) => `
               <tr>
-                <td style="font-family:var(--mono);font-size:12px;white-space:nowrap">${mk}</td>
-                <td style="color:var(--text2);font-size:12px">${md.items.map(i => i.desc).join(', ')}</td>
-                <td><span class="amt" style="color:var(--blue)">R$ ${fmt(md.total)}</span></td>
+                <td style="font-family:var(--mono);font-size:12px;white-space:nowrap">${mk === 'assinaturas' ? '🔁 Assinaturas' : mk}</td>
+                <td style="color:var(--text2);font-size:12px">${md.items.map(i => i.isSub
+                  ? `${i.desc} <span class="bm bm-rec" style="font-size:9px">assinatura</span>`
+                  : i.desc).join(', ')}</td>
+                <td><span class="amt" style="color:var(--blue)">R$ ${fmt(md.total)}</span>${mk === 'assinaturas' ? '<span style="font-size:10px;color:var(--text3);display:block">/mês</span>' : ''}</td>
               </tr>`).join('')}
           </tbody>
         </table>
