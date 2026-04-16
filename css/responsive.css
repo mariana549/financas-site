@@ -29,6 +29,11 @@
     transform: translateX(-100%);
   }
 
+  .content {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .sidebar.open {
     transform: translateX(0);
   }

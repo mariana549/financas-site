@@ -159,10 +159,11 @@ function getCategoryIcon(desc, cat) {
 function initSwipeRows() {
   const THRESHOLD = 75;
   document.querySelectorAll('#view-dash .entry-row[data-entry-id]').forEach(row => {
-    let startX = 0, startY = 0, dx = 0, moved = false;
-    const cells = () => row.querySelectorAll('td');
+    let startX = 0, startY = 0, dx = 0, moved = false, rafId = null;
+    const cellsArr = Array.from(row.querySelectorAll('td')); // cache — evita requery no touchmove
 
-    // Bloqueia o click se houve movimento horizontal
+    const setCellsBg = bg => { for (let i = 0; i < cellsArr.length; i++) cellsArr[i].style.background = bg; };
+
     row.addEventListener('click', e => {
       if (moved) { e.stopImmediatePropagation(); moved = false; }
     }, true);
@@ -172,6 +173,7 @@ function initSwipeRows() {
       startY = e.touches[0].clientY;
       dx = 0; moved = false;
       row.style.transition = 'none';
+      row.style.willChange = 'transform'; // promove para camada própria durante o swipe
     }, { passive: true });
 
     row.addEventListener('touchmove', e => {
@@ -183,35 +185,37 @@ function initSwipeRows() {
       if (!moved && Math.abs(ddy) > Math.abs(ddx)) return; // scroll vertical
       moved = true;
       dx = ddx;
-      row.style.transform = `translateX(${dx}px)`;
-      const pct = Math.min(Math.abs(dx) / THRESHOLD, 1);
-      cells().forEach(td => {
-        td.style.background = dx < 0
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        row.style.transform = `translateX(${dx}px)`;
+        const pct = Math.min(Math.abs(dx) / THRESHOLD, 1);
+        setCellsBg(dx < 0
           ? `rgba(255,77,77,${(pct * 0.22).toFixed(2)})`
-          : `rgba(77,160,255,${(pct * 0.22).toFixed(2)})`;
+          : `rgba(77,160,255,${(pct * 0.22).toFixed(2)})`);
       });
     }, { passive: true });
 
     row.addEventListener('touchend', () => {
-      const tr = 'transform .22s ease, background .22s ease';
-      row.style.transition = tr;
+      if (rafId) cancelAnimationFrame(rafId);
+      row.style.willChange = ''; // libera camada
+      row.style.transition = 'transform .22s ease, background .22s ease';
       if (dx < -THRESHOLD) {
-        cells().forEach(td => td.style.background = 'rgba(255,77,77,0.22)');
+        setCellsBg('rgba(255,77,77,0.22)');
         setTimeout(() => {
           row.style.transform = '';
-          cells().forEach(td => td.style.background = '');
+          setCellsBg('');
           deleteEntry(row.dataset.bank, row.dataset.entryId);
         }, 220);
       } else if (dx > THRESHOLD) {
-        cells().forEach(td => td.style.background = 'rgba(77,160,255,0.22)');
+        setCellsBg('rgba(77,160,255,0.22)');
         setTimeout(() => {
           row.style.transform = '';
-          cells().forEach(td => td.style.background = '');
+          setCellsBg('');
           openEntryM(row.dataset.entryId, row.dataset.bank);
         }, 220);
       } else {
         row.style.transform = '';
-        cells().forEach(td => td.style.background = '');
+        setCellsBg('');
       }
       dx = 0;
     });

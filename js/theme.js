@@ -45,8 +45,17 @@ function showView(v) {
   if (navEl) navEl.classList.add('active');
   const tb = document.getElementById('mainTopbar');
   if (tb) tb.style.display = v === 'dash' ? 'flex' : 'none';
-  if (v === 'reports') renderReports();
+  if (v === 'reports') {
+    const k = S.currentMonth;
+    if (S._repKey !== k) { S._repKey = k; renderReports(); }
+  }
   if (v === 'subs') renderSubs();
-  if (v === 'year') renderYear();
-  if (v === 'history') renderHistory();
+  if (v === 'year') {
+    const k = S.months.length + ':' + (S.months[S.months.length - 1]?.key || '');
+    if (S._yearKey !== k) { S._yearKey = k; renderYear(); }
+  }
+  if (v === 'history') {
+    const k = S.months.length + ':' + (S.months[S.months.length - 1]?.key || '');
+    if (S._histKey !== k) { S._histKey = k; renderHistory(); }
+  }
 }

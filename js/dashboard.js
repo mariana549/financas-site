@@ -19,6 +19,11 @@ function setInnerTab(t) {
 }
 
 function renderDash() {
+  // Invalida cache de views derivadas ao mudar dados
+  S._repKey = null;
+  S._yearKey = null;
+  S._histKey = null;
+
   const m = getMonth();
   const el = document.getElementById('dashContent');
   if (!el) return;
