@@ -1,7 +1,7 @@
 // ══════════════════════════════════════════════════
-// DB.JS — Todas as funções de salvar/deletar no Supabase
+// DB.JS — Carregamento inicial (loadAllFromSupabase)
+// Funções de salvar/deletar ficam nos arquivos db-*.js
 // ══════════════════════════════════════════════════
-
 
 async function loadAllFromSupabase() {
   if (!currentUser) return;
@@ -20,6 +20,7 @@ async function loadAllFromSupabase() {
       sb.from('banks_global').select('*').eq('user_id', uid).order('created_at'),
     ]);
 
+    // ── Months + Banks (por mês) + Entries ──
     const months = (mRes.data || []).map(m => ({
       key: m.key, label: m.label, year: m.year, goal: m.goal,
       banks: (bRes.data || [])
@@ -38,6 +39,7 @@ async function loadAllFromSupabase() {
         }))
     }));
 
+    // ── Pix ──
     const pixEntries = {};
     (pRes.data || []).forEach(p => {
       if (!pixEntries[p.month_key]) pixEntries[p.month_key] = [];
@@ -47,6 +49,7 @@ async function loadAllFromSupabase() {
       });
     });
 
+    // ── Contas Fixas ──
     const recurrents = {};
     (rRes.data || []).forEach(r => {
       if (!recurrents[r.month_key]) recurrents[r.month_key] = [];
@@ -56,6 +59,7 @@ async function loadAllFromSupabase() {
       });
     });
 
+    // ── Entradas (receitas) ──
     const incomes = {};
     (iRes.data || []).forEach(i => {
       if (!incomes[i.month_key]) incomes[i.month_key] = [];
@@ -66,26 +70,26 @@ async function loadAllFromSupabase() {
       });
     });
 
-    const subscriptions = (sRes.data || []).map(s => {
-      const parsePeople = v => {
-        if (!v) return null;
-        if (Array.isArray(v)) return v;
-        try { return JSON.parse(v); } catch { return v.split(',').map(x => x.trim()); }
-      };
-      const parseValues = v => {
-        if (!v) return null;
-        if (Array.isArray(v)) return v.map(Number);
-        try { return JSON.parse(v).map(Number); } catch { return null; }
-      };
-      return {
-        id: s.id, name: s.name, amount: parseFloat(s.amount), cycle: s.cycle,
-        bank: s.bank_name, day: s.due_day, startDate: s.start_date, endDate: s.end_date,
-        owner: s.owner || 'mine',
-        splitPeople: parsePeople(s.split_people),
-        splitValues: parseValues(s.split_values)
-      };
-    });
+    // ── Assinaturas ──
+    const parsePeople = v => {
+      if (!v) return null;
+      if (Array.isArray(v)) return v;
+      try { return JSON.parse(v); } catch { return v.split(',').map(x => x.trim()); }
+    };
+    const parseValues = v => {
+      if (!v) return null;
+      if (Array.isArray(v)) return v.map(Number);
+      try { return JSON.parse(v).map(Number); } catch { return null; }
+    };
+    const subscriptions = (sRes.data || []).map(s => ({
+      id: s.id, name: s.name, amount: parseFloat(s.amount), cycle: s.cycle,
+      bank: s.bank_name, day: s.due_day, startDate: s.start_date, endDate: s.end_date,
+      owner: s.owner || 'mine',
+      splitPeople: parsePeople(s.split_people),
+      splitValues: parseValues(s.split_values)
+    }));
 
+    // ── Parcelas futuras ──
     const installments = (instRes.data || []).map(i => ({
       id: i.id, gId: i.group_id, desc: i.description, amount: parseFloat(i.amount),
       total: i.total_parts, partNum: i.part_num, bankName: i.bank_name,
@@ -93,19 +97,21 @@ async function loadAllFromSupabase() {
       offset: i.month_offset, startKey: i.start_month_key, date: i.entry_date, done: i.done
     }));
 
+    // ── Bancos Globais ──
     const globalBanks = (gbRes?.data || []).map(g => ({
       id: g.id, name: g.name, color: g.color
     }));
 
-    S.months = months;
-    S.pixEntries = pixEntries;
-    S.recurrents = recurrents;
-    S.incomes = incomes;
+    // ── Popula estado global ──
+    S.months       = months;
+    S.pixEntries   = pixEntries;
+    S.recurrents   = recurrents;
+    S.incomes      = incomes;
     S.subscriptions = subscriptions;
     S.installments = installments;
-    S.globalBanks = globalBanks;
+    S.globalBanks  = globalBanks;
 
-    // ── Seeding: se banks_global vazia mas já existem bancos nos meses, migra ──
+    // ── Seeding: migra bancos existentes para banks_global na primeira vez ──
     if (S.globalBanks.length === 0 && months.length > 0 && !gbRes?.error) {
       const seen = new Set();
       for (const m of months) {
@@ -130,137 +136,4 @@ async function loadAllFromSupabase() {
     console.error('Erro ao carregar dados:', e);
   }
   setSyncing(false);
-}
-
-async function dbSaveMonth(m) {
-  if (!currentUser) return;
-  await sb.from('months').upsert(
-    { user_id: currentUser.id, key: m.key, label: m.label, year: m.year, goal: m.goal || null },
-    { onConflict: 'user_id,key' }
-  );
-}
-
-async function dbSaveBank(monthKey, bank) {
-  if (!currentUser) return;
-  await sb.from('banks').upsert(
-    { user_id: currentUser.id, month_key: monthKey, name: bank.name, color: bank.color },
-    { onConflict: 'user_id,month_key,name' }
-  );
-}
-
-async function dbSaveEntry(monthKey, bankName, entry) {
-  if (!currentUser) return;
-  const { error } = await sb.from('transacoes').upsert({
-    id: String(entry.id), user_id: currentUser.id, month_key: monthKey, bank_name: bankName,
-    description: entry.desc, amount: entry.amount, entry_date: entry.date || null,
-    owner: entry.owner || 'mine', person: entry.person || null, category: entry.category || null,
-    note: entry.note || null, type: entry.type || 'normal',
-    install_current: entry.installCurrent || null, install_total: entry.installTotal || null,
-    group_id: entry.groupId || null, auto_injected: entry.autoInj || false
-  }, { onConflict: 'id' });
-  if (error) console.error('[dbSaveEntry] Supabase error:', error);
-}
-
-async function dbDeleteEntry(id) {
-  if (!currentUser) return;
-  await sb.from('transacoes').delete().eq('id', String(id)).eq('user_id', currentUser.id);
-}
-
-async function dbSavePix(monthKey, px) {
-  if (!currentUser) return;
-  await sb.from('pix_entries').upsert({
-    id: String(px.id), user_id: currentUser.id, month_key: monthKey,
-    to_person: px.to, amount: px.amount, entry_date: px.date || null,
-    bank_name: px.bank || null, obs: px.obs || null
-  }, { onConflict: 'id' });
-}
-
-async function dbDeletePix(id) {
-  if (!currentUser) return;
-  await sb.from('pix_entries').delete().eq('id', String(id)).eq('user_id', currentUser.id);
-}
-
-async function dbSaveRecurrent(monthKey, r) {
-  if (!currentUser) return;
-  await sb.from('recurrents').upsert({
-    id: String(r.id), user_id: currentUser.id, month_key: monthKey,
-    description: r.desc, amount: r.amount, due_day: r.day || null, obs: r.obs || null
-  }, { onConflict: 'id' });
-}
-
-async function dbDeleteRecurrent(id) {
-  if (!currentUser) return;
-  await sb.from('recurrents').delete().eq('id', String(id)).eq('user_id', currentUser.id);
-}
-
-async function dbSaveIncome(monthKey, inc) {
-  if (!currentUser) return;
-  await sb.from('incomes').upsert({
-    id: String(inc.id), user_id: currentUser.id, month_key: monthKey,
-    description: inc.desc, amount: inc.amount, entry_date: inc.date || null,
-    income_type: inc.incType || null, from_source: inc.from || null,
-    owner: inc.owner || 'mine', person: inc.person || null
-  }, { onConflict: 'id' });
-}
-
-async function dbDeleteIncome(id) {
-  if (!currentUser) return;
-  await sb.from('incomes').delete().eq('id', String(id)).eq('user_id', currentUser.id);
-}
-
-async function dbSaveSub(sub) {
-  if (!currentUser) return;
-  await sb.from('subscriptions').upsert({
-    id: String(sub.id), user_id: currentUser.id, name: sub.name, amount: sub.amount,
-    cycle: sub.cycle, bank_name: sub.bank || null, due_day: sub.day || null,
-    start_date: sub.startDate || null, end_date: sub.endDate || null,
-    owner: sub.owner || 'mine',
-    split_people: sub.splitPeople ? JSON.stringify(sub.splitPeople) : null,
-    split_values: sub.splitValues ? JSON.stringify(sub.splitValues) : null
-  }, { onConflict: 'id' });
-}
-
-async function dbDeleteSub(id) {
-  if (!currentUser) return;
-  await sb.from('subscriptions').delete().eq('id', String(id)).eq('user_id', currentUser.id);
-}
-
-async function dbSaveInstallment(inst) {
-  if (!currentUser) return;
-  await sb.from('installments').upsert({
-    id: inst.id, user_id: currentUser.id, group_id: inst.gId,
-    description: inst.desc, amount: inst.amount, total_parts: inst.total,
-    part_num: inst.partNum, bank_name: inst.bankName, owner: inst.owner,
-    person: inst.person || null, category: inst.cat || null,
-    month_offset: inst.offset, start_month_key: inst.startKey,
-    entry_date: inst.date || null, done: inst.done || false
-  }, { onConflict: 'id' });
-}
-
-async function dbDeleteInstallmentsByGroup(gId) {
-  if (!currentUser) return;
-  await sb.from('installments').delete().eq('group_id', gId).eq('user_id', currentUser.id);
-}
-
-async function dbMarkInstallmentDone(id) {
-  if (!currentUser) return;
-  await sb.from('installments').update({ done: true }).eq('id', id).eq('user_id', currentUser.id);
-}
-
-async function dbDeleteInstallmentById(id) {
-  if (!currentUser) return;
-  await sb.from('installments').delete().eq('id', id).eq('user_id', currentUser.id);
-}
-
-async function dbSaveGlobalBank(gb) {
-  if (!currentUser) return;
-  await sb.from('banks_global').upsert(
-    { id: gb.id, user_id: currentUser.id, name: gb.name, color: gb.color },
-    { onConflict: 'id' }
-  );
-}
-
-async function dbDeleteGlobalBank(id) {
-  if (!currentUser) return;
-  await sb.from('banks_global').delete().eq('id', id).eq('user_id', currentUser.id);
 }
