@@ -46,6 +46,8 @@
 
   .main {
     margin-left: 0;
+    overflow: visible;
+    position: relative;
   }
 
   .content {
