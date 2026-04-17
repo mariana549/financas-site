@@ -24,7 +24,7 @@ async function addBank() {
   const name = document.getElementById('bName').value.trim();
   if (!name) return;
   const m = getMonth();
-  if (m.banks.find(b => b.name === name)) { alert('Já existe.'); return; }
+  if (m.banks.find(b => b.name.toLowerCase() === name.toLowerCase())) { alert('Já existe.'); return; }
   const bank = { name, color: S.pickedColor, entries: [] };
   m.banks.push(bank);
   setSyncing(true);
@@ -58,7 +58,7 @@ function openGlobalBankM() {
 async function addGlobalBank() {
   const name = document.getElementById('gbName').value.trim();
   if (!name) return;
-  if (S.globalBanks.find(b => b.name === name)) { showToast('Banco já existe', 'error'); return; }
+  if (S.globalBanks.find(b => b.name.toLowerCase() === name.toLowerCase())) { showToast('Banco já existe', 'error'); return; }
   const gb = {
     id: 'gb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
     name, color: S.pickedColor || 'azure'
@@ -108,6 +108,10 @@ function renderBanksView() {
     return;
   }
 
+  const infoText = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.5">
+    ℹ️ Bancos cadastrados aqui aparecem automaticamente em <strong>novos meses</strong>. Para adicionar um banco em um mês já criado, selecione o mês e use <strong>+ Banco</strong> na aba Gastos.
+  </div>`;
+
   const selId = S._selectedBankId;
   const cards = S.globalBanks.map(gb => {
     const col = PALETTE[gb.color] || gb.color || '#4d9fff';
@@ -122,6 +126,7 @@ function renderBanksView() {
   const stats = selId ? buildBankStats(selId) : '';
 
   el.innerHTML = `
+    ${infoText}
     <div class="bgc-list">
       ${cards}
       <div class="bank-global-card bgc-add" onclick="openGlobalBankM()">

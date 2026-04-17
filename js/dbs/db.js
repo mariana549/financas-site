@@ -104,6 +104,7 @@ async function loadAllFromSupabase() {
 
     // ── Popula estado global ──
     S.months       = months;
+    sortMonths();
     S.pixEntries   = pixEntries;
     S.recurrents   = recurrents;
     S.incomes      = incomes;

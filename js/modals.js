@@ -365,5 +365,12 @@ function injectModals() {
   <div class="modal-title">💰 Cobrança <button class="modal-close" onclick="closeModal('mCobranca')">×</button></div>
   <div id="mCobrancaContent"></div>
 </div></div>
+
+<!-- Meus Gastos Report -->
+<div class="modal-overlay" id="mMeusGastos"><div class="modal">
+  <div class="modal-title" id="meusGastosTitle">Meus Gastos <button class="modal-close" onclick="closeModal('mMeusGastos')">×</button></div>
+  <div id="meusGastosContent"></div>
+  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mMeusGastos')">Fechar</button></div>
+</div></div>
   `);
 }

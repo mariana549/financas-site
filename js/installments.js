@@ -69,9 +69,13 @@ async function injectInstallments(key) {
   if (!m) return;
   const mIdx = S.months.findIndex(x => x.key === key);
   for (const inst of S.installments) {
-    if (inst.done) continue;
     const si = S.months.findIndex(x => x.key === inst.startKey);
     if (si < 0 || si + inst.offset !== mIdx) continue;
+    // Não injeta se já existe entrada com mesmo grupo e número de parcela
+    const jaExiste = m.banks
+      .flatMap(b => b.entries)
+      .some(e => e.groupId === inst.gId && e.installCurrent === inst.partNum);
+    if (jaExiste) continue;
     let bk = m.banks.find(b => b.name === inst.bankName);
     if (!bk) {
       const newBank = { name: inst.bankName, color: 'azure', entries: [] };

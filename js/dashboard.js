@@ -72,8 +72,8 @@ function renderSummaryCards(m, totals) {
         <div class="card-lbl">Total Gastos</div>
         <div class="card-val">R$ ${fmt(totalGasto)}</div>
       </div>
-      <div class="card">
-        <div class="card-lbl">Meus Gastos</div>
+      <div class="card card-link" onclick="showMeusGastosReport()" title="Ver detalhes dos meus gastos">
+        <div class="card-lbl">Meus Gastos ↗</div>
         <div class="card-val a">R$ ${fmt(metaGasto)}</div>
         ${goalBar}
       </div>
@@ -248,6 +248,85 @@ function renderEntradasSection(incL, incMyT, incOthT, incPplMap) {
       </div>
     </div>`;
   return html;
+}
+
+function showMeusGastosReport() {
+  const m = getMonth();
+  if (!m) return;
+
+  document.getElementById('meusGastosTitle').textContent = 'Meus Gastos — ' + m.label + ' ' + m.year;
+
+  const allE = m.banks.flatMap(b => b.entries.map(e => ({ ...e, bankName: b.name })));
+  const pixL = S.pixEntries[S.currentMonth] || [];
+  const recL = S.recurrents[S.currentMonth] || [];
+
+  const myEntries = allE.filter(e => e.owner === 'mine');
+  const splitEntries = allE.filter(e => e.owner === 'split');
+  const myEntriesAmt = myEntries.reduce((s, e) => s + e.amount, 0);
+  const splitAmt = splitEntries.reduce((s, e) => s + e.amount * (e.splitRatio ?? 0.5), 0);
+  const pixTotal = pixL.reduce((s, p) => s + p.amount, 0);
+  const recTotal = recL.reduce((s, r) => s + r.amount, 0);
+  const mySubs = (S.subscriptions || []).filter(s => !s.endDate && s.cycle === 'mensal');
+  const mySubTotal = mySubs.reduce((s, sub) => s + calcMySubPart(sub), 0);
+  const grandTotal = myEntriesAmt + splitAmt + pixTotal + recTotal + mySubTotal;
+
+  const mkEntryRow = (e) => {
+    const myAmt = e.owner === 'split' ? e.amount * (e.splitRatio ?? 0.5) : e.amount;
+    const icon = getCategoryIcon(e.desc, e.category);
+    const typeBadge = e.type === 'installment'
+      ? `<span class="bm bm-inst">${e.installCurrent ?? '?'}/${e.installTotal ?? '?'}</span>`
+      : e.type === 'debit' ? `<span class="bm bm-debit">déb</span>`
+      : e.type === 'cash' ? `<span class="bm bm-cash">din</span>` : '';
+    const splitBadge = e.owner === 'split' ? `<span class="bm bm-split">÷</span>` : '';
+    return `<tr><td>${icon ? icon + ' ' : ''}${e.desc} ${typeBadge}${splitBadge}</td>
+      <td style="color:var(--text2);font-size:12px">${e.bankName}</td>
+      <td style="text-align:right"><span class="amt">R$ ${fmt(myAmt)}</span></td></tr>`;
+  };
+
+  const entryRows = [...myEntries, ...splitEntries]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .map(mkEntryRow).join('');
+
+  const pixRows = [...pixL]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .map(p => `<tr><td>${p.to}${p.obs ? ` <span style="color:var(--text3);font-size:11px">· ${p.obs}</span>` : ''}</td>
+      <td style="color:var(--text2);font-size:12px">pix</td>
+      <td style="text-align:right"><span class="amt">R$ ${fmt(p.amount)}</span></td></tr>`).join('');
+
+  const recRows = recL.map(r => `<tr>
+    <td>${r.desc}${r.day ? ` <span style="color:var(--text3);font-size:11px">· dia ${r.day}</span>` : ''}</td>
+    <td style="color:var(--text2);font-size:12px">fixo</td>
+    <td style="text-align:right"><span class="amt">R$ ${fmt(r.amount)}</span></td></tr>`).join('');
+
+  const subRows = mySubs.map(s => {
+    const myPart = calcMySubPart(s);
+    const splitBadge = s.owner === 'split' || s.owner === 'other' ? `<span class="bm bm-split">÷</span>` : '';
+    return `<tr><td>${s.name} ${splitBadge}</td>
+      <td style="color:var(--text2);font-size:12px">assinatura</td>
+      <td style="text-align:right"><span class="amt">R$ ${fmt(myPart)}</span></td></tr>`;
+  }).join('');
+
+  const mkSection = (label, rows) => rows ? `
+    <tr><td colspan="3" style="padding:10px 0 4px;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600">${label}</td></tr>
+    ${rows}` : '';
+
+  const allRows = mkSection('Lançamentos', entryRows)
+    + mkSection('Pix', pixRows)
+    + mkSection('Contas Fixas', recRows)
+    + mkSection('Assinaturas', subRows);
+
+  document.getElementById('meusGastosContent').innerHTML = `
+    <div class="summary-grid" style="margin-bottom:20px">
+      ${myEntriesAmt + splitAmt > 0 ? `<div class="card"><div class="card-lbl">Lançamentos</div><div class="card-val a">R$ ${fmt(myEntriesAmt + splitAmt)}</div></div>` : ''}
+      ${pixTotal > 0 ? `<div class="card"><div class="card-lbl">Pix</div><div class="card-val a">R$ ${fmt(pixTotal)}</div></div>` : ''}
+      ${recTotal > 0 ? `<div class="card"><div class="card-lbl">Contas Fixas</div><div class="card-val a">R$ ${fmt(recTotal)}</div></div>` : ''}
+      ${mySubTotal > 0 ? `<div class="card"><div class="card-lbl">Assinaturas</div><div class="card-val a">R$ ${fmt(mySubTotal)}</div></div>` : ''}
+      <div class="card"><div class="card-lbl">Total Meus</div><div class="card-val a" style="font-size:18px">R$ ${fmt(grandTotal)}</div></div>
+    </div>
+    ${allRows ? `<div class="tbl-block"><table><thead><tr><th>Descrição</th><th>Onde</th><th style="text-align:right">Meu valor</th></tr></thead><tbody>${allRows}</tbody></table></div>`
+      : '<div class="empty">Nenhum gasto registrado</div>'}`;
+
+  openModal('mMeusGastos');
 }
 
 // ── renderDash(): calcula totais, chama sub-funções, monta innerHTML ──

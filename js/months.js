@@ -2,6 +2,17 @@
 // MONTHS.JS — CRUD de Meses
 // ══════════════════════════════════════════════════
 
+const MONTH_ORDER = {Janeiro:1,Fevereiro:2,Março:3,Abril:4,Maio:5,Junho:6,
+                     Julho:7,Agosto:8,Setembro:9,Outubro:10,Novembro:11,Dezembro:12};
+
+function sortMonths() {
+  S.months.sort((a, b) => {
+    const ya = parseInt(a.year), yb = parseInt(b.year);
+    if (ya !== yb) return ya - yb;
+    return (MONTH_ORDER[a.label] || 0) - (MONTH_ORDER[b.label] || 0);
+  });
+}
+
 async function addMonth() {
   const m = document.getElementById('mSel').value;
   const y = document.getElementById('mYear').value;
@@ -11,6 +22,7 @@ async function addMonth() {
   const banks = S.globalBanks.map(gb => ({ name: gb.name, color: gb.color, entries: [] }));
   const month = { key, label: m, year: y, banks, goal };
   S.months.push(month);
+  sortMonths();
   setSyncing(true);
   await dbSaveMonth(month);
   for (const b of banks) await dbSaveBank(key, b);
@@ -36,6 +48,7 @@ async function copyLastMonth() {
     : last.banks.map(b => ({ ...b, entries: [] }));
   const month = { key, label: m, year: y, banks, goal };
   S.months.push(month);
+  sortMonths();
   setSyncing(true);
   await dbSaveMonth(month);
   for (const b of banks) await dbSaveBank(key, b);
