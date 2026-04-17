@@ -74,52 +74,22 @@ COMMIT: "fix: CSS mobile — remover GPU layers e corrigir scroll"
 
 
 ==========================================================
-FASE 3 — QUEBRAR renderDash() EM FUNÇÕES MENORES
+FASE 3 — ✅ CONCLUÍDA
 ==========================================================
 
-OBJETIVO: Transformar a função de 250+ linhas em funções
-menores e legíveis, sem mudar nenhum comportamento.
-
-TAREFAS:
-Extrair do renderDash() para funções separadas no mesmo arquivo:
-
-  renderSummaryCards(m, totals)
-  → retorna string HTML dos cards de resumo (Total, Meus, etc.)
-
+O QUE FOI FEITO:
+- renderDash() refatorada em 8 sub-funções no mesmo arquivo:
   renderGoalBar(m, metaGasto)
-  → retorna string HTML da barra de meta
-
   renderAlerts(m, metaGasto, recL)
-  → retorna string HTML dos alertas de vencimento e meta
-
+  renderSummaryCards(m, totals)
   renderAReceber(pplMap)
-  → retorna string HTML da seção A Receber
-
-  renderBankSection(m, bk, S)
-  → retorna string HTML das abas de banco e tabela de entradas
-
+  renderBankSection(m, bk)
   renderPixSection(pixL, pixT)
-  → retorna string HTML da seção Pix Enviados
-
   renderRecurrentsSection(recL, recT)
-  → retorna string HTML das Contas Fixas
-
   renderEntradasSection(incL, incMyT, incOthT, incPplMap)
-  → retorna string HTML da aba Entradas
-
-A função renderDash() original fica responsável apenas por:
-  - Calcular todos os totais
-  - Chamar as sub-funções acima
-  - Montar o innerHTML final com os resultados
-
-REGRA CRÍTICA:
-- Não mudar nenhum nome de classe CSS
-- Não mudar nenhum id de elemento HTML
-- Não mudar nenhuma função JS pública
-- Só reorganizar internamente
-
-ARQUIVOS:
-- js/dashboard.js
+- renderDash() agora só calcula totais, chama sub-funções e monta innerHTML
+- Nenhum nome de classe CSS, id de elemento ou função pública foi alterado
+- CACHE_NAME atualizado para financas-v18
 
 COMMIT: "refactor: quebrar renderDash em funções menores"
 
