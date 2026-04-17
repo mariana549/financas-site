@@ -15,7 +15,10 @@ function setInnerTab(t) {
   document.querySelectorAll('.itab-content').forEach(x => x.style.display = 'none');
   document.getElementById('itab-' + t)?.classList.add('active');
   const c = document.getElementById('itabc-' + t);
-  if (c) c.style.display = 'block';
+  if (c) {
+    c.style.display = 'block';
+    requestAnimationFrame(() => { void c.offsetHeight; });
+  }
 }
 
 // ── Sub-funções extraídas de renderDash() ──

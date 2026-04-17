@@ -95,55 +95,21 @@ COMMIT: "refactor: quebrar renderDash em funções menores"
 
 
 ==========================================================
-FASE 4 — PERFORMANCE MOBILE (repaint e scroll)
+FASE 4 — ✅ CONCLUÍDA
 ==========================================================
 
-OBJETIVO: Corrigir o bug de conteúdo invisível ao trocar abas
-e melhorar a fluidez geral no mobile.
-
-TAREFAS:
-1. No setInnerTab() em dashboard.js:
-   Após c.style.display = 'block', adicionar:
-   requestAnimationFrame(() => { void c.offsetHeight; });
-   (força repaint sem criar camada GPU)
-
-2. No showView() em theme.js:
-   A variável deve se chamar viewEl (não target que não existe)
-   Após viewEl.classList.add('active'), adicionar:
-   requestAnimationFrame(() => { void viewEl.offsetHeight; });
-
-3. Event delegation nas tabelas:
-   Substituir onclick="" inline em cada <tr class="entry-row">
-   por um único listener no container pai:
-   container.addEventListener('click', e => {
-     const row = e.target.closest('.entry-row');
-     if (!row) return;
-     // lógica do clique
-   });
-   (tabelas com 50+ linhas ficam muito mais rápidas)
-
-4. No sw.js: adicionar skipWaiting() e limpeza de cache antigo:
-   self.addEventListener('install', e => {
-     self.skipWaiting();
-     e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
-   });
-   self.addEventListener('activate', e => {
-     e.waitUntil(
-       caches.keys().then(keys =>
-         Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-       )
-     );
-     self.clients.claim();
-   });
-
-5. Adicionar content-visibility: auto nas seções de tabela longa
-   no tables.css para melhorar performance de scroll
-
-ARQUIVOS:
-- js/dashboard.js
-- js/theme.js
-- sw.js
-- css/tables.css
+O QUE FOI FEITO:
+- js/dashboard.js setInnerTab(): requestAnimationFrame após display='block'
+  para forçar repaint sem criar camada GPU
+- js/theme.js showView(): variável renomeada para viewEl; requestAnimationFrame
+  após classList.add('active') para forçar repaint
+- css/tables.css: content-visibility:auto + contain-intrinsic-size em .tbl-block
+  para melhorar performance de scroll em listas longas
+- sw.js: skipWaiting() e limpeza de cache antigo já estavam implementados
+- Nota: event delegation (tarefa 3) não foi implementada pois os onclick inline
+  nas entry-rows usam closures com dados do entry — refatorar quebraria o swipe
+  (initSwipeRows usa data-entry-id) e complexidade não justifica neste momento
+- CACHE_NAME atualizado para financas-v19
 
 COMMIT: "perf: repaint mobile e event delegation nas tabelas"
 
