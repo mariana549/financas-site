@@ -1,4 +1,4 @@
-const CACHE_NAME = 'financas-v16';
+const CACHE_NAME = 'financas-v17';
 const ASSETS = [
   './',
   './index.html',
@@ -19,7 +19,6 @@ const ASSETS = [
   './js/state.js',
   './js/filter.js',
   './js/theme.js',
-  './js/offline-queue.js',
   './js/dbs/db-months.js',
   './js/dbs/db-banks.js',
   './js/dbs/db-entries.js',

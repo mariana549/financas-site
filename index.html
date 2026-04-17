@@ -112,28 +112,28 @@
   <div class="content">
     <div class="view active" id="view-dash"><div id="dashContent"><div class="empty">selecione ou crie um mês<br>para começar</div></div></div>
     <div class="view" id="view-subs">
-      <div style="padding:0 0 20px;border-bottom:1px solid var(--border);margin-bottom:24px;display:flex;align-items:center;justify-content:space-between">
+      <div class="view-top-bar">
         <div><div class="topbar-title">Assinaturas</div><div class="topbar-sub">por banco · com datas</div></div>
       </div>
       <div id="subsContent"></div>
     </div>
     <div class="view" id="view-banks">
-      <div style="padding:0 0 20px;border-bottom:1px solid var(--border);margin-bottom:24px;display:flex;align-items:center;justify-content:space-between">
+      <div class="view-top-bar">
         <div><div class="topbar-title">Bancos</div><div class="topbar-sub">cadastro global · estatísticas por banco</div></div>
         <button class="btn btn-primary btn-sm" onclick="openGlobalBankM()">+ Adicionar</button>
       </div>
       <div id="banksContent"></div>
     </div>
     <div class="view" id="view-reports">
-      <div style="margin-bottom:22px"><div class="topbar-title">Relatórios</div><div class="topbar-sub" id="repSub">selecione um mês</div></div>
+      <div class="view-title-wrap"><div class="topbar-title">Relatórios</div><div class="topbar-sub" id="repSub">selecione um mês</div></div>
       <div id="repContent"></div>
     </div>
     <div class="view" id="view-year">
-      <div style="margin-bottom:22px"><div class="topbar-title">Resumo Anual</div><div class="topbar-sub" id="yearSub">visão geral do ano</div></div>
+      <div class="view-title-wrap"><div class="topbar-title">Resumo Anual</div><div class="topbar-sub" id="yearSub">visão geral do ano</div></div>
       <div id="yearContent"></div>
     </div>
     <div class="view" id="view-history">
-      <div style="margin-bottom:22px"><div class="topbar-title">Histórico de Pessoas</div><div class="topbar-sub">quem comprou no seu cartão · todos os meses</div></div>
+      <div class="view-title-wrap"><div class="topbar-title">Histórico de Pessoas</div><div class="topbar-sub">quem comprou no seu cartão · todos os meses</div></div>
       <div id="historyContent"></div>
     </div>
   </div>
@@ -513,7 +513,6 @@
 <script src="js/state.js"></script>
 <script src="js/filter.js"></script>
 <script src="js/theme.js"></script>
-<script src="js/offline-queue.js"></script>
 <!-- DB: um arquivo por tabela, db.js carrega por último (usa as funções acima) -->
 <script src="js/dbs/db-months.js"></script>
 <script src="js/dbs/db-banks.js"></script>

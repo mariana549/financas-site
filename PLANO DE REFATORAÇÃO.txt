@@ -1,0 +1,256 @@
+==========================================================
+PLANO DE REFATORAÇÃO — FINANÇAS PWA
+==========================================================
+
+INSTRUÇÕES GERAIS PARA A IA
+----------------------------
+- Execute UMA FASE por sessão
+- Aguarde confirmação antes de avançar para a próxima
+- Nunca refatorar e adicionar feature no mesmo commit
+- Sempre rodar dist\build.bat após modificar qualquer JS ou CSS
+- Sempre testar no Chrome DevTools (emulação Android 412px) antes de commitar
+- Um commit por fase, com mensagem descritiva
+
+
+==========================================================
+REGRAS QUE NUNCA PODEM SER QUEBRADAS
+==========================================================
+
+NUNCA FAZER:
+- Renomear funções públicas chamadas no HTML via onclick=""
+- Mudar IDs de elementos HTML usados por getElementById()
+- Alterar nomes de classes CSS usadas em JS via classList
+- Refatorar e adicionar feature no mesmo commit
+- Usar frameworks, bundlers ou dependências novas
+- Melhorar lógica de negócio durante refatoração — só reorganizar
+- Editar um arquivo sem ter lido o arquivo inteiro antes
+
+SEMPRE FAZER:
+- Ler o arquivo inteiro antes de editar qualquer parte
+- Rodar o build após cada arquivo modificado
+- Testar no Chrome DevTools mobile antes de commitar
+- Um commit por fase
+- Se encontrar um bug durante refatoração: registrar no CLAUDE.md
+  e NÃO corrigir agora — corrigir depois em sessão separada
+
+
+==========================================================
+FASE 1 — ✅ CONCLUÍDA
+==========================================================
+
+O QUE FOI FEITO:
+- Todos os arquivos JS lidos e mapeados
+- filter.js estava na posição errada (depois de auth.js e months.js)
+  → movido para entre state.js e theme.js ✅
+- filter.js e offline-queue.js não estavam nos ASSETS do sw.js → corrigidos ✅
+- offline-queue.js foi removido a pedido da usuária (não quer a fila offline)
+- Ordem final: supabase-config → utils → state → filter → theme →
+  dbs/* → db.js → auth → months → banks → entries → installments →
+  pix → recurrents → income → subscriptions → dashboard → cobranca →
+  reports → history → backup → ai-engine → main
+
+COMMIT: "refactor: verificação de ordem de scripts e dependências"
+
+
+==========================================================
+FASE 2 — ✅ CONCLUÍDA
+==========================================================
+
+O QUE FOI FEITO:
+- css/layout.css: .main recebeu min-height:0; overflow:hidden
+  .content recebeu overflow-y:auto explícito
+  .sidebar: transition trocada de transform para left (.3s)
+  Adicionadas classes .view-top-bar e .view-title-wrap
+- css/responsive.css: .sidebar usa left:-240px / left:0 (era translateX)
+  .content recebeu overflow-y:auto, -webkit-overflow-scrolling:touch,
+  overscroll-behavior:contain, height:calc(100vh - 60px) no mobile
+- index.html: inline styles das views removidos e substituídos por classes
+  (view-subs, view-banks → .view-top-bar; view-reports, view-year,
+  view-history → .view-title-wrap)
+- Verificado: nenhum transform/will-change/translateZ no index.html
+- CACHE_NAME atualizado para financas-v17
+
+COMMIT: "fix: CSS mobile — remover GPU layers e corrigir scroll"
+
+
+==========================================================
+FASE 3 — QUEBRAR renderDash() EM FUNÇÕES MENORES
+==========================================================
+
+OBJETIVO: Transformar a função de 250+ linhas em funções
+menores e legíveis, sem mudar nenhum comportamento.
+
+TAREFAS:
+Extrair do renderDash() para funções separadas no mesmo arquivo:
+
+  renderSummaryCards(m, totals)
+  → retorna string HTML dos cards de resumo (Total, Meus, etc.)
+
+  renderGoalBar(m, metaGasto)
+  → retorna string HTML da barra de meta
+
+  renderAlerts(m, metaGasto, recL)
+  → retorna string HTML dos alertas de vencimento e meta
+
+  renderAReceber(pplMap)
+  → retorna string HTML da seção A Receber
+
+  renderBankSection(m, bk, S)
+  → retorna string HTML das abas de banco e tabela de entradas
+
+  renderPixSection(pixL, pixT)
+  → retorna string HTML da seção Pix Enviados
+
+  renderRecurrentsSection(recL, recT)
+  → retorna string HTML das Contas Fixas
+
+  renderEntradasSection(incL, incMyT, incOthT, incPplMap)
+  → retorna string HTML da aba Entradas
+
+A função renderDash() original fica responsável apenas por:
+  - Calcular todos os totais
+  - Chamar as sub-funções acima
+  - Montar o innerHTML final com os resultados
+
+REGRA CRÍTICA:
+- Não mudar nenhum nome de classe CSS
+- Não mudar nenhum id de elemento HTML
+- Não mudar nenhuma função JS pública
+- Só reorganizar internamente
+
+ARQUIVOS:
+- js/dashboard.js
+
+COMMIT: "refactor: quebrar renderDash em funções menores"
+
+
+==========================================================
+FASE 4 — PERFORMANCE MOBILE (repaint e scroll)
+==========================================================
+
+OBJETIVO: Corrigir o bug de conteúdo invisível ao trocar abas
+e melhorar a fluidez geral no mobile.
+
+TAREFAS:
+1. No setInnerTab() em dashboard.js:
+   Após c.style.display = 'block', adicionar:
+   requestAnimationFrame(() => { void c.offsetHeight; });
+   (força repaint sem criar camada GPU)
+
+2. No showView() em theme.js:
+   A variável deve se chamar viewEl (não target que não existe)
+   Após viewEl.classList.add('active'), adicionar:
+   requestAnimationFrame(() => { void viewEl.offsetHeight; });
+
+3. Event delegation nas tabelas:
+   Substituir onclick="" inline em cada <tr class="entry-row">
+   por um único listener no container pai:
+   container.addEventListener('click', e => {
+     const row = e.target.closest('.entry-row');
+     if (!row) return;
+     // lógica do clique
+   });
+   (tabelas com 50+ linhas ficam muito mais rápidas)
+
+4. No sw.js: adicionar skipWaiting() e limpeza de cache antigo:
+   self.addEventListener('install', e => {
+     self.skipWaiting();
+     e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
+   });
+   self.addEventListener('activate', e => {
+     e.waitUntil(
+       caches.keys().then(keys =>
+         Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+       )
+     );
+     self.clients.claim();
+   });
+
+5. Adicionar content-visibility: auto nas seções de tabela longa
+   no tables.css para melhorar performance de scroll
+
+ARQUIVOS:
+- js/dashboard.js
+- js/theme.js
+- sw.js
+- css/tables.css
+
+COMMIT: "perf: repaint mobile e event delegation nas tabelas"
+
+
+==========================================================
+FASE 5 — DIMINUIR O INDEX.HTML + LIMPEZA FINAL
+==========================================================
+
+OBJETIVO: Reduzir index.html de 544 para ~120 linhas movendo
+todos os modais para js/modals.js.
+
+TAREFAS:
+1. Criar js/modals.js com função injectModals() que contém
+   o HTML de todos os modais dentro de template literal:
+
+   function injectModals() {
+     document.body.insertAdjacentHTML('beforeend', `
+       [HTML de todos os modais aqui]
+     `);
+   }
+
+2. No index.html: remover todos os modais do body e substituir
+   por <script src="js/modals.js"></script>
+
+3. Chamar injectModals() no início do main.js antes de qualquer
+   outra inicialização
+
+4. Adicionar js/modals.js na lista de ASSETS do sw.js
+
+5. Limpeza geral:
+   - Remover comentários desnecessários e código comentado
+   - Consolidar variáveis CSS duplicadas em variables.css
+   - Remover qualquer cor ou variável definida mais de uma vez
+
+6. Atualizar CLAUDE.md com o novo inventário de funções
+
+7. Atualizar CACHE_NAME no sw.js
+
+ARQUIVOS:
+- index.html
+- js/modals.js (novo)
+- js/main.js
+- sw.js
+- css/variables.css
+- CLAUDE.md
+
+TESTE OBRIGATÓRIO:
+- Todos os modais abrem corretamente
+- Nenhuma função de modal quebrou
+- Testar no mobile
+
+COMMIT: "refactor: modais movidos para modals.js, index.html limpo"
+
+
+==========================================================
+ORDEM DE EXECUÇÃO RECOMENDADA
+==========================================================
+
+Sessão 1: Fase 1 + Fase 2 → testar mobile → commitar
+Sessão 2: Fase 3 → testar → commitar
+Sessão 3: Fase 4 → testar mobile → commitar
+Sessão 4: Fase 5 → testar tudo → commitar
+
+Entre cada sessão: abrir o app no celular e confirmar
+que nenhum bug novo apareceu antes de continuar.
+
+
+==========================================================
+CONTEXTO DO PROJETO
+==========================================================
+
+Stack: HTML + CSS + JavaScript vanilla + Supabase
+PWA com Service Worker
+Build: dist\build.bat (concatena CSS e JS)
+Deploy: Vercel (auto-deploy no push para main)
+Mobile: Android Chrome (principal alvo de teste)
+Repositório: https://github.com/mariana549/financas-site
+
+Arquivos JS carregados individualmente (sem bundler)
+Ordem de carga é crítica — ver Fase 1

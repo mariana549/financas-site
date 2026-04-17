@@ -26,16 +26,18 @@
 
 @media (max-width: 768px) {
   .sidebar {
-    transform: translateX(-100%);
-  }
-
-  .content {
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
+    left: -240px;
   }
 
   .sidebar.open {
-    transform: translateX(0);
+    left: 0;
+  }
+
+  .content {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    height: calc(100vh - 60px);
   }
 
   .sb-overlay.open {
