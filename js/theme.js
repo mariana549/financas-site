@@ -15,8 +15,11 @@ function applyTheme() {
 }
 
 function toggleSidebar() {
-  document.getElementById('sb').classList.toggle('open');
-  document.getElementById('sbOverlay').classList.toggle('open');
+  const sbEl = document.getElementById('sb');
+  const overlay = document.getElementById('sbOverlay');
+  const isOpening = sbEl.classList.toggle('open');
+  overlay.classList.toggle('open');
+  document.body.style.overflow = isOpening ? 'hidden' : '';
 }
 
 function togglePrivacy() {
