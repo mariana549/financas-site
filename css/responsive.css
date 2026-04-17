@@ -28,6 +28,8 @@
 @media (max-width: 768px) {
   .sidebar {
     left: -240px;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .sidebar.open {
