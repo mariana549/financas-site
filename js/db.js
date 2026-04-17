@@ -222,3 +222,8 @@ async function dbMarkInstallmentDone(id) {
   if (!currentUser) return;
   await sb.from('installments').update({ done: true }).eq('id', id).eq('user_id', currentUser.id);
 }
+
+async function dbDeleteInstallmentById(id) {
+  if (!currentUser) return;
+  await sb.from('installments').delete().eq('id', id).eq('user_id', currentUser.id);
+}
