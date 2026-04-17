@@ -8,10 +8,12 @@ async function addMonth() {
   const key = m + '/' + y;
   if (S.months.find(x => x.key === key)) { alert('Mês já existe.'); return; }
   const goal = parseFloat(document.getElementById('mGoal').value) || null;
-  const month = { key, label: m, year: y, banks: [], goal };
+  const banks = S.globalBanks.map(gb => ({ name: gb.name, color: gb.color, entries: [] }));
+  const month = { key, label: m, year: y, banks, goal };
   S.months.push(month);
   setSyncing(true);
   await dbSaveMonth(month);
+  for (const b of banks) await dbSaveBank(key, b);
   await injectInstallments(key);
   setSyncing(false);
   renderMonthList();
@@ -29,7 +31,9 @@ async function copyLastMonth() {
   const key = m + '/' + y;
   if (S.months.find(x => x.key === key)) { alert('Mês já existe.'); return; }
   const goal = parseFloat(document.getElementById('mGoal').value) || last.goal || null;
-  const banks = last.banks.map(b => ({ ...b, entries: [] }));
+  const banks = S.globalBanks.length > 0
+    ? S.globalBanks.map(gb => ({ name: gb.name, color: gb.color, entries: [] }))
+    : last.banks.map(b => ({ ...b, entries: [] }));
   const month = { key, label: m, year: y, banks, goal };
   S.months.push(month);
   setSyncing(true);

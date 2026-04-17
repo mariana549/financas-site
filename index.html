@@ -85,6 +85,9 @@
     <div class="nav-item" onclick="showView('subs')" id="nav-subs">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Assinaturas
     </div>
+    <div class="nav-item" onclick="showView('banks')" id="nav-banks">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>Bancos
+    </div>
     <div class="nav-item" onclick="showView('reports')" id="nav-reports">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Relatórios
     </div>
@@ -113,6 +116,13 @@
         <div><div class="topbar-title">Assinaturas</div><div class="topbar-sub">por banco · com datas</div></div>
       </div>
       <div id="subsContent"></div>
+    </div>
+    <div class="view" id="view-banks">
+      <div style="padding:0 0 20px;border-bottom:1px solid var(--border);margin-bottom:24px;display:flex;align-items:center;justify-content:space-between">
+        <div><div class="topbar-title">Bancos</div><div class="topbar-sub">cadastro global · estatísticas por banco</div></div>
+        <button class="btn btn-primary btn-sm" onclick="openGlobalBankM()">+ Adicionar</button>
+      </div>
+      <div id="banksContent"></div>
     </div>
     <div class="view" id="view-reports">
       <div style="margin-bottom:22px"><div class="topbar-title">Relatórios</div><div class="topbar-sub" id="repSub">selecione um mês</div></div>
@@ -152,6 +162,14 @@
   <div class="fg"><label>Nome</label><input type="text" id="bName" placeholder="Nubank, Will, Mercado Livre..."></div>
   <div class="fg"><label>Cor</label><div class="color-grid" id="colorGrid"></div></div>
   <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mBank')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="addBank()">Adicionar</button></div>
+</div></div>
+
+<!-- Global Bank -->
+<div class="modal-overlay" id="mGlobalBank"><div class="modal modal-sm">
+  <div class="modal-title">Novo Banco Global <button class="modal-close" onclick="closeModal('mGlobalBank')">×</button></div>
+  <div class="fg"><label>Nome</label><input type="text" id="gbName" placeholder="Nubank, Itaú, Mercado Livre..."></div>
+  <div class="fg"><label>Cor</label><div class="color-grid" id="gbColorGrid"></div></div>
+  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mGlobalBank')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="addGlobalBank()">Adicionar</button></div>
 </div></div>
 
 <!-- Entry -->

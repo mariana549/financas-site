@@ -50,6 +50,7 @@ function showView(v) {
     if (S._repKey !== k) { S._repKey = k; renderReports(); }
   }
   if (v === 'subs') renderSubs();
+  if (v === 'banks') renderBanksView();
   if (v === 'year') {
     const k = S.months.length + ':' + (S.months[S.months.length - 1]?.key || '');
     if (S._yearKey !== k) { S._yearKey = k; renderYear(); }

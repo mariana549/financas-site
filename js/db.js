@@ -8,7 +8,7 @@ async function loadAllFromSupabase() {
   setSyncing(true);
   try {
     const uid = currentUser.id;
-    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes] = await Promise.all([
+    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes] = await Promise.all([
       sb.from('months').select('*').eq('user_id', uid).order('created_at'),
       sb.from('banks').select('*').eq('user_id', uid),
       sb.from('transacoes').select('*').eq('user_id', uid),
@@ -17,6 +17,7 @@ async function loadAllFromSupabase() {
       sb.from('incomes').select('*').eq('user_id', uid),
       sb.from('subscriptions').select('*').eq('user_id', uid),
       sb.from('installments').select('*').eq('user_id', uid),
+      sb.from('banks_global').select('*').eq('user_id', uid).order('created_at'),
     ]);
 
     const months = (mRes.data || []).map(m => ({
@@ -92,12 +93,35 @@ async function loadAllFromSupabase() {
       offset: i.month_offset, startKey: i.start_month_key, date: i.entry_date, done: i.done
     }));
 
+    const globalBanks = (gbRes?.data || []).map(g => ({
+      id: g.id, name: g.name, color: g.color
+    }));
+
     S.months = months;
     S.pixEntries = pixEntries;
     S.recurrents = recurrents;
     S.incomes = incomes;
     S.subscriptions = subscriptions;
     S.installments = installments;
+    S.globalBanks = globalBanks;
+
+    // ── Seeding: se banks_global vazia mas já existem bancos nos meses, migra ──
+    if (S.globalBanks.length === 0 && months.length > 0 && !gbRes?.error) {
+      const seen = new Set();
+      for (const m of months) {
+        for (const b of m.banks) {
+          if (!seen.has(b.name)) {
+            seen.add(b.name);
+            const gb = {
+              id: 'gb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+              name: b.name, color: b.color || 'azure'
+            };
+            S.globalBanks.push(gb);
+            await dbSaveGlobalBank(gb);
+          }
+        }
+      }
+    }
 
     const saved = localStorage.getItem('fin_theme');
     if (saved) S.theme = saved;
@@ -226,4 +250,17 @@ async function dbMarkInstallmentDone(id) {
 async function dbDeleteInstallmentById(id) {
   if (!currentUser) return;
   await sb.from('installments').delete().eq('id', id).eq('user_id', currentUser.id);
+}
+
+async function dbSaveGlobalBank(gb) {
+  if (!currentUser) return;
+  await sb.from('banks_global').upsert(
+    { id: gb.id, user_id: currentUser.id, name: gb.name, color: gb.color },
+    { onConflict: 'id' }
+  );
+}
+
+async function dbDeleteGlobalBank(id) {
+  if (!currentUser) return;
+  await sb.from('banks_global').delete().eq('id', id).eq('user_id', currentUser.id);
 }
