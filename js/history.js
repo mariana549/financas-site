@@ -18,6 +18,14 @@ function avatarInitials(name) {
     : name.trim().slice(0, 2).toUpperCase();
 }
 
+function toggleHistCard(header) {
+  const detail = header.nextElementSibling;
+  const chevron = header.querySelector('.hist-chevron');
+  const isOpen = detail.style.display !== 'none';
+  detail.style.display = isOpen ? 'none' : 'block';
+  chevron.textContent = isOpen ? '▸' : '▾';
+}
+
 function renderHistory() {
   const el = document.getElementById('historyContent');
   if (!el) return;
@@ -146,43 +154,46 @@ function renderHistory() {
           </tr>`).join('');
 
       return `
-        <div class="tbl-block" style="margin-bottom:16px">
-          <div class="tbl-head" style="gap:12px">
+        <div class="tbl-block hist-card" style="margin-bottom:12px">
+          <div class="tbl-head hist-card-header" onclick="toggleHistCard(this)" style="gap:12px;cursor:pointer;user-select:none">
             <div class="hist-avatar" style="background:${color}">${initials}</div>
             <div style="flex:1;min-width:0">
               <div style="font-weight:600;font-size:14px">${name}</div>
               <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">
-                média R$ ${fmt(avgPerMonth)}/mês · ${monthCount} mês${monthCount !== 1 ? 'es' : ''} ativo${monthCount !== 1 ? 's' : ''}
+                R$ ${fmt(data.total)} · ${monthCount} mês${monthCount !== 1 ? 'es' : ''}
               </div>
             </div>
             <span class="tbl-total" style="color:var(--blue);flex-shrink:0">R$ ${fmt(data.total)}</span>
+            <span class="hist-chevron">▸</span>
           </div>
-          <div style="padding:10px 18px;border-bottom:1px solid var(--border)">
-            <div style="display:flex;align-items:center;gap:10px">
-              <div class="hist-progress-wrap">
-                <div class="hist-progress-fill" style="width:${Math.min(pct, 100).toFixed(1)}%"></div>
+          <div class="hist-detail" style="display:none">
+            <div style="padding:10px 18px;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="hist-progress-wrap">
+                  <div class="hist-progress-fill" style="width:${Math.min(pct, 100).toFixed(1)}%"></div>
+                </div>
+                <span style="font-size:11px;font-family:var(--mono);color:var(--text2);white-space:nowrap">
+                  ${pct.toFixed(1)}% do total
+                </span>
               </div>
-              <span style="font-size:11px;font-family:var(--mono);color:var(--text2);white-space:nowrap">
-                ${pct.toFixed(1)}% do total
-              </span>
             </div>
-          </div>
-          <table>
-            <thead><tr><th>Mês</th><th>Itens</th><th>Total</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-          <div class="foot-row">
-            <div class="foot-grp">
-              <span class="foot-lbl">Total</span>
-              <span class="foot-amt" style="color:var(--blue)">R$ ${fmt(data.total)}</span>
-            </div>
-            <div class="foot-grp">
-              <span class="foot-lbl">Meses ativos</span>
-              <span class="foot-amt">${monthCount}</span>
-            </div>
-            <div class="foot-grp">
-              <span class="foot-lbl">Média/mês</span>
-              <span class="foot-amt">R$ ${fmt(avgPerMonth)}</span>
+            <table>
+              <thead><tr><th>Mês</th><th>Itens</th><th>Total</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+            <div class="foot-row">
+              <div class="foot-grp">
+                <span class="foot-lbl">Total</span>
+                <span class="foot-amt" style="color:var(--blue)">R$ ${fmt(data.total)}</span>
+              </div>
+              <div class="foot-grp">
+                <span class="foot-lbl">Meses ativos</span>
+                <span class="foot-amt">${monthCount}</span>
+              </div>
+              <div class="foot-grp">
+                <span class="foot-lbl">Média/mês</span>
+                <span class="foot-amt">R$ ${fmt(avgPerMonth)}</span>
+              </div>
             </div>
           </div>
         </div>`;
