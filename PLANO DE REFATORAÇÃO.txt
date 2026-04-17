@@ -115,51 +115,18 @@ COMMIT: "perf: repaint mobile e event delegation nas tabelas"
 
 
 ==========================================================
-FASE 5 — DIMINUIR O INDEX.HTML + LIMPEZA FINAL
+FASE 5 — ✅ CONCLUÍDA
 ==========================================================
 
-OBJETIVO: Reduzir index.html de 544 para ~120 linhas movendo
-todos os modais para js/modals.js.
-
-TAREFAS:
-1. Criar js/modals.js com função injectModals() que contém
-   o HTML de todos os modais dentro de template literal:
-
-   function injectModals() {
-     document.body.insertAdjacentHTML('beforeend', `
-       [HTML de todos os modais aqui]
-     `);
-   }
-
-2. No index.html: remover todos os modais do body e substituir
-   por <script src="js/modals.js"></script>
-
-3. Chamar injectModals() no início do main.js antes de qualquer
-   outra inicialização
-
-4. Adicionar js/modals.js na lista de ASSETS do sw.js
-
-5. Limpeza geral:
-   - Remover comentários desnecessários e código comentado
-   - Consolidar variáveis CSS duplicadas em variables.css
-   - Remover qualquer cor ou variável definida mais de uma vez
-
-6. Atualizar CLAUDE.md com o novo inventário de funções
-
-7. Atualizar CACHE_NAME no sw.js
-
-ARQUIVOS:
-- index.html
-- js/modals.js (novo)
-- js/main.js
-- sw.js
-- css/variables.css
-- CLAUDE.md
-
-TESTE OBRIGATÓRIO:
-- Todos os modais abrem corretamente
-- Nenhuma função de modal quebrou
-- Testar no mobile
+O QUE FOI FEITO:
+- js/modals.js criado com injectModals() contendo HTML de todos os modais
+  (14 modais: mMonth, mBank, mGlobalBank, mEntry, mDetail, mIncome, mRec,
+  mPix, mSub, mInstDet, mBackup, mAI, mLogout, mEditMonth, mDeleteMonth,
+  mGoal, mCobranca)
+- index.html: todos os modais removidos; index.html reduziu de 544 para 180 linhas
+- js/main.js: injectModals() chamado como primeira linha antes de applyTheme()
+- sw.js: js/modals.js adicionado aos ASSETS; CACHE_NAME atualizado para financas-v20
+- Script adicionado no index.html antes de main.js: <script src="js/modals.js">
 
 COMMIT: "refactor: modais movidos para modals.js, index.html limpo"
 

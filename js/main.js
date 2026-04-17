@@ -2,6 +2,9 @@
 // MAIN.JS — Inicialização do App
 // ══════════════════════════════════════════════════
 
+// ── Injetar modais no body ──
+injectModals();
+
 // ── Aplicar tema salvo ──
 applyTheme();
 
