@@ -42,7 +42,6 @@ function showView(v) {
   document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
   const viewEl = document.getElementById('view-' + v);
   viewEl.classList.add('active');
-  requestAnimationFrame(() => { void viewEl.offsetHeight; });
   const navEl = document.getElementById('nav-' + v);
   if (navEl) navEl.classList.add('active');
   const tb = document.getElementById('mainTopbar');

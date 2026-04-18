@@ -17,7 +17,6 @@ function setInnerTab(t) {
   const c = document.getElementById('itabc-' + t);
   if (c) {
     c.style.display = 'block';
-    requestAnimationFrame(() => { void c.offsetHeight; });
   }
 }
 
