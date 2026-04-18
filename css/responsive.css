@@ -37,10 +37,12 @@
   }
 
   .content {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    height: calc(100vh - 60px);
+    padding: 16px 12px;
   }
 
   .sb-overlay.open {
@@ -50,12 +52,7 @@
 
   .main {
     margin-left: 0;
-    overflow: visible;
-    position: relative;
-  }
-
-  .content {
-    padding: 16px 12px;
+    height: 100vh;
   }
 
   .topbar {
