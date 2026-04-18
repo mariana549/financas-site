@@ -27,7 +27,10 @@
 
 @media (max-width: 768px) {
   .sidebar {
-    left: -240px;
+    width: 80vw;
+    min-width: unset;
+    max-width: unset;
+    left: -80vw;
     overflow-y: auto;
     overflow-x: hidden;
   }
