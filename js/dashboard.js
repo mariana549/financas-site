@@ -76,7 +76,11 @@ function renderSummaryCards(m, totals) {
         <div class="card-val a">R$ ${fmt(metaGasto)}</div>
         ${goalBar}
       </div>
-      <div class="card"><div class="card-lbl">A Receber</div><div class="card-val b">R$ ${fmt(othT)}</div><div class="card-sub">${Object.keys(pplMap).length} pessoa(s)</div></div>
+      ${othT > 0 ? `<div class="card card-link" onclick="toggleAReceber()" title="Ver quem deve — clique para expandir">
+        <div class="card-lbl">A Receber ↗</div>
+        <div class="card-val b">R$ ${fmt(othT)}</div>
+        <div class="card-sub">${Object.keys(pplMap).length} pessoa(s) · clique para ver</div>
+      </div>` : `<div class="card"><div class="card-lbl">A Receber</div><div class="card-val b">R$ ${fmt(othT)}</div><div class="card-sub">ninguém deve</div></div>`}
       <div class="card"><div class="card-lbl">Entradas</div><div class="card-val g">R$ ${fmt(incMyT + incOthT)}</div></div>
       <div class="card"><div class="card-lbl">Saldo</div><div class="card-val ${saldo >= 0 ? 'g' : 'r'}">R$ ${fmt(saldo)}</div></div>
       ${subM > 0 ? `<div class="card card-link" onclick="showView('subs')" title="Gerenciar assinaturas">
@@ -90,15 +94,23 @@ function renderSummaryCards(m, totals) {
 function renderAReceber(pplMap) {
   if (!Object.keys(pplMap).length) return '';
   return `
-    <div class="sec-title" style="margin-bottom:10px">A Receber</div>
-    <div class="people-grid" style="margin-bottom:18px">
-      ${Object.entries(pplMap).map(([n, d]) => `
-        <div class="pcard" onclick="openCobranca('${n}')" style="cursor:pointer" title="Cobrar ${n}">
-          <div class="pcard-name">${n}</div>
-          <div class="pcard-val">R$ ${fmt(d.total)}</div>
-          <div class="pcard-sub">${d.count} item(s) · toque para cobrar</div>
-        </div>`).join('')}
+    <div id="dashAReceber" style="display:none;margin-bottom:4px">
+      <div class="sec-title" style="margin-bottom:10px">A Receber</div>
+      <div class="people-grid" style="margin-bottom:18px">
+        ${Object.entries(pplMap).map(([n, d]) => `
+          <div class="pcard" onclick="openCobranca('${n}')" style="cursor:pointer" title="Cobrar ${n}">
+            <div class="pcard-name">${n}</div>
+            <div class="pcard-val">R$ ${fmt(d.total)}</div>
+            <div class="pcard-sub">${d.count} item(s) · toque para cobrar</div>
+          </div>`).join('')}
+      </div>
     </div>`;
+}
+
+function toggleAReceber() {
+  const el = document.getElementById('dashAReceber');
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 function renderBankSection(m, bk) {
@@ -445,7 +457,6 @@ function _renderDashImpl() {
         <button class="btn btn-primary" onclick="openEntryM()" style="margin-top:18px">+ Adicionar Lançamento</button>
       </div>`;
   } else {
-    gastoHTML += renderAReceber(pplMap);
     gastoHTML += renderBankSection(m, bk);
     gastoHTML += renderPixSection(pixL, pixT);
     gastoHTML += renderRecurrentsSection(recL, recT);
@@ -457,6 +468,7 @@ function _renderDashImpl() {
   el.innerHTML = `
     ${renderAlerts(m, metaGasto, recL)}
     ${renderSummaryCards(m, totals)}
+    ${renderAReceber(pplMap)}
     <div style="position:relative;margin-bottom:14px">
       <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text3)" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input type="text" id="globalSearch" placeholder="Buscar lançamento..." oninput="filterEntries(this.value)"

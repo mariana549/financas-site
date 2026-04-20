@@ -11,7 +11,7 @@ function injectModals() {
     <div class="fg"><label>Mês</label><select id="mSel"><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select></div>
     <div class="fg"><label>Ano</label><input type="number" id="mYear" value="2025" min="2020" max="2035"></div>
   </div>
-  <div class="fg"><label>Meta de gastos (R$) — opcional <span class="tip" data-tip="Quanto você quer gastar no mês.&#10;Só conta seus gastos (Meu).&#10;Gastos de terceiros não entram.">?</span></label><input type="number" id="mGoal" step="0.01" placeholder="ex: 3000,00"></div>
+  <div class="fg"><label>Meta de gastos (R$) — opcional <span class="tip" data-tip="Quanto você quer gastar no mês.&#10;Só conta seus gastos (Meu).&#10;Gastos de terceiros não entram.">?</span></label><input type="number" id="mMonthGoal" step="0.01" placeholder="ex: 3000,00"></div>
   <div class="modal-actions">
     <button class="btn btn-ghost btn-sm" onclick="copyLastMonth()">📋 Copiar mês anterior</button>
     <button class="btn btn-ghost btn-sm" onclick="closeModal('mMonth')">Cancelar</button>

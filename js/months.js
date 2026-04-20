@@ -18,7 +18,7 @@ async function addMonth() {
   const y = document.getElementById('mYear').value;
   const key = m + '/' + y;
   if (S.months.find(x => x.key === key)) { alert('Mês já existe.'); return; }
-  const goal = parseFloat(document.getElementById('mGoal').value) || null;
+  const goal = parseFloat(document.getElementById('mMonthGoal').value) || null;
   const banks = S.globalBanks.map(gb => ({ name: gb.name, color: gb.color, entries: [] }));
   const month = { key, label: m, year: y, banks, goal };
   S.months.push(month);
@@ -31,7 +31,7 @@ async function addMonth() {
   renderMonthList();
   selectMonth(key);
   closeModal('mMonth');
-  document.getElementById('mGoal').value = '';
+  document.getElementById('mMonthGoal').value = '';
   showToast('✓ Mês criado');
 }
 
@@ -42,7 +42,7 @@ async function copyLastMonth() {
   const y = document.getElementById('mYear').value;
   const key = m + '/' + y;
   if (S.months.find(x => x.key === key)) { alert('Mês já existe.'); return; }
-  const goal = parseFloat(document.getElementById('mGoal').value) || last.goal || null;
+  const goal = parseFloat(document.getElementById('mMonthGoal').value) || last.goal || null;
   const banks = S.globalBanks.length > 0
     ? S.globalBanks.map(gb => ({ name: gb.name, color: gb.color, entries: [] }))
     : last.banks.map(b => ({ ...b, entries: [] }));
@@ -61,7 +61,7 @@ async function copyLastMonth() {
   renderMonthList();
   selectMonth(key);
   closeModal('mMonth');
-  document.getElementById('mGoal').value = '';
+  document.getElementById('mMonthGoal').value = '';
 }
 
 // ── NOVO: Deletar mês e todos os dados relacionados ──
