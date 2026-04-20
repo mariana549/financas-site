@@ -21,11 +21,12 @@
   position: fixed;
   inset: 0;
   z-index: 99;
-  background: rgba(0,0,0,.45);
+  background: rgba(0, 0, 0, .45);
   pointer-events: none;
 }
 
 @media (max-width: 768px) {
+
   /* ── Constrain app height so .content becomes the scroll container ── */
   .app {
     height: 100vh;
@@ -177,6 +178,7 @@
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
+
   .modal {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -186,7 +188,10 @@
 
 /* ── Reduzir movimento (acessibilidade) ── */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: .01ms !important;
     transition-duration: .01ms !important;
   }
@@ -197,9 +202,11 @@
   .sidebar {
     padding-bottom: env(safe-area-inset-bottom);
   }
+
   .content {
     padding-bottom: calc(28px + env(safe-area-inset-bottom));
   }
+
   .mob-toggle {
     top: calc(12px + env(safe-area-inset-top));
     right: calc(12px + env(safe-area-inset-right));

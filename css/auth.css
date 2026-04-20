@@ -2,15 +2,105 @@
    AUTH.CSS — Login / Cadastro
    ============================================ */
 
-.auth-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
-.auth-card { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; padding: 36px; width: 380px; max-width: 100%; }
-.auth-logo { font-family: var(--mono); font-size: 14px; color: var(--accent); letter-spacing: 3px; text-transform: uppercase; text-align: center; margin-bottom: 4px; }
-.auth-tagline { text-align: center; font-size: 12px; color: var(--text3); font-family: var(--mono); margin-bottom: 32px; }
-.auth-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; text-align: center; }
-.auth-tabs { display: flex; background: var(--bg3); border-radius: 8px; padding: 3px; margin-bottom: 24px; }
-.auth-tab { flex: 1; padding: 8px; text-align: center; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text2); transition: all .15s; font-family: var(--mono); }
-.auth-tab.active { background: var(--bg2); color: var(--accent); border: 1px solid var(--border2); }
-.auth-msg { font-size: 12px; padding: 10px 12px; border-radius: 6px; margin-bottom: 14px; text-align: center; font-family: var(--mono); display: none; }
-.auth-msg.err { background: #ff4d4d18; color: var(--red); border: 1px solid #ff4d4d33; display: block; }
-.auth-msg.ok { background: #4dff9118; color: var(--green); border: 1px solid #4dff9133; display: block; }
-.auth-footer { text-align: center; font-size: 11px; color: var(--text3); margin-top: 16px; font-family: var(--mono); }
+.auth-screen {
+   position: fixed;
+   inset: 0;
+   background: var(--bg);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   z-index: 9999;
+   padding: 20px;
+}
+
+.auth-card {
+   background: var(--bg2);
+   border: 1px solid var(--border2);
+   border-radius: 16px;
+   padding: 36px;
+   width: 380px;
+   max-width: 100%;
+}
+
+.auth-logo {
+   font-family: var(--mono);
+   font-size: 14px;
+   color: var(--accent);
+   letter-spacing: 3px;
+   text-transform: uppercase;
+   text-align: center;
+   margin-bottom: 4px;
+}
+
+.auth-tagline {
+   text-align: center;
+   font-size: 12px;
+   color: var(--text3);
+   font-family: var(--mono);
+   margin-bottom: 32px;
+}
+
+.auth-title {
+   font-size: 18px;
+   font-weight: 600;
+   margin-bottom: 20px;
+   text-align: center;
+}
+
+.auth-tabs {
+   display: flex;
+   background: var(--bg3);
+   border-radius: 8px;
+   padding: 3px;
+   margin-bottom: 24px;
+}
+
+.auth-tab {
+   flex: 1;
+   padding: 8px;
+   text-align: center;
+   border-radius: 6px;
+   cursor: pointer;
+   font-size: 13px;
+   color: var(--text2);
+   transition: all .15s;
+   font-family: var(--mono);
+}
+
+.auth-tab.active {
+   background: var(--bg2);
+   color: var(--accent);
+   border: 1px solid var(--border2);
+}
+
+.auth-msg {
+   font-size: 12px;
+   padding: 10px 12px;
+   border-radius: 6px;
+   margin-bottom: 14px;
+   text-align: center;
+   font-family: var(--mono);
+   display: none;
+}
+
+.auth-msg.err {
+   background: #ff4d4d18;
+   color: var(--red);
+   border: 1px solid #ff4d4d33;
+   display: block;
+}
+
+.auth-msg.ok {
+   background: #4dff9118;
+   color: var(--green);
+   border: 1px solid #4dff9133;
+   display: block;
+}
+
+.auth-footer {
+   text-align: center;
+   font-size: 11px;
+   color: var(--text3);
+   margin-top: 16px;
+   font-family: var(--mono);
+}

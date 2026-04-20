@@ -2,14 +2,62 @@
    AI.CSS — Importação com IA
    ============================================ */
 
-.ai-box { background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
-.ai-box-title { font-size: 12px; font-family: var(--mono); color: var(--text2); margin-bottom: 8px; }
+.ai-box {
+   background: var(--bg3);
+   border: 1px solid var(--border2);
+   border-radius: 8px;
+   padding: 14px;
+   margin-bottom: 12px;
+}
 
-.preview-img { max-width: 100%; border-radius: 6px; margin-top: 8px; max-height: 180px; object-fit: contain; }
-.ai-entry-list { margin-top: 8px; }
-.ai-entry-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--bg3); border-radius: 6px; margin-bottom: 5px; }
-.ai-entry-item input[type=checkbox] { width: auto; accent-color: var(--accent); }
+.ai-box-title {
+   font-size: 12px;
+   font-family: var(--mono);
+   color: var(--text2);
+   margin-bottom: 8px;
+}
+
+.preview-img {
+   max-width: 100%;
+   border-radius: 6px;
+   margin-top: 8px;
+   max-height: 180px;
+   object-fit: contain;
+}
+
+.ai-entry-list {
+   margin-top: 8px;
+}
+
+.ai-entry-item {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   padding: 7px 10px;
+   background: var(--bg3);
+   border-radius: 6px;
+   margin-bottom: 5px;
+}
+
+.ai-entry-item input[type=checkbox] {
+   width: auto;
+   accent-color: var(--accent);
+}
 
 /* ── SPINNER ── */
-.spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; margin-right: 5px; }
-@keyframes spin { to { transform: rotate(360deg) } }
+.spinner {
+   display: inline-block;
+   width: 13px;
+   height: 13px;
+   border: 2px solid var(--border2);
+   border-top-color: var(--accent);
+   border-radius: 50%;
+   animation: spin .6s linear infinite;
+   margin-right: 5px;
+}
+
+@keyframes spin {
+   to {
+      transform: rotate(360deg)
+   }
+}
