@@ -210,11 +210,11 @@ async function saveSub() {
   let splitPeople = null;
   let splitValues = null;
   if (owner === 'other') {
-    const person = document.getElementById('sOtherPerson').value.trim();
+    const person = normalizeName(document.getElementById('sOtherPerson').value);
     if (!person) { alert('Informe o nome da pessoa.'); return; }
     splitPeople = [person];
   } else if (owner === 'split') {
-    splitPeople = (S.subSplitPeople || []).filter(Boolean);
+    splitPeople = (S.subSplitPeople || []).filter(Boolean).map(normalizeName);
     if (!splitPeople.length) { alert('Adicione ao menos uma pessoa para dividir.'); return; }
     if (S.subSplitType === 'fixed') {
       splitValues = (S.subSplitValues || splitPeople.map(() => 0)).slice(0, splitPeople.length);

@@ -60,11 +60,16 @@ function closeModal(id) {
   if (el) el.classList.remove('open');
 }
 
+function normalizeName(name) {
+  return (name || '').trim().split(/\s+/).filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+}
+
 function getAllPeople() {
   const s = new Set();
   S.months.forEach(m => m.banks.forEach(b => b.entries.forEach(e => {
-    if (e.owner === 'other' && e.person) s.add(e.person);
-    if (e.splitPeople) e.splitPeople.filter(Boolean).forEach(p => s.add(p));
+    if (e.owner === 'other' && e.person) s.add(normalizeName(e.person));
+    if (e.splitPeople) e.splitPeople.filter(Boolean).forEach(p => s.add(normalizeName(p)));
   })));
   return [...s];
 }

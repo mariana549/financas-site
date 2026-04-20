@@ -21,7 +21,7 @@ function buildColorGrid(targetId = 'colorGrid') {
 }
 
 async function addBank() {
-  const name = document.getElementById('bName').value.trim();
+  const name = normalizeName(document.getElementById('bName').value);
   if (!name) return;
   const m = getMonth();
   if (m.banks.find(b => b.name.toLowerCase() === name.toLowerCase())) { alert('Já existe.'); return; }
@@ -56,7 +56,7 @@ function openGlobalBankM() {
 }
 
 async function addGlobalBank() {
-  const name = document.getElementById('gbName').value.trim();
+  const name = normalizeName(document.getElementById('gbName').value);
   if (!name) return;
   if (S.globalBanks.find(b => b.name.toLowerCase() === name.toLowerCase())) { showToast('Banco já existe', 'error'); return; }
   const gb = {

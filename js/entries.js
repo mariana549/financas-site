@@ -277,9 +277,9 @@ async function saveEntry() {
   const date = document.getElementById('eDate').value;
   const bankName = document.getElementById('eBank').value;
   const splitCount = S.entryOwner === 'split' ? (S.splitCount || 2) : null;
-  const splitPeople = S.entryOwner === 'split' ? (S.splitPeople || []).filter(Boolean) : [];
+  const splitPeople = S.entryOwner === 'split' ? (S.splitPeople || []).filter(Boolean).map(normalizeName) : [];
   const person = S.entryOwner === 'other'
-    ? document.getElementById('ePerson').value.trim()
+    ? normalizeName(document.getElementById('ePerson').value)
     : S.entryOwner === 'split'
       ? splitPeople.join(', ')
       : null;
