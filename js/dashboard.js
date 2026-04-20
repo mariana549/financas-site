@@ -329,7 +329,15 @@ function showMeusGastosReport() {
 }
 
 // ── renderDash(): calcula totais, chama sub-funções, monta innerHTML ──
+let _renderDashRaf = null;
 function renderDash() {
+  if (_renderDashRaf) return;
+  _renderDashRaf = requestAnimationFrame(() => {
+    _renderDashRaf = null;
+    _renderDashImpl();
+  });
+}
+function _renderDashImpl() {
   // Invalida cache de views derivadas ao mudar dados
   S._repKey = null;
   S._yearKey = null;
