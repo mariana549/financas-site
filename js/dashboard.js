@@ -74,19 +74,23 @@ function renderSummaryCards(m, totals) {
       <div class="card card-link" onclick="showMeusGastosReport()" title="Ver detalhes dos meus gastos">
         <div class="card-lbl">Meus Gastos ↗</div>
         <div class="card-val a">R$ ${fmt(metaGasto)}</div>
-        ${goalBar}
+        ${goalBar || '<div class="card-sub">clique para ver</div>'}
       </div>
       ${othT > 0 ? `<div class="card card-link" onclick="toggleAReceber()" title="Ver quem deve — clique para expandir">
         <div class="card-lbl">A Receber ↗</div>
         <div class="card-val b">R$ ${fmt(othT)}</div>
         <div class="card-sub">${Object.keys(pplMap).length} pessoa(s) · clique para ver</div>
       </div>` : `<div class="card"><div class="card-lbl">A Receber</div><div class="card-val b">R$ ${fmt(othT)}</div><div class="card-sub">ninguém deve</div></div>`}
-      <div class="card"><div class="card-lbl">Entradas</div><div class="card-val g">R$ ${fmt(incMyT + incOthT)}</div></div>
+      <div class="card card-link" onclick="setInnerTab('entradas')" title="Ver entradas do mês">
+        <div class="card-lbl">Entradas ↗</div>
+        <div class="card-val g">R$ ${fmt(incMyT + incOthT)}</div>
+        <div class="card-sub">clique para ver</div>
+      </div>
       <div class="card"><div class="card-lbl">Saldo</div><div class="card-val ${saldo >= 0 ? 'g' : 'r'}">R$ ${fmt(saldo)}</div></div>
       ${subM > 0 ? `<div class="card card-link" onclick="showView('subs')" title="Gerenciar assinaturas">
         <div class="card-lbl">Assinaturas ↗</div>
         <div class="card-val p">R$ ${fmt(subM)}</div>
-        <div class="card-sub">${mySubM > 0 ? `meu: R$ ${fmt(mySubM)}` : ''}${othSubM > 0 ? ` · terceiros: R$ ${fmt(othSubM)}` : ''}</div>
+        <div class="card-sub">${mySubM > 0 ? `meu: R$ ${fmt(mySubM)}` : ''}${othSubM > 0 ? ` · terceiros: R$ ${fmt(othSubM)}` : ''} · clique para ver</div>
       </div>` : ''}
     </div>`;
 }
