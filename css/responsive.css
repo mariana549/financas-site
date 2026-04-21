@@ -25,6 +25,36 @@
   pointer-events: none;
 }
 
+/* ── TABLET (769px – 1260px): sidebar compacta, conteúdo respira ── */
+@media (max-width: 1260px) and (min-width: 769px) {
+  .sidebar {
+    width: 260px;
+  }
+
+  .main {
+    margin-left: 260px;
+  }
+
+  .content {
+    padding: 20px 20px;
+  }
+
+  .topbar {
+    padding: 14px 20px;
+  }
+
+  .filter-chip {
+    font-size: 11px;
+    min-width: 80px;
+    padding: 6px 10px;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+}
+
 @media (max-width: 768px) {
 
   /* ── Constrain app height so .content becomes the scroll container ── */
