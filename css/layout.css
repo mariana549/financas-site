@@ -173,9 +173,9 @@
   transition: margin-left .3s;
 }
 
-/* ── Botão reabrir sidebar (desktop/tablet) ── */
+/* ── Botão toggle sidebar (desktop/tablet) — sempre visível ── */
 .sb-reopen-btn {
-  display: none;
+  display: none; /* activado no breakpoint ≥769px */
   position: fixed;
   top: 14px;
   left: 12px;
@@ -195,20 +195,23 @@
   color: var(--accent);
 }
 
-/* ── Estado sidebar escondida (desktop/tablet) ── */
-body.sb-desktop-hidden .sidebar {
-  left: -500px;
-}
-body.sb-desktop-hidden .main {
-  margin-left: 0;
-}
-body.sb-desktop-hidden .sb-reopen-btn {
-  display: flex;
-}
+/* Ícones alternam via CSS */
+.sb-reopen-btn .sb-icon-hide { display: flex; } /* sidebar visível → mostra ← */
+.sb-reopen-btn .sb-icon-show { display: none; } /* sidebar visível → esconde ☰ */
 
-/* Botão colapso visível no desktop */
-.sb-collapse-btn {
-  display: flex !important;
+/* ── Estado sidebar escondida (desktop/tablet) ── */
+body.sb-desktop-hidden .sidebar { left: -500px; }
+body.sb-desktop-hidden .main    { margin-left: 0; }
+
+/* Quando hidden: troca ícone e empurra conteúdo para não sobrepor */
+body.sb-desktop-hidden .sb-reopen-btn .sb-icon-hide { display: none; }
+body.sb-desktop-hidden .sb-reopen-btn .sb-icon-show { display: flex; }
+body.sb-desktop-hidden .topbar  { padding-left: 52px; }
+body.sb-desktop-hidden .content { padding-left: 52px; }
+
+/* Botão toggle visível no desktop (≥1261px) */
+@media (min-width: 1261px) {
+  .sb-reopen-btn { display: flex; }
 }
 
 .topbar {

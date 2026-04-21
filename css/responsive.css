@@ -39,15 +39,14 @@
     left: -260px;
   }
 
-  /* Botão colapso: visível na sidebar */
-  .sb-collapse-btn {
-    display: flex !important;
-  }
-
-  /* Botão reabrir: só aparece quando sidebar oculta */
-  body.sb-desktop-hidden .sb-reopen-btn {
+  /* Botão toggle: sempre visível no tablet */
+  .sb-reopen-btn {
     display: flex;
   }
+
+  /* Quando hidden no tablet: padding menor que desktop */
+  body.sb-desktop-hidden .topbar  { padding-left: 48px; }
+  body.sb-desktop-hidden .content { padding-left: 48px; }
 
   .content {
     padding: 20px 20px;
