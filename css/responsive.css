@@ -43,6 +43,10 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
   }
+
+  /* Tablet: garante que o trigger ⋮ não apareça */
+  .topbar-actions .act-trigger { display: none; }
+  .act-list { display: flex; }
 }
 
 @media (max-width: 768px) {
@@ -105,7 +109,7 @@
   }
 
   /* Mobile: mostra o botão ⋮ e esconde os botões inline */
-  .act-trigger {
+  .topbar-actions .act-trigger {
     display: flex;
     align-items: center;
     justify-content: center;

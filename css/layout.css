@@ -237,7 +237,7 @@ body.sb-desktop-hidden .sb-topbar-toggle .sb-icon-show { display: flex; }
 }
 
 /* ── Mini-menu de ações (topbar) ── */
-.act-trigger { display: none; }   /* escondido no desktop */
+.topbar-actions .act-trigger { display: none; }  /* oculto no desktop/tablet */
 
 .act-list {
   display: flex;
@@ -246,7 +246,7 @@ body.sb-desktop-hidden .sb-topbar-toggle .sb-icon-show { display: flex; }
   align-items: center;
 }
 
-.act-list.open { display: flex; } /* usado só no mobile */
+.act-list.open { display: flex; }
 
 .content {
   padding: 28px;
