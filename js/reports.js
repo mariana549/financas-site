@@ -8,7 +8,7 @@ function renderReports() {
   if (!el) return;
   if (!m) { el.innerHTML = '<div class="empty">selecione um mês</div>'; return; }
 
-  const subEl = document.getElementById('repSub');
+  const subEl = document.getElementById('tbSub');
   if (subEl) subEl.textContent = m.label + ' ' + m.year;
 
   const allE = m.banks.flatMap(b => b.entries.map(e => ({ ...e, bankName: b.name })));
@@ -195,7 +195,7 @@ function renderYear() {
   if (!S.months.length) { el.innerHTML = '<div class="empty">nenhum mês cadastrado</div>'; return; }
 
   const years = [...new Set(S.months.map(m => m.year))];
-  const yearSub = document.getElementById('yearSub');
+  const yearSub = document.getElementById('tbSub');
   let html = '';
 
   years.forEach(y => {

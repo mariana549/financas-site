@@ -46,25 +46,13 @@
   </div>
 </div>
 
-<button class="mob-toggle" onclick="toggleSidebar()">
-  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-</button>
-<button class="sb-reopen-btn" onclick="toggleDesktopSidebar()" title="Esconder/mostrar menu">
-  <!-- ícone ← quando sidebar visível -->
-  <span class="sb-icon-hide"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></span>
-  <!-- ícone ☰ quando sidebar oculta -->
-  <span class="sb-icon-show"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span>
-</button>
 <div class="sb-overlay" id="sbOverlay" onclick="toggleSidebar()"></div>
 
 <div class="app">
 <aside class="sidebar" id="sb">
   <div class="logo">
     <div><div class="logo-text">Finanças</div><div class="logo-sub">organizador pessoal</div></div>
-    <div style="display:flex;gap:4px">
-      <button class="theme-toggle" onclick="togglePrivacy()" id="privacyBtn" title="Modo Privacidade">👁</button>
-      <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Alternar tema">🌙</button>
-    </div>
+    <button class="theme-toggle" onclick="togglePrivacy()" id="privacyBtn" title="Modo Privacidade">👁</button>
   </div>
   <div style="padding:8px 12px;border-bottom:1px solid var(--border)">
     <div class="user-bar">
@@ -112,36 +100,24 @@
 
 <main class="main">
   <div class="topbar" id="mainTopbar">
-    <div><div class="topbar-title" id="tbTitle">Selecione um mês</div><div class="topbar-sub" id="tbSub">nenhum mês selecionado</div></div>
+    <button class="sb-topbar-toggle" onclick="toggleSidebarAll()" title="Esconder/mostrar menu">
+      <span class="sb-icon-hide"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></span>
+      <span class="sb-icon-show"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span>
+    </button>
+    <div style="flex:1;min-width:0">
+      <div class="topbar-title" id="tbTitle">Selecione um mês</div>
+      <div class="topbar-sub" id="tbSub">nenhum mês selecionado</div>
+    </div>
     <div class="topbar-actions" id="tbActions"></div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Alternar tema">🌙</button>
   </div>
   <div class="content">
     <div class="view active" id="view-dash"><div id="dashContent"><div class="empty">selecione ou crie um mês<br>para começar</div></div></div>
-    <div class="view" id="view-subs">
-      <div class="view-top-bar">
-        <div><div class="topbar-title">Assinaturas</div><div class="topbar-sub">por banco · com datas</div></div>
-      </div>
-      <div id="subsContent"></div>
-    </div>
-    <div class="view" id="view-banks">
-      <div class="view-top-bar">
-        <div><div class="topbar-title">Bancos</div><div class="topbar-sub">cadastro global · estatísticas por banco</div></div>
-        <button class="btn btn-primary btn-sm" onclick="openGlobalBankM()">+ Adicionar</button>
-      </div>
-      <div id="banksContent"></div>
-    </div>
-    <div class="view" id="view-reports">
-      <div class="view-title-wrap"><div class="topbar-title">Relatórios</div><div class="topbar-sub" id="repSub">selecione um mês</div></div>
-      <div id="repContent"></div>
-    </div>
-    <div class="view" id="view-year">
-      <div class="view-title-wrap"><div class="topbar-title">Resumo Anual</div><div class="topbar-sub" id="yearSub">visão geral do ano</div></div>
-      <div id="yearContent"></div>
-    </div>
-    <div class="view" id="view-history">
-      <div class="view-title-wrap"><div class="topbar-title">Histórico de Pessoas</div><div class="topbar-sub">quem comprou no seu cartão · todos os meses</div></div>
-      <div id="historyContent"></div>
-    </div>
+    <div class="view" id="view-subs"><div id="subsContent"></div></div>
+    <div class="view" id="view-banks"><div id="banksContent"></div></div>
+    <div class="view" id="view-reports"><div id="repContent"></div></div>
+    <div class="view" id="view-year"><div id="yearContent"></div></div>
+    <div class="view" id="view-history"><div id="historyContent"></div></div>
   </div>
 </main>
 </div>

@@ -2,20 +2,6 @@
    RESPONSIVE.CSS — Mobile (max-width: 768px)
    ============================================ */
 
-.mob-toggle {
-  display: none;
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  z-index: 200;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px;
-  cursor: pointer;
-  color: var(--text);
-}
-
 .sb-overlay {
   display: none;
   position: fixed;
@@ -38,15 +24,6 @@
   body.sb-desktop-hidden .sidebar {
     left: -260px;
   }
-
-  /* Botão toggle: sempre visível no tablet */
-  .sb-reopen-btn {
-    display: flex;
-  }
-
-  /* Quando hidden no tablet: padding menor que desktop */
-  body.sb-desktop-hidden .topbar  { padding-left: 48px; }
-  body.sb-desktop-hidden .content { padding-left: 48px; }
 
   .content {
     padding: 20px 20px;
@@ -117,7 +94,7 @@
   }
 
   .topbar {
-    padding: 10px 52px 10px 14px;
+    padding: 10px 14px;
     flex-wrap: wrap;
     gap: 6px;
   }
@@ -132,9 +109,13 @@
     padding: 4px 8px;
   }
 
-  .mob-toggle {
-    display: flex;
-  }
+  /* Mobile: sidebar começa fechada → mostra ☰ por padrão */
+  .sb-topbar-toggle .sb-icon-hide { display: none; }
+  .sb-topbar-toggle .sb-icon-show { display: flex; }
+
+  /* Mobile: sidebar aberta → mostra ← */
+  #sb.open ~ .main .sb-topbar-toggle .sb-icon-hide { display: flex; }
+  #sb.open ~ .main .sb-topbar-toggle .sb-icon-show { display: none; }
 
   .summary-grid {
     grid-template-columns: 1fr 1fr;
@@ -250,8 +231,4 @@
     padding-bottom: calc(28px + env(safe-area-inset-bottom));
   }
 
-  .mob-toggle {
-    top: calc(12px + env(safe-area-inset-top));
-    right: calc(12px + env(safe-area-inset-right));
-  }
 }
