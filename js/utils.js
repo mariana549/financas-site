@@ -246,6 +246,10 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
 
+function getCSSVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
 function showSplash(onDone) {
   const coins = [
     { left: '5%', sz: '18px', dur: '2.4s', delay: '0s', rot: '320deg', ico: '💰' },

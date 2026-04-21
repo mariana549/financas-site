@@ -225,6 +225,20 @@
    white-space: nowrap;
 }
 
+/* ── CHART.JS WRAPPERS ── */
+.chart-wrap {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.chart-donut { height: 210px; }
+.chart-bar   { height: 180px; }
+
+@media (max-width: 768px) {
+  .chart-donut { height: 170px; }
+  .chart-bar   { height: 150px; }
+}
+
 /* ── ALERT BANNER ── */
 .alert-banner {
    background: #ff9f4d18;

@@ -2,6 +2,16 @@
 // REPORTS.JS — Relatórios, Resumo Anual, Histórico
 // ══════════════════════════════════════════════════
 
+// ── Chart.js: instâncias ──
+const _rc = {};
+function _destroyChart(k) { if (_rc[k]) { _rc[k].destroy(); delete _rc[k]; } }
+function _makeChart(k, id, cfg) {
+  _destroyChart(k);
+  const cv = document.getElementById(id);
+  if (!cv || typeof Chart === 'undefined') return;
+  _rc[k] = new Chart(cv.getContext('2d'), cfg);
+}
+
 function renderReports() {
   const m = getMonth();
   const el = document.getElementById('repContent');
@@ -119,6 +129,7 @@ function renderReports() {
 
     ${bkD.length ? `
     <div class="sec-title" style="margin-bottom:12px">Por Banco</div>
+    ${bkD.length >= 2 ? `<div class="chart-wrap chart-donut"><canvas id="repBankDonut"></canvas></div>` : ''}
     ${bkD.map(b => `
       <div class="bar-wrap">
         <div class="bar-lbl"><span>${b.name}</span><span>R$ ${fmt(b.total)}</span></div>
@@ -184,6 +195,45 @@ function renderReports() {
         </div>
       </div>`;
     }).join('')}` : ''}`;
+
+  // ── Chart: donut por banco ──
+  if (bkD.length >= 2) {
+    _makeChart('repDonut', 'repBankDonut', {
+      type: 'doughnut',
+      data: {
+        labels: bkD.map(b => b.name),
+        datasets: [{
+          data: bkD.map(b => b.total),
+          backgroundColor: bkD.map(b => b.color),
+          borderWidth: 2,
+          borderColor: getCSSVar('--bg2') || '#121212',
+          hoverBorderColor: getCSSVar('--bg2') || '#121212'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              color: getCSSVar('--text2') || '#999',
+              font: { family: 'DM Mono, monospace', size: 11 },
+              padding: 14,
+              boxWidth: 10,
+              boxHeight: 10
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.label}: R$ ${fmt(ctx.parsed)}`
+            }
+          }
+        }
+      }
+    });
+  }
 }
 
 // ══════════════════════════════════════════════════
@@ -227,6 +277,7 @@ function renderYear() {
             <span style="font-family:var(--mono);font-size:12px;color:var(--text2)">saldo: <span style="color:${saldoAnual >= 0 ? 'var(--green)' : 'var(--red)'}">R$ ${fmt(saldoAnual)}</span></span>
           </div>
         </div>
+        ${mths.length >= 2 ? `<div class="chart-wrap chart-bar"><canvas id="yearBarChart_${y}"></canvas></div>` : ''}
         ${mths.map(m => `
           <div class="comp-bar">
             <span class="comp-label" style="cursor:pointer;color:var(--text2)"
@@ -262,6 +313,55 @@ function renderYear() {
 
   if (yearSub) yearSub.textContent = years.join(', ');
   el.innerHTML = html;
+
+  // ── Charts: bar por mês para cada ano ──
+  years.forEach(y => {
+    const mths = S.months.filter(m => m.year === y);
+    if (mths.length < 2) return;
+    const accentColor = getCSSVar('--accent') || '#4d9fff';
+    const borderColor = getCSSVar('--border') || '#2a2a2a';
+    const text3      = getCSSVar('--text3') || '#666';
+    _makeChart('yearBar_' + y, 'yearBarChart_' + y, {
+      type: 'bar',
+      data: {
+        labels: mths.map(m => m.label.slice(0, 3)),
+        datasets: [{
+          data: mths.map(m => monthTotal(m)),
+          backgroundColor: accentColor + 'cc',
+          borderColor: accentColor,
+          borderWidth: 1,
+          borderRadius: 4,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` R$ ${fmt(ctx.parsed.y)}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: borderColor },
+            ticks: { color: text3, font: { family: 'DM Mono, monospace', size: 11 } }
+          },
+          y: {
+            grid: { color: borderColor },
+            ticks: {
+              color: text3,
+              font: { family: 'DM Mono, monospace', size: 11 },
+              callback: v => 'R$' + fmt(v)
+            }
+          }
+        }
+      }
+    });
+  });
 }
 
 // renderHistory() movida para js/history.js
