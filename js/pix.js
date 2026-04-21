@@ -8,7 +8,9 @@ function openPixM(editId = null) {
   fillSel('pxBank', m.banks.map(b => b.name));
   document.getElementById('editPixId').value = '';
   clr('pxTo', 'pxAmt', 'pxObs');
-  document.getElementById('pxDate').value = today();
+  const { min: pxMin, max: pxMax } = getMonthDateRange(m);
+  const pxT = today();
+  document.getElementById('pxDate').value = (pxT >= pxMin && pxT <= pxMax) ? pxT : pxMin;
 
   if (editId) {
     const px = (S.pixEntries[S.currentMonth] || []).find(p => String(p.id) === String(editId));

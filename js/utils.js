@@ -89,6 +89,20 @@ function getMonthDateRange(m) {
   return { min, max };
 }
 
+// Retorna true se a assinatura deve aparecer no mês dado
+function isSubActiveInMonth(s, monthKey) {
+  const month = (S.months || []).find(m => m.key === monthKey);
+  if (!month) return true;
+  const mn = MONTH_NUM[month.label] || 1;
+  const yr = parseInt(month.year);
+  // Primeiro dia do mês atual (YYYY-MM-01)
+  const pad = n => String(n).padStart(2, '0');
+  const curStr = `${yr}-${pad(mn)}-01`;
+  if (s.startDate && curStr < s.startDate.slice(0, 7) + '-01') return false;
+  if (s.endDate   && curStr > s.endDate.slice(0, 7)   + '-01') return false;
+  return true;
+}
+
 // ── Toast global ──
 function showToast(msg, type = 'ok') {
   let toast = document.getElementById('appToast');

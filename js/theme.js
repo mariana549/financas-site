@@ -19,6 +19,11 @@ function toggleSidebar() {
   document.getElementById('sbOverlay').classList.toggle('open');
 }
 
+function toggleDesktopSidebar() {
+  document.body.classList.toggle('sb-desktop-hidden');
+  localStorage.setItem('fin_sb_hidden', document.body.classList.contains('sb-desktop-hidden') ? '1' : '0');
+}
+
 function togglePrivacy() {
   const isOn = document.documentElement.getAttribute('data-privacy') === 'on';
   applyPrivacy(!isOn);

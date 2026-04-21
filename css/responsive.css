@@ -35,6 +35,20 @@
     margin-left: 260px;
   }
 
+  body.sb-desktop-hidden .sidebar {
+    left: -260px;
+  }
+
+  /* Botão colapso: visível na sidebar */
+  .sb-collapse-btn {
+    display: flex !important;
+  }
+
+  /* Botão reabrir: só aparece quando sidebar oculta */
+  body.sb-desktop-hidden .sb-reopen-btn {
+    display: flex;
+  }
+
   .content {
     padding: 20px 20px;
   }

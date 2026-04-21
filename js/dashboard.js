@@ -379,7 +379,7 @@ function _renderDashImpl() {
   // ── Assinaturas: calcular partes e A Receber de terceiros ──
   let mySubM = 0, othSubM = 0;
   const subPplMap = {};
-  (S.subscriptions || []).filter(s => !s.endDate && s.cycle === 'mensal').forEach(s => {
+  (S.subscriptions || []).filter(s => s.cycle === 'mensal' && isSubActiveInMonth(s, S.currentMonth)).forEach(s => {
     const owner = s.owner || 'mine';
     const myPart = calcMySubPart(s);
     mySubM += myPart;

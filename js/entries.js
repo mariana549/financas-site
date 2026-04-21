@@ -449,13 +449,13 @@ function showEntryDetail(entry, bankName) {
   document.getElementById('detailTitle').innerHTML = `Detalhes <button class="modal-close" onclick="closeModal('mDetail')">×</button>`;
   document.getElementById('detailContent').innerHTML = html;
   document.getElementById('detailActions').innerHTML = `
-    <button class="btn btn-danger btn-sm" onclick="deleteEntry('${bankName}',${entry.id})">🗑 Excluir</button>
+    <button class="btn btn-danger btn-sm" onclick="deleteEntry('${bankName}','${entry.id}')">🗑 Excluir</button>
     ${entry.type === 'installment' ? `
     <button class="btn btn-ghost btn-sm" style="color:var(--orange)"
       onclick="closeModal('mDetail');showInst(${JSON.stringify(entry).replace(/"/g, '&quot;')})">
       📦 Parcelas
     </button>` : ''}
-    <button class="btn btn-primary btn-sm" onclick="closeModal('mDetail');openEntryM(${entry.id},'${bankName}')">✎ Editar</button>`;
+    <button class="btn btn-primary btn-sm" onclick="closeModal('mDetail');openEntryM('${entry.id}','${bankName}')">✎ Editar</button>`;
   openModal('mDetail');
 }
 
