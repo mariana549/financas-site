@@ -60,14 +60,21 @@ async function onLoginSuccess() {
   const emailEl = document.getElementById('userEmail');
   if (emailEl) emailEl.textContent = currentUser.email;
 
-  // Skeleton enquanto carrega do Supabase
+  showSplash();
+
   const dashEl = document.getElementById('dashContent');
   if (dashEl) dashEl.innerHTML = renderSkeleton();
 
   await loadAllFromSupabase();
   renderMonthList();
   renderSubs();
-  if (S.currentMonth) selectMonth(S.currentMonth, false);
+
+  if (S.currentMonth) {
+    selectMonth(S.currentMonth, false);
+  } else {
+    _renderDashImpl();
+  }
+
   applyTheme();
 }
 

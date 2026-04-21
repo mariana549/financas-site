@@ -245,3 +245,51 @@ function initSwipeRows() {
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
+
+function showSplash(onDone) {
+  const coins = [
+    { left: '5%', sz: '18px', dur: '2.4s', delay: '0s', rot: '320deg', ico: '💰' },
+    { left: '15%', sz: '13px', dur: '3.0s', delay: '.4s', rot: '-180deg', ico: '💸' },
+    { left: '25%', sz: '15px', dur: '2.2s', delay: '.9s', rot: '270deg', ico: '🪙' },
+    { left: '38%', sz: '12px', dur: '2.8s', delay: '.2s', rot: '420deg', ico: '💵' },
+    { left: '52%', sz: '16px', dur: '2.5s', delay: '.6s', rot: '-300deg', ico: '💳' },
+    { left: '63%', sz: '11px', dur: '3.2s', delay: '1.1s', rot: '200deg', ico: '💴' },
+    { left: '72%', sz: '17px', dur: '2.0s', delay: '.35s', rot: '-240deg', ico: '💸' },
+    { left: '82%', sz: '13px', dur: '2.7s', delay: '.75s', rot: '150deg', ico: '🪙' },
+    { left: '90%', sz: '15px', dur: '2.3s', delay: '1.4s', rot: '380deg', ico: '💰' },
+    { left: '46%', sz: '10px', dur: '3.4s', delay: '.15s', rot: '-120deg', ico: '💵' },
+  ];
+
+  const el = document.createElement('div');
+  el.className = 'splash-screen';
+  el.id = 'splashScreen';
+
+  coins.forEach(c => {
+    const s = document.createElement('span');
+    s.className = 'splash-coin';
+    s.style.cssText = `left:${c.left};--sz:${c.sz};--dur:${c.dur};--delay:${c.delay};--rot:${c.rot}`;
+    s.textContent = c.ico;
+    el.appendChild(s);
+  });
+
+  el.insertAdjacentHTML('beforeend', `
+    <div class="splash-center">
+      <div class="splash-logo">Finanças</div>
+      <div class="splash-sub">organizador pessoal</div>
+      <div class="splash-line"></div>
+      <div class="splash-loading">carregando...</div>
+    </div>
+  `);
+
+  document.body.appendChild(el);
+
+  // Após 2.2s começa a sumir, aos 2.7s remove do DOM
+  setTimeout(() => {
+    el.classList.add('fade-out');
+    setTimeout(() => {
+      el.remove();
+      if (onDone) onDone();
+    }, 500);
+  }, 2200);
+}
+

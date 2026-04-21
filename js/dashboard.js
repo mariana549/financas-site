@@ -362,8 +362,60 @@ function _renderDashImpl() {
   const m = getMonth();
   const el = document.getElementById('dashContent');
   if (!el) return;
-  if (!m) { el.innerHTML = '<div class="empty">selecione ou crie um mês</div>'; return; }
+  if (!m) {
+    const temMeses = S.months && S.months.length > 0;
 
+    if (!temMeses) {
+      // Nunca criou nenhum mês — ícone azul + botão criar
+      el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg width="56" height="56" viewBox="0 0 52 52" fill="none">
+            <rect x="6" y="12" width="40" height="30" rx="5" fill="#1a2a3a" stroke="#4d9eff" stroke-width="1.5"/>
+            <line x1="6" y1="21" x2="46" y2="21" stroke="#4d9eff" stroke-width="1"/>
+            <rect x="12" y="27" width="9" height="5" rx="1.5" fill="#4d9eff" opacity=".5"/>
+            <rect x="26" y="27" width="13" height="5" rx="1.5" fill="#4d9eff" opacity=".25"/>
+            <rect x="12" y="34" width="20" height="3" rx="1.5" fill="#4d9eff" opacity=".15"/>
+            <circle cx="40" cy="36" r="8" fill="#0a0a0a" stroke="#4d9eff" stroke-width="1.5"/>
+            <line x1="40" y1="32.5" x2="40" y2="39.5" stroke="#4d9eff" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="36.5" y1="36" x2="43.5" y2="36" stroke="#4d9eff" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="empty-state-title blue">nenhum mês ainda</div>
+        <div class="empty-state-sub">crie seu primeiro mês para começar</div>
+        <div class="empty-state-dots blue">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="empty-state-btn-wrap">
+          <button class="btn btn-primary btn-sm" onclick="openModal('mMonth')">+ novo mês</button>
+        </div>
+      </div>`;
+    } else {
+      // Tem meses mas nenhum selecionado — ícone verde + instrução
+      el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg width="56" height="56" viewBox="0 0 52 52" fill="none">
+            <rect x="6" y="12" width="40" height="30" rx="5" fill="#1a2a1a" stroke="#5aad5a" stroke-width="1.5"/>
+            <line x1="6" y1="21" x2="46" y2="21" stroke="#5aad5a" stroke-width="1"/>
+            <rect x="12" y="27" width="9" height="5" rx="1.5" fill="#5aad5a" opacity=".5"/>
+            <rect x="26" y="27" width="13" height="5" rx="1.5" fill="#5aad5a" opacity=".25"/>
+            <rect x="12" y="34" width="20" height="3" rx="1.5" fill="#5aad5a" opacity=".15"/>
+            <circle cx="40" cy="36" r="8" fill="#0a0a0a" stroke="#5aad5a" stroke-width="1.5"/>
+            <polyline points="36.5,36 39,38.5 43.5,33" stroke="#5aad5a" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </div>
+        <div class="empty-state-title green">selecione um mês</div>
+        <div class="empty-state-sub">escolha na sidebar para ver seus dados</div>
+        <div class="empty-state-dots green">
+          <span></span><span></span><span></span>
+        </div>
+      </div>`;
+    }
+    return;
+  }
+  
   const allE = m.banks.flatMap(b => b.entries.map(e => ({ ...e, bankName: b.name })));
   const pixL = S.pixEntries[S.currentMonth] || [];
   const recL = S.recurrents[S.currentMonth] || [];
