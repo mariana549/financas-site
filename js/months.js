@@ -147,9 +147,14 @@ function buildActions() {
   if (!el) return;
   if (getMonth()) {
     el.innerHTML = `
-      <button class="btn btn-ghost btn-sm" onclick="openModal('mGoal')">🎯 Meta</button>
-      <button class="btn btn-ghost btn-sm" onclick="openAI()">📄 Extrato IA</button>
-      <button class="btn btn-ghost btn-sm" onclick="exportMonthPDF()">📥 PDF</button>`;
+      <button class="btn btn-ghost btn-sm act-trigger" onclick="toggleActMenu(event)" title="Ações do mês">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+      </button>
+      <div class="act-list" id="actMenuList">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('mGoal');closeActMenu()">🎯 Meta</button>
+        <button class="btn btn-ghost btn-sm" onclick="openAI();closeActMenu()">📄 Extrato IA</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportMonthPDF();closeActMenu()">📥 PDF</button>
+      </div>`;
   } else {
     el.innerHTML = '';
   }

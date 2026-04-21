@@ -100,13 +100,39 @@
   }
 
   .topbar-actions {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 4px;
   }
 
-  .topbar-actions .btn {
-    font-size: 11px;
-    padding: 4px 8px;
+  /* Mobile: mostra o botão ⋮ e esconde os botões inline */
+  .act-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .act-list {
+    display: none;
+    position: fixed;
+    z-index: 500;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.45);
+    min-width: 160px;
+  }
+
+  .act-list.open { display: flex; }
+
+  .act-list .btn {
+    justify-content: flex-start;
+    width: 100%;
+    font-size: 13px;
+    padding: 8px 12px;
+    text-align: left;
   }
 
   /* Mobile: sidebar começa fechada → mostra ☰ por padrão */

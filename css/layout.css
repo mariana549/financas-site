@@ -236,6 +236,18 @@ body.sb-desktop-hidden .sb-topbar-toggle .sb-icon-show { display: flex; }
   flex-wrap: wrap;
 }
 
+/* ── Mini-menu de ações (topbar) ── */
+.act-trigger { display: none; }   /* escondido no desktop */
+
+.act-list {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.act-list.open { display: flex; } /* usado só no mobile */
+
 .content {
   padding: 28px;
   flex: 1;

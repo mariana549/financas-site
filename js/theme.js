@@ -24,6 +24,27 @@ function toggleDesktopSidebar() {
   localStorage.setItem('fin_sb_hidden', document.body.classList.contains('sb-desktop-hidden') ? '1' : '0');
 }
 
+function toggleActMenu(e) {
+  if (e) e.stopPropagation();
+  const list = document.getElementById('actMenuList');
+  if (!list) return;
+  if (list.classList.contains('open')) {
+    closeActMenu();
+    return;
+  }
+  // Posiciona o dropdown fixo perto do botão trigger
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  list.style.top  = (rect.bottom + 6) + 'px';
+  list.style.right = (window.innerWidth - rect.right) + 'px';
+  list.classList.add('open');
+  setTimeout(() => document.addEventListener('click', closeActMenu, { once: true }), 0);
+}
+
+function closeActMenu() {
+  document.getElementById('actMenuList')?.classList.remove('open');
+}
+
 function toggleSidebarAll() {
   if (window.innerWidth <= 768) {
     toggleSidebar();
