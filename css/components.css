@@ -27,12 +27,13 @@
   color: var(--accent);
 }
 
-.tip::after {
-  content: attr(data-tip);
-  position: absolute;
-  bottom: calc(100% + 7px);
-  left: 50%;
-  transform: translateX(-50%);
+/* ::after suprimido — tooltip gerenciado por JS (#gTip) para evitar clipping */
+.tip::after { display: none; }
+
+/* ── TOOLTIP GLOBAL (posicionado via JS, acima de qualquer overflow) ── */
+#gTip {
+  position: fixed;
+  z-index: 9999;
   background: var(--bg4);
   border: 1px solid var(--border2);
   color: var(--text);
@@ -42,17 +43,103 @@
   padding: 7px 10px;
   border-radius: 7px;
   white-space: pre-wrap;
-  width: max-content;
   max-width: min(220px, calc(100vw - 32px));
   pointer-events: none;
   opacity: 0;
   transition: opacity .15s;
-  z-index: 1100;
   box-shadow: 0 4px 16px var(--shadow);
 }
 
-.tip:hover::after {
-  opacity: 1;
+/* ── EVOLUTION TIMELINE (assinaturas) ── */
+.sub-evo-timeline {
+  padding: 2px 0 0;
+}
+
+.sub-evo-item {
+  display: flex;
+  gap: 10px;
+  position: relative;
+}
+
+.sub-evo-track {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 14px;
+}
+
+.sub-evo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text3);
+  border: 2px solid var(--bg2);
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.sub-evo-item--current .sub-evo-dot {
+  background: var(--accent);
+  width: 10px;
+  height: 10px;
+  border-color: var(--bg2);
+}
+
+.sub-evo-line {
+  flex: 1;
+  width: 2px;
+  min-height: 8px;
+  background: var(--border);
+  margin-top: 3px;
+}
+
+.sub-evo-item:last-child .sub-evo-line {
+  display: none;
+}
+
+.sub-evo-body {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 12px;
+}
+
+.sub-evo-item:last-child .sub-evo-body {
+  padding-bottom: 4px;
+}
+
+.sub-evo-amount {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.sub-evo-item--current .sub-evo-amount {
+  color: var(--accent);
+}
+
+.sub-evo-meta {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: var(--mono);
+  margin-top: 1px;
+}
+
+.sub-evo-note {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 1px;
+}
+
+.sub-evo-change {
+  display: inline-block;
+  font-size: 10px;
+  color: var(--orange);
+  background: rgba(251, 146, 60, .12);
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-top: 3px;
 }
 
 /* ── BOTÕES ── */

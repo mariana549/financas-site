@@ -365,44 +365,7 @@ function toggleSubEvolution(id) {
   if (btn) btn.textContent = showing ? '📈 ver evolução' : '📈 ocultar';
 }
 
-function _buildSparkline(history) {
-  if (!history || history.length < 2) return '';
-  const W = 240, H = 52, PAD = 8;
-  const now = Date.now();
-  const pts = history.map(h => ({
-    t: new Date(((h.from || '2000-01') + '-01')).getTime(),
-    y: h.amount
-  }));
-  pts.push({ t: now, y: pts[pts.length - 1].y });
-
-  const minT = pts[0].t, maxT = now;
-  const amts = history.map(h => h.amount);
-  const minY = Math.min(...amts) * 0.88;
-  const maxY = Math.max(...amts) * 1.08;
-  const rangeY = maxY - minY || 1;
-  const rangeT = maxT - minT || 1;
-
-  const px = t => (PAD + ((t - minT) / rangeT) * (W - PAD * 2)).toFixed(1);
-  const py = y => ((H - PAD) - ((y - minY) / rangeY) * (H - PAD * 2)).toFixed(1);
-
-  let d = `M ${px(pts[0].t)} ${py(pts[0].y)}`;
-  for (let i = 1; i < pts.length; i++) {
-    d += ` H ${px(pts[i].t)} V ${py(pts[i].y)}`;
-  }
-  const fillD = d + ` V ${H - PAD} H ${px(pts[0].t)} Z`;
-
-  const dots = history.map(h => {
-    const x = px(new Date(((h.from || '2000-01') + '-01')).getTime());
-    const y = py(h.amount);
-    return `<circle cx="${x}" cy="${y}" r="3.5" fill="var(--accent)" stroke="var(--bg2)" stroke-width="1.5"/>`;
-  }).join('');
-
-  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;overflow:visible;margin-bottom:8px">
-    <path d="${fillD}" fill="var(--accent)" opacity="0.08"/>
-    <path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
-    ${dots}
-  </svg>`;
-}
+function _buildSparkline() { return ''; } // replaced by CSS timeline
 
 function renderSubs() {
   const el = document.getElementById('subsContent');
@@ -456,29 +419,30 @@ function renderSubs() {
 
     const evoSection = hasHistory ? `
       <div id="subEvo_${s.id}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-        ${_buildSparkline(history)}
-        ${history.map((h, i) => {
-          const isLast = i === history.length - 1;
-          const pct = i > 0
-            ? ((h.amount - history[i - 1].amount) / history[i - 1].amount * 100).toFixed(1)
-            : null;
-          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;${isLast ? '' : 'border-bottom:1px solid var(--border)'}">
-            <div>
-              <span style="font-family:var(--mono);font-size:12px;${isLast ? 'color:var(--accent);font-weight:600' : 'color:var(--text2)'}">R$&nbsp;${fmt(h.amount)}</span>
-              ${h.note ? `<span style="font-size:10px;color:var(--text3);margin-left:5px">${h.note}</span>` : ''}
-            </div>
-            <div style="text-align:right">
-              <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">${(h.from || '').replace('-', '/')}</div>
-              <div style="font-size:10px;color:${isLast ? 'var(--accent)' : pct ? 'var(--orange)' : 'var(--text3)'}">
-                ${isLast ? 'atual' : pct ? '↑ +' + pct + '%' : 'inicial'}
+        <div class="sub-evo-timeline">
+          ${history.map((h, i) => {
+            const isLast = i === history.length - 1;
+            const pct = i > 0
+              ? ((h.amount - history[i - 1].amount) / history[i - 1].amount * 100).toFixed(1)
+              : null;
+            return `<div class="sub-evo-item${isLast ? ' sub-evo-item--current' : ''}">
+              <div class="sub-evo-track">
+                <div class="sub-evo-dot"></div>
+                <div class="sub-evo-line"></div>
               </div>
-            </div>
-          </div>`;
-        }).join('')}
+              <div class="sub-evo-body">
+                <div class="sub-evo-amount">R$\u00a0${fmt(h.amount)}</div>
+                <div class="sub-evo-meta">${(h.from || '').replace('-', '/')}${isLast ? ' · atual' : i === 0 ? ' · inicial' : ''}</div>
+                ${h.note ? `<div class="sub-evo-note">${h.note}</div>` : ''}
+                ${pct ? `<span class="sub-evo-change">&#x2191; +${pct}%</span>` : ''}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
       </div>
       <button id="subEvoBtn_${s.id}" onclick="event.stopPropagation();toggleSubEvolution('${s.id}')"
         style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:6px 0 0;width:100%;text-align:left">
-        📈 ver evolução
+        &#x1F4C8; ver evolução
       </button>` : '';
 
     return `
