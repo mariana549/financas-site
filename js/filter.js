@@ -101,9 +101,8 @@ function renderMonthList() {
 
 function renderMonthItem(m) {
   return `<div class="month-item ${S.currentMonth === m.key ? 'active' : ''}"
-    onclick="selectMonth('${m.key}')"
-    ondblclick="selectMonth('${m.key}');showView('dash')"
-    title="Duplo clique para abrir no dashboard">
+    onclick="selectMonth('${m.key}');showView('dash')"
+    title="Abrir no dashboard">
     <span>${m.label.slice(0, 3)} ${m.year}</span>
     <div class="month-actions">
       <button onclick="event.stopPropagation();openEditMonth('${m.key}')"
