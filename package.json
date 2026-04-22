@@ -1,6 +1,6 @@
 {
   "name": "financas-site",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "scripts": {
     "serve":       "npx serve . --listen 4321 --no-clipboard",
