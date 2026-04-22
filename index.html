@@ -15,17 +15,8 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="css/variables.css">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/auth.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/tables.css">
-  <link rel="stylesheet" href="css/modals.css">
-  <link rel="stylesheet" href="css/reports.css">
-  <link rel="stylesheet" href="css/ai.css">
-  <link rel="stylesheet" href="css/responsive.css">
+  <!-- CSS bundle -->
+  <link rel="stylesheet" href="dist/all.min.css">
 </head>
 <body>
 
@@ -122,43 +113,12 @@
 </main>
 </div>
 
-<!-- Supabase (local — evita bloqueio de extensões do navegador) -->
+<!-- Libs externas (fora do bundle — carregadas antes do app) -->
 <script src="js/lib/supabase.min.js"></script>
-
-<!-- JS (ordem importa!) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="js/supabase-config.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/state.js"></script>
-<script src="js/filter.js"></script>
-<script src="js/theme.js"></script>
-<!-- DB: um arquivo por tabela, db.js carrega por último (usa as funções acima) -->
-<script src="js/dbs/db-months.js"></script>
-<script src="js/dbs/db-banks.js"></script>
-<script src="js/dbs/db-entries.js"></script>
-<script src="js/dbs/db-pix.js"></script>
-<script src="js/dbs/db-recurrents.js"></script>
-<script src="js/dbs/db-incomes.js"></script>
-<script src="js/dbs/db-subscriptions.js"></script>
-<script src="js/dbs/db-installments.js"></script>
-<script src="js/dbs/db.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/months.js"></script>
-<script src="js/banks.js"></script>
-<script src="js/entries.js"></script>
-<script src="js/installments.js"></script>
-<script src="js/pix.js"></script>
-<script src="js/recurrents.js"></script>
-<script src="js/income.js"></script>
-<script src="js/subscriptions.js"></script>
-<script src="js/dashboard.js"></script>
-<script src="js/cobranca.js"></script>
-<script src="js/reports.js"></script>
-<script src="js/history.js"></script>
-<script src="js/backup.js"></script>
-<script src="js/ai-engine.js"></script>
-<script src="js/modals.js"></script>
-<script src="js/main.js"></script>
+
+<!-- JS bundle (gerado por dist/build.js) -->
+<script src="dist/app.min.js"></script>
 
 </body>
 </html>

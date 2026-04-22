@@ -13,3 +13,7 @@ node_modules/
 
 # ── Scripts de setup local ──
 download-supabase.js
+
+# ── Segredos locais ──
+settings.local.json
+CLAUDE.md
