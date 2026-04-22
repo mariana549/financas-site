@@ -104,8 +104,7 @@ function showView(v) {
   }
 
   if (v === 'reports') {
-    const k = S.currentMonth;
-    if (S._repKey !== k) { S._repKey = k; renderReports(); }
+    renderReports();
   }
   if (v === 'subs') renderSubs();
   if (v === 'banks') renderBanksView();

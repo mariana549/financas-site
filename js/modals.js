@@ -312,7 +312,7 @@ function injectModals() {
     </div>
   </div>
   <div class="fg"><label>Meta de gastos (R$)</label>
-    <input type="number" id="mGoalNew" step="0.01" placeholder="ex: 3000,00">
+    <input type="number" id="editMGoal" step="0.01" placeholder="ex: 3000,00">
   </div>
   <input type="hidden" id="editMKey">
   <div style="background:var(--bg3);border-radius:6px;padding:9px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">

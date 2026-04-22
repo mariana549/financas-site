@@ -38,16 +38,99 @@ function _avatarColor(name) {
 
 
 // ══════════════════════════════════════════════════
-// REPORTS — Relatório mensal
+// REPORTS — Picker de mês (tela inicial)
 // ══════════════════════════════════════════════════
+let _repPickerYear = null;
+
 function renderReports() {
-  const m = getMonth();
   const el = document.getElementById('repContent');
   if (!el) return;
-  if (!m) { el.innerHTML = '<div class="empty">selecione um mês</div>'; return; }
+
+  const subEl = document.getElementById('tbSub');
+  if (subEl) subEl.textContent = 'selecione um mês';
+
+  if (!S.months.length) {
+    el.innerHTML = '<div class="empty">nenhum mês cadastrado</div>';
+    return;
+  }
+
+  const years = [...new Set(S.months.map(m => +m.year))].sort((a, b) => b - a);
+  if (!_repPickerYear || !years.includes(_repPickerYear)) {
+    _repPickerYear = years[0];
+  }
+
+  const yearTabs = years.map(y =>
+    `<div class="itab ${y === _repPickerYear ? 'active' : ''}" onclick="_repPickerYear=${y};renderReports()">${y}</div>`
+  ).join('');
+
+  const mths = [...S.months].filter(m => +m.year === _repPickerYear).reverse();
+
+  const cards = mths.map(m => {
+    const allE = m.banks.flatMap(b => b.entries);
+    const pixL = S.pixEntries[m.key] || [];
+    const recL = S.recurrents[m.key] || [];
+    const incL = S.incomes[m.key] || [];
+    const gasto    = allE.reduce((s, e) => s + e.amount, 0) + pixL.reduce((s, p) => s + p.amount, 0) + recL.reduce((s, r) => s + r.amount, 0);
+    const entrada  = incL.reduce((s, i) => s + i.amount, 0);
+    const meusGastos = allE.filter(e => e.owner === 'mine').reduce((s, e) => s + e.amount, 0)
+                     + allE.filter(e => e.owner === 'split').reduce((s, e) => s + e.amount * (e.splitRatio ?? 0.5), 0)
+                     + pixL.reduce((s, p) => s + p.amount, 0) + recL.reduce((s, r) => s + r.amount, 0);
+    const saldo    = entrada - meusGastos;
+    const nLanc    = allE.length + pixL.length + recL.length;
+    const hasMeta  = m.goal && gasto > 0;
+    const pct      = hasMeta ? Math.min(gasto / m.goal * 100, 100).toFixed(0) : null;
+    const metaColor = hasMeta ? (gasto > m.goal ? 'var(--red)' : +pct > 80 ? 'var(--orange)' : 'var(--accent)') : 'var(--accent)';
+    return `<div class="rep-mc" onclick="renderReportForMonth('${m.key}')">
+      <div class="rep-mc-hd">
+        <span class="rep-mc-name">${m.label}</span>
+        <span class="rep-mc-yr">${m.year}</span>
+      </div>
+      <div class="rep-mc-total">R$&nbsp;${fmt(gasto)}</div>
+      <div class="rep-mc-row">
+        <span class="rep-mc-lbl">Entradas</span>
+        <span class="rep-mc-val" style="color:var(--green)">R$&nbsp;${fmt(entrada)}</span>
+      </div>
+      <div class="rep-mc-row">
+        <span class="rep-mc-lbl">Saldo</span>
+        <span class="rep-mc-val" style="color:${saldo >= 0 ? 'var(--green)' : 'var(--red)'}">${saldo >= 0 ? '+' : '−'}R$&nbsp;${fmt(Math.abs(saldo))}</span>
+      </div>
+      <div class="rep-mc-entries">${nLanc ? nLanc + ' lançamentos' : 'sem lançamentos'}</div>
+      ${hasMeta ? `<div class="rep-mc-bar"><div class="rep-mc-bar-fill" style="width:${pct}%;background:${metaColor}"></div></div><div class="rep-mc-meta">${pct}% da meta</div>` : ''}
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="inner-tabs" style="margin-bottom:20px">${yearTabs}</div>
+    <div class="rep-mc-grid">${cards || '<div class="empty">nenhum mês neste ano</div>'}</div>
+  `;
+}
+
+// ── Abre o relatório de um mês específico ──
+function renderReportForMonth(key) {
+  const m = S.months.find(x => x.key === key);
+  const el = document.getElementById('repContent');
+  if (!el || !m) return;
 
   const subEl = document.getElementById('tbSub');
   if (subEl) subEl.textContent = m.label + ' ' + m.year;
+
+  el.innerHTML = `
+    <div style="margin-bottom:16px">
+      <button class="btn btn-ghost btn-sm" onclick="renderReports()" style="gap:6px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Todos os Meses
+      </button>
+    </div>
+    <div id="repMonthBody"></div>
+  `;
+  _buildMonthReport(m, document.getElementById('repMonthBody'));
+}
+
+// ══════════════════════════════════════════════════
+// REPORTS — Corpo do relatório mensal
+// ══════════════════════════════════════════════════
+function _buildMonthReport(m, el) {
+  if (!el) return;
 
   const allE = m.banks.flatMap(b => b.entries.map(e => ({ ...e, bankName: b.name })));
   const pixL = S.pixEntries[m.key] || [];

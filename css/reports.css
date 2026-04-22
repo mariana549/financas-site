@@ -3,6 +3,103 @@
    ============================================ */
 
 /* ══════════════════════════════════════════
+   MONTH PICKER — Cards de mês (tela inicial de relatórios)
+   ══════════════════════════════════════════ */
+
+.rep-mc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.rep-mc {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, transform .1s;
+}
+
+.rep-mc:hover {
+  border-color: var(--accent);
+  background: var(--bg3);
+  transform: translateY(-1px);
+}
+
+.rep-mc-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.rep-mc-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text1);
+}
+
+.rep-mc-yr {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--mono);
+}
+
+.rep-mc-total {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text1);
+  font-family: var(--mono);
+  margin-bottom: 10px;
+}
+
+.rep-mc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.rep-mc-lbl {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.rep-mc-val {
+  font-size: 12px;
+  font-family: var(--mono);
+  font-weight: 500;
+}
+
+.rep-mc-entries {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 8px;
+}
+
+.rep-mc-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.rep-mc-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width .3s;
+}
+
+.rep-mc-meta {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: var(--mono);
+  margin-top: 4px;
+}
+
+/* ══════════════════════════════════════════
    LAYOUT — Grid 2 colunas e cards
    ══════════════════════════════════════════ */
 
