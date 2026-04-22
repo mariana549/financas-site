@@ -144,11 +144,21 @@ function calcAnualTotal(subs) {
   }, 0);
 }
 
+let _subProjFilter = 'all';
+
 function toggleSubProjection() {
   const el = document.getElementById('subProjection');
   if (!el) return;
   const hidden = el.style.display === 'none';
   el.style.display = hidden ? 'block' : 'none';
+}
+
+function setSubProjFilter(f) {
+  _subProjFilter = f;
+  renderSubs();
+  // Reabre a projeção após re-render
+  const el = document.getElementById('subProjection');
+  if (el) el.style.display = 'block';
 }
 
 function openSubM(editId = null) {
@@ -515,7 +525,9 @@ function renderSubs() {
     </div>`;
 
   // ── Projeção Anual Detalhada ──
-  const projList = [...active]
+  const projFiltered = _subProjFilter === 'all' ? active
+    : active.filter(s => (s.owner || 'mine') === _subProjFilter);
+  const projList = [...projFiltered]
     .map(s => {
       const anual = s.cycle === 'anual' ? s.amount : s.cycle === 'semanal' ? s.amount * 52 : s.amount * 12;
       const mensal_val = s.cycle === 'anual' ? s.amount / 12 : s.cycle === 'semanal' ? s.amount * 52 / 12 : s.amount;
@@ -524,10 +536,18 @@ function renderSubs() {
     .sort((a, b) => b.anual - a.anual);
   const maxProj = Math.max(...projList.map(s => s.anual), 1);
 
+  const filterChips = ['all', 'mine', 'other', 'split'].map(f => {
+    const labels = { all: 'Tudo', mine: 'Minhas', other: 'De outros', split: 'Em conjunto' };
+    return `<div class="chip ${_subProjFilter === f ? 'sel' : ''}" onclick="setSubProjFilter('${f}')">${labels[f]}</div>`;
+  }).join('');
+
   html += `
     <div id="subProjection" style="display:none;margin-bottom:24px">
-      <div class="sec-title" style="margin-bottom:12px">Projeção por Serviço (12 meses)</div>
-      <div class="tbl-block">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div class="sec-title">Projeção por Serviço (12 meses)</div>
+        <div class="chips">${filterChips}</div>
+      </div>
+      ${projList.length === 0 ? `<div class="empty" style="padding:20px 0">nenhuma assinatura nesta categoria</div>` : `<div class="tbl-block">
         <table>
           <thead><tr><th>Serviço</th><th>Ciclo</th><th style="text-align:right">Mensal</th><th style="text-align:right">Anual</th></tr></thead>
           <tbody>
@@ -546,10 +566,10 @@ function renderSubs() {
           </tbody>
         </table>
         <div class="foot-row">
-          <div class="foot-grp"><span class="foot-lbl">Total Anual</span><span class="foot-amt" style="color:var(--accent)">R$ ${fmt(calcAnualTotal(active))}</span></div>
-          <div class="foot-grp"><span class="foot-lbl">Média Mensal</span><span class="foot-amt">R$ ${fmt(calcAnualTotal(active) / 12)}</span></div>
+          <div class="foot-grp"><span class="foot-lbl">Total Anual</span><span class="foot-amt" style="color:var(--accent)">R$ ${fmt(calcAnualTotal(projFiltered))}</span></div>
+          <div class="foot-grp"><span class="foot-lbl">Média Mensal</span><span class="foot-amt">R$ ${fmt(calcAnualTotal(projFiltered) / 12)}</span></div>
         </div>
-      </div>
+      </div>`}
     </div>`;
 
   Object.entries(byBank).forEach(([bank, subs]) => {

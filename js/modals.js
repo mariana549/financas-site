@@ -176,7 +176,11 @@ function injectModals() {
   </div>
   <div class="fg"><label>Observação</label><textarea id="rObs" placeholder="detalhes..."></textarea></div>
   <input type="hidden" id="editRecId">
-  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mRec')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveRec()">Salvar</button></div>
+  <div class="modal-actions">
+    <button id="recDeleteBtn" class="btn btn-danger btn-sm" style="display:none" onclick="deleteRecCurrent()">Excluir</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mRec')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="saveRec()">Salvar</button>
+  </div>
 </div></div>
 
 <!-- Pix -->

@@ -76,11 +76,11 @@ function renderSummaryCards(m, totals) {
         <div class="card-val a">R$ ${fmt(metaGasto)}</div>
         ${goalBar || '<div class="card-sub">clique para ver</div>'}
       </div>
-      ${othT > 0 ? `<div class="card card-link" onclick="toggleAReceber()" title="Ver quem deve — clique para expandir">
+      ${Object.keys(pplMap).length > 0 ? `<div class="card card-link" onclick="toggleAReceber()" title="Ver quem deve — clique para expandir">
         <div class="card-lbl">A Receber ↗</div>
-        <div class="card-val b">R$ ${fmt(othT)}</div>
+        <div class="card-val b">R$ ${fmt(Object.values(pplMap).reduce((s, d) => s + d.total, 0))}</div>
         <div class="card-sub">${Object.keys(pplMap).length} pessoa(s) · clique para ver</div>
-      </div>` : `<div class="card"><div class="card-lbl">A Receber</div><div class="card-val b">R$ ${fmt(othT)}</div><div class="card-sub">ninguém deve</div></div>`}
+      </div>` : `<div class="card"><div class="card-lbl">A Receber</div><div class="card-val b">R$ 0,00</div><div class="card-sub">ninguém deve</div></div>`}
       <div class="card card-link" onclick="setInnerTab('entradas')" title="Ver entradas do mês">
         <div class="card-lbl">Entradas ↗</div>
         <div class="card-val g">R$ ${fmt(incMyT + incOthT)}</div>
@@ -539,7 +539,7 @@ function _renderDashImpl() {
         <button class="btn btn-primary btn-sm" onclick="openEntryM()">+ Lançamento</button>
         <button class="btn btn-ghost btn-sm" onclick="openModal('mBank')">+ Banco</button>
         <button class="btn btn-ghost btn-sm" onclick="openPixM()">+ Pix</button>
-        <button class="btn btn-ghost btn-sm" onclick="openModal('mRec')">+ Conta Fixa</button>
+        <button class="btn btn-ghost btn-sm" onclick="openRecM()">+ Conta Fixa</button>
       </div>
       ${gastoHTML}
     </div>

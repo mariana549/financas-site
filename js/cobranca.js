@@ -39,7 +39,34 @@ function openCobranca(person) {
       installCurrent: null, installTotal: null
     }));
 
-  const allItems = [...cartao, ...splitCartao, ...pix];
+  const subs = (S.subscriptions || [])
+    .filter(s => {
+      if (s.endDate) return false;
+      const owner = s.owner || 'mine';
+      if (owner === 'other') return (s.splitPeople || [])[0] === person;
+      if (owner === 'split') return (s.splitPeople || []).includes(person);
+      return false;
+    })
+    .map(s => {
+      const owner = s.owner || 'mine';
+      let share;
+      if (owner === 'other') {
+        share = s.amount;
+      } else {
+        const people = s.splitPeople || [];
+        const idx = people.indexOf(person);
+        const myPart = calcMySubPart(s);
+        share = s.splitValues?.[idx] ?? ((s.amount - myPart) / people.length);
+      }
+      return {
+        id: s.id, desc: s.name + ' (assinatura)',
+        amount: share, bankName: s.bank || '—',
+        _tipo: 'sub', type: 'sub',
+        category: null, installCurrent: null, installTotal: null
+      };
+    });
+
+  const allItems = [...cartao, ...splitCartao, ...pix, ...subs];
   const total    = allItems.reduce((s, e) => s + e.amount, 0);
 
   _cobData = { person, items: allItems, total, month: m };
@@ -63,6 +90,7 @@ function openCobranca(person) {
                 ${e.desc}
                 ${e.installCurrent ? `<span class="bm bm-inst" style="margin-left:4px">${e.installCurrent}/${e.installTotal}</span>` : ''}
                 ${e._tipo === 'pix' ? `<span class="bm bm-pix" style="margin-left:4px">pix</span>` : ''}
+                ${e._tipo === 'sub' ? `<span class="bm bm-rec" style="margin-left:4px">assinatura</span>` : ''}
                 ${e.category ? `<span class="bm bm-cat" style="margin-left:4px">${e.category}</span>` : ''}
               </td>
               <td style="color:var(--text3);font-size:12px;font-family:var(--mono)">${e.bankName || '—'}</td>
