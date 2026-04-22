@@ -1,8 +1,7 @@
 // ══════════════════════════════════════════════════
-// REPORTS.JS — Relatórios, Resumo Anual, Histórico
+// REPORTS.JS — Relatórios, Resumo Anual
 // ══════════════════════════════════════════════════
 
-// ── Chart.js: instâncias ──
 const _rc = {};
 function _destroyChart(k) { if (_rc[k]) { _rc[k].destroy(); delete _rc[k]; } }
 function _makeChart(k, id, cfg) {
@@ -12,6 +11,35 @@ function _makeChart(k, id, cfg) {
   _rc[k] = new Chart(cv.getContext('2d'), cfg);
 }
 
+const CAT_COLORS = ['#4d9eff', '#a78bfa', '#fb923c', '#4ade80', '#f472b6', '#facc15', '#38bdf8', '#f87171', '#34d399', '#e879f9'];
+const MONO_FONT = "'DM Mono', monospace";
+
+function _chartDefaults() {
+  return {
+    grid: getCSSVar('--border') || '#1e1e1e',
+    text: getCSSVar('--text3') || '#555',
+    tick: { color: getCSSVar('--text3') || '#555', font: { size: 10, family: MONO_FONT } }
+  };
+}
+
+function _avatarColor(name) {
+  const colors = [
+    { bg: '#152035', fg: '#4d9eff' },
+    { bg: '#1e1230', fg: '#a78bfa' },
+    { bg: '#0f2a1a', fg: '#4ade80' },
+    { bg: '#2a1800', fg: '#fb923c' },
+    { bg: '#2a0f0f', fg: '#f87171' },
+    { bg: '#0f2a2a', fg: '#38bdf8' },
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+
+// ══════════════════════════════════════════════════
+// REPORTS — Relatório mensal
+// ══════════════════════════════════════════════════
 function renderReports() {
   const m = getMonth();
   const el = document.getElementById('repContent');
@@ -34,55 +62,48 @@ function renderReports() {
   const totalGasto = myT + othT + pixT + recT;
   const saldo = incT - (myT + pixT + recT);
 
-  const bkD = m.banks.map(b => ({
+  const fallbackColors = ['#4d9eff', '#a78bfa', '#fb923c', '#4ade80', '#f472b6', '#facc15'];
+  const bkRaw = m.banks.map(b => ({
     name: b.name,
     total: b.entries.reduce((s, e) => s + e.amount, 0),
     mine: b.entries.filter(e => e.owner === 'mine').reduce((s, e) => s + e.amount, 0),
     others: b.entries.filter(e => e.owner === 'other').reduce((s, e) => s + e.amount, 0),
     color: PALETTE[b.color] || PALETTE.azure
   }));
-  const maxB = Math.max(...bkD.map(b => b.total), 1);
+  const rawCores = bkRaw.map(x => x.color);
+  const bkColors = bkRaw.map((b, i) =>
+    rawCores.filter(c => c === b.color).length > 1 ? fallbackColors[i % fallbackColors.length] : b.color
+  );
 
   const pplMap = {};
   allE.filter(e => e.owner === 'other').forEach(e => {
-    if (!pplMap[e.person]) pplMap[e.person] = 0;
-    pplMap[e.person] += e.amount;
+    pplMap[e.person] = (pplMap[e.person] || 0) + e.amount;
   });
+  const pplItems = n => allE.filter(e => e.owner === 'other' && e.person === n).length;
 
   const catMap = {};
   allE.filter(e => e.category).forEach(e => {
-    if (!catMap[e.category]) catMap[e.category] = 0;
-    catMap[e.category] += e.amount;
+    catMap[e.category] = (catMap[e.category] || 0) + e.amount;
   });
-  const maxC = Math.max(...Object.values(catMap), 1);
+  const catSorted = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
 
-  // ── Comparativo mês anterior ──
   const mIdx = S.months.findIndex(x => x.key === m.key);
   const prevM = mIdx > 0 ? S.months[mIdx - 1] : null;
   const prevTotal = prevM ? monthTotal(prevM) : null;
-  const maxComp = Math.max(totalGasto, prevTotal || 0, 1);
 
-  // ── Assinaturas para composição de gastos ──
   let mySubRep = 0, splitSubRep = 0;
   (S.subscriptions || []).filter(s => !s.endDate && s.cycle === 'mensal').forEach(s => {
-    const owner = s.owner || 'mine';
-    if (owner === 'mine') { mySubRep += s.amount; }
-    else if (owner === 'split') {
+    if ((s.owner || 'mine') === 'mine') { mySubRep += s.amount; }
+    else if (s.owner === 'split') {
       const myPart = calcMySubPart(s);
       mySubRep += myPart;
       splitSubRep += s.amount - myPart;
     }
   });
 
-  // ── Tipo de entrada ──
   const incTypeMap = {};
-  incL.forEach(i => {
-    const t = i.incType || 'Outros';
-    incTypeMap[t] = (incTypeMap[t] || 0) + i.amount;
-  });
-  const maxIncType = Math.max(...Object.values(incTypeMap), 1);
+  incL.forEach(i => { const t = i.incType || 'Outros'; incTypeMap[t] = (incTypeMap[t] || 0) + i.amount; });
 
-  // ── Tipo de gasto ──
   const typeMap = { normal: 0, installment: 0, pix: pixT, debit: 0, cash: 0 };
   allE.forEach(e => {
     if (e.type === 'installment') typeMap.installment += e.amount;
@@ -91,277 +112,499 @@ function renderReports() {
     else typeMap.normal += e.amount;
   });
   typeMap.normal += recT;
-  const maxType = Math.max(...Object.values(typeMap), 1);
+  const tiposSorted = [
+    { label: 'Normal / Fixo', val: typeMap.normal, color: getCSSVar('--accent') || '#4d9eff' },
+    { label: 'Parcelado', val: typeMap.installment, color: '#fb923c' },
+    { label: 'Pix', val: typeMap.pix, color: '#4ade80' },
+    { label: 'Débito', val: typeMap.debit, color: '#38bdf8' },
+    { label: 'Dinheiro', val: typeMap.cash, color: '#facc15' },
+    { label: 'Assinaturas', val: mySubRep, color: '#a78bfa' },
+    { label: 'Em conjunto', val: splitSubRep, color: '#f472b6' },
+  ].filter(t => t.val > 0);
+
+  const dailyMap = {};
+  allE.forEach(e => { if (e.date) { const d = +e.date.split('-')[2]; dailyMap[d] = (dailyMap[d] || 0) + e.amount; } });
+  pixL.forEach(p => { if (p.date) { const d = +p.date.split('-')[2]; dailyMap[d] = (dailyMap[d] || 0) + p.amount; } });
+  const monthIdx = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].indexOf(m.label);
+  const daysInMonth = new Date(m.year, monthIdx + 1, 0).getDate() || 30;
+  const dailyLabels = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  let acum = 0;
+  const dailyData = dailyLabels.map(d => { acum += dailyMap[d] || 0; return acum; });
+
+  const allMonths = S.months;
+  const annualLabels = allMonths.map(mn => mn.label.slice(0, 3));
+  const annualGastos = allMonths.map(mn => monthTotal(mn));
+  const annualEntradas = allMonths.map(mn => (S.incomes[mn.key] || []).reduce((s, i) => s + i.amount, 0));
+  const hasAnnual = annualGastos.some(v => v > 0) || annualEntradas.some(v => v > 0);
 
   el.innerHTML = `
-    <div class="summary-grid" style="margin-bottom:24px">
-      <div class="card"><div class="card-lbl">Total Gastos</div><div class="card-val">R$ ${fmt(totalGasto)}</div></div>
-      <div class="card"><div class="card-lbl">Meus</div><div class="card-val a">R$ ${fmt(myT + pixT + recT)}</div></div>
-      <div class="card"><div class="card-lbl">A Receber</div><div class="card-val b">R$ ${fmt(othT)}</div></div>
-      <div class="card"><div class="card-lbl">Entradas</div><div class="card-val g">R$ ${fmt(incT)}</div></div>
-      <div class="card"><div class="card-lbl">Saldo</div><div class="card-val ${saldo >= 0 ? 'g' : 'r'}">R$ ${fmt(saldo)}</div></div>
+    <div class="summary-grid" style="margin-bottom:16px">
+      <div class="card"><div class="card-lbl">Total Gastos</div><div class="card-val">R$&nbsp;${fmt(totalGasto)}</div></div>
+      <div class="card"><div class="card-lbl">Meus</div><div class="card-val a">R$&nbsp;${fmt(myT + pixT + recT)}</div></div>
+      <div class="card"><div class="card-lbl">A Receber</div><div class="card-val b">R$&nbsp;${fmt(othT)}</div></div>
+      <div class="card"><div class="card-lbl">Entradas</div><div class="card-val g">R$&nbsp;${fmt(incT)}</div></div>
+      <div class="card"><div class="card-lbl">Saldo</div><div class="card-val ${saldo >= 0 ? 'g' : 'r'}">R$&nbsp;${fmt(saldo)}</div></div>
     </div>
 
-    ${prevM ? `
-    <div class="sec-title" style="margin-bottom:12px">Comparativo com mês anterior</div>
-    <div class="comp-bar">
-      <span class="comp-label">${m.label.slice(0, 3)} ${m.year}</span>
-      <div class="comp-track">
-        <div class="comp-fill" style="width:${(totalGasto / maxComp * 100).toFixed(1)}%">
-          <span class="comp-val">R$ ${fmt(totalGasto)}</span>
+    <div class="rep-row">
+      <div class="rep-card">
+        <div class="rep-card-title">Comparativo Mensal</div>
+        ${prevM ? `
+          <div style="position:relative;height:110px"><canvas id="repComparativo"></canvas></div>
+          <div style="font-size:11px;font-family:var(--mono);margin-top:8px;color:${totalGasto > prevTotal ? 'var(--red)' : 'var(--green)'}">
+            ${totalGasto > prevTotal
+        ? `▲ R$&nbsp;${fmt(totalGasto - prevTotal)} a mais que ${prevM.label}`
+        : `▼ R$&nbsp;${fmt(prevTotal - totalGasto)} a menos que ${prevM.label}`}
+          </div>
+        ` : `<div style="height:110px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3)">apenas um mês cadastrado</div>`}
+      </div>
+      <div class="rep-card">
+        <div class="rep-card-title">Por Banco</div>
+        <div class="rep-donut-wrap">
+          <div style="position:relative;width:120px;height:120px;flex-shrink:0">
+            <canvas id="repBankDonut"></canvas>
+          </div>
+          <div class="rep-donut-legend">
+            ${bkRaw.map((b, i) => `
+              <div class="rep-legend-item">
+                <div class="rep-legend-dot" style="background:${bkColors[i]}"></div>
+                <span class="rep-legend-name">${b.name}</span>
+                <span class="rep-legend-val">R$&nbsp;${fmt(b.total)}</span>
+              </div>
+              <div class="rep-legend-sub">meu: R$&nbsp;${fmt(b.mine)} · outros: R$&nbsp;${fmt(b.others)}</div>
+            `).join('')}
+          </div>
         </div>
       </div>
     </div>
-    <div class="comp-bar">
-      <span class="comp-label">${prevM.label.slice(0, 3)} ${prevM.year}</span>
-      <div class="comp-track">
-        <div class="comp-fill" style="width:${(prevTotal / maxComp * 100).toFixed(1)}%;background:var(--text3)">
-          <span class="comp-val">R$ ${fmt(prevTotal)}</span>
-        </div>
+
+    <div class="rep-row">
+      <div class="rep-card">
+        <div class="rep-card-title">Por Categoria</div>
+        ${catSorted.length ? `
+          <div style="position:relative;height:${Math.max(catSorted.slice(0, 6).length * 36 + 10, 110)}px">
+            <canvas id="repCat"></canvas>
+          </div>
+        ` : `<div style="height:110px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3)">sem categorias</div>`}
+      </div>
+      <div class="rep-card">
+        <div class="rep-card-title">Evolução Diária</div>
+        <div style="position:relative;height:150px"><canvas id="repEvol"></canvas></div>
       </div>
     </div>
-    <div style="font-size:11px;font-family:var(--mono);color:${totalGasto > prevTotal ? 'var(--red)' : 'var(--green)'};margin-top:4px;margin-bottom:16px">
-      ${totalGasto > prevTotal
-        ? `▲ R$ ${fmt(totalGasto - prevTotal)} a mais que ${prevM.label}`
-        : `▼ R$ ${fmt(prevTotal - totalGasto)} a menos que ${prevM.label}`}
-    </div>
-    <div class="divider"></div>` : ''}
-
-    ${bkD.length ? `
-    <div class="sec-title" style="margin-bottom:12px">Por Banco</div>
-    ${bkD.length >= 2 ? `<div class="chart-wrap chart-donut"><canvas id="repBankDonut"></canvas></div>` : ''}
-    ${bkD.map(b => `
-      <div class="bar-wrap">
-        <div class="bar-lbl"><span>${b.name}</span><span>R$ ${fmt(b.total)}</span></div>
-        <div class="bar-track">
-          <div class="bar-fill" style="width:${(b.total / maxB * 100).toFixed(1)}%;background:${b.color}"></div>
-        </div>
-        <div style="display:flex;gap:14px;margin-top:3px">
-          <span style="font-size:10px;color:var(--accent);font-family:var(--mono)">meus: R$ ${fmt(b.mine)}</span>
-          <span style="font-size:10px;color:var(--blue);font-family:var(--mono)">outros: R$ ${fmt(b.others)}</span>
-        </div>
-      </div>`).join('')}
-    <div class="divider"></div>` : ''}
-
-    <div class="sec-title" style="margin-bottom:12px">Por Tipo</div>
-    ${[
-      { label: 'Normal / Fixo', val: typeMap.normal, color: 'var(--accent)' },
-      { label: 'Parcelado', val: typeMap.installment, color: 'var(--orange)' },
-      { label: 'Pix', val: typeMap.pix, color: 'var(--green)' },
-      { label: 'Débito', val: typeMap.debit, color: 'var(--teal)' },
-      { label: 'Dinheiro', val: typeMap.cash, color: 'var(--yellow)' },
-      { label: 'Assinaturas', val: mySubRep, color: 'var(--purple)' },
-      { label: 'Assinaturas em conjunto', val: splitSubRep, color: 'var(--pink)' }
-    ].filter(t => t.val > 0).map(t => `
-      <div class="bar-wrap">
-        <div class="bar-lbl"><span>${t.label}</span><span>R$ ${fmt(t.val)}</span></div>
-        <div class="bar-track">
-          <div class="bar-fill" style="width:${(t.val / maxType * 100).toFixed(1)}%;background:${t.color}"></div>
-        </div>
-      </div>`).join('')}
 
     ${Object.keys(pplMap).length ? `
-    <div class="divider"></div>
-    <div class="sec-title" style="margin-bottom:12px">A Receber por Pessoa</div>
-    <div class="people-grid">
-      ${Object.entries(pplMap).sort((a, b) => b[1] - a[1]).map(([n, t]) => `
-        <div class="pcard">
-          <div class="pcard-name">${n}</div>
-          <div class="pcard-val">R$ ${fmt(t)}</div>
-        </div>`).join('')}
-    </div>` : ''}
+      <div class="sec-title" style="margin:4px 0 12px">A Receber por Pessoa</div>
+      <div class="rep-ppl-grid">
+        ${Object.entries(pplMap).sort((a, b) => b[1] - a[1]).map(([n, t]) => {
+          const av = _avatarColor(n);
+          const initials = n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+          const cnt = pplItems(n);
+          return `<div class="rep-pcard" onclick="openCobranca('${n}')">
+            <div class="rep-pcard-avatar" style="background:${av.bg};color:${av.fg}">${initials}</div>
+            <div class="rep-pcard-name">${n}</div>
+            <div class="rep-pcard-val">R$&nbsp;${fmt(t)}</div>
+            <div class="rep-pcard-sub">${cnt}&nbsp;${cnt === 1 ? 'item' : 'itens'}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    ` : ''}
 
-    ${Object.keys(catMap).length ? `
-    <div class="divider"></div>
-    <div class="sec-title" style="margin-bottom:12px">Por Categoria</div>
-    ${Object.entries(catMap).sort((a, b) => b[1] - a[1]).map(([c, t]) => `
-      <div class="bar-wrap">
-        <div class="bar-lbl"><span>${c}</span><span>R$ ${fmt(t)}</span></div>
-        <div class="bar-track">
-          <div class="bar-fill" style="width:${(t / maxC * 100).toFixed(1)}%;background:var(--purple)"></div>
+    ${tiposSorted.length ? `
+      <div class="rep-card" style="margin-bottom:12px">
+        <div class="rep-card-title">Por Tipo</div>
+        <div style="position:relative;height:${tiposSorted.length * 36 + 20}px">
+          <canvas id="repTipo"></canvas>
         </div>
-      </div>`).join('')}` : ''}
+      </div>
+    ` : ''}
 
     ${Object.keys(incTypeMap).length ? `
-    <div class="divider"></div>
-    <div class="sec-title" style="margin-bottom:12px">Entradas por Tipo</div>
-    ${Object.entries(incTypeMap).sort((a, b) => b[1] - a[1]).map(([t, v]) => {
-      const color = t === 'Pix' ? 'var(--green)' : t === 'Débito' ? 'var(--teal)' : t === 'Dinheiro' ? 'var(--yellow)' : t === 'Salário' ? 'var(--accent)' : t === 'Freela' ? 'var(--blue)' : 'var(--text3)';
-      return `
-      <div class="bar-wrap">
-        <div class="bar-lbl"><span>${t}</span><span>R$ ${fmt(v)}</span></div>
-        <div class="bar-track">
-          <div class="bar-fill" style="width:${(v / maxIncType * 100).toFixed(1)}%;background:${color}"></div>
-        </div>
-      </div>`;
-    }).join('')}` : ''}`;
+      <div class="rep-card" style="margin-bottom:12px">
+        <div class="rep-card-title">Entradas por Tipo</div>
+        ${(() => {
+        const maxInc = Math.max(...Object.values(incTypeMap), 1);
+        return Object.entries(incTypeMap).sort((a, b) => b[1] - a[1]).map(([t, v]) => {
+          const color = t === 'Pix' ? 'var(--green)' : t === 'Débito' ? 'var(--teal)' : t === 'Dinheiro' ? 'var(--yellow)' : t === 'Salário' ? 'var(--accent)' : t === 'Freela' ? 'var(--blue)' : 'var(--text3)';
+          return `<div class="bar-wrap">
+              <div class="bar-lbl"><span>${t}</span><span>R$&nbsp;${fmt(v)}</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:${(v / maxInc * 100).toFixed(1)}%;background:${color}"></div></div>
+            </div>`;
+        }).join('');
+      })()}
+      </div>
+    ` : ''}
 
-  // ── Chart: donut por banco ──
-  if (bkD.length >= 2) {
-    _makeChart('repDonut', 'repBankDonut', {
-      type: 'doughnut',
+    ${hasAnnual ? `
+      <div class="rep-card">
+        <div class="rep-card-title">Entradas vs Gastos — Visão Anual</div>
+        <div style="position:relative;height:190px"><canvas id="repAnual"></canvas></div>
+      </div>
+    ` : ''}
+  `;
+
+  // ── Charts do relatório mensal ─────────────────────────────────────────────
+  const d = _chartDefaults();
+  const fmtT = v => ' R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+  if (prevM) {
+    _makeChart('repComp', 'repComparativo', {
+      type: 'bar',
       data: {
-        labels: bkD.map(b => b.name),
-        datasets: [{
-          data: bkD.map(b => b.total),
-          backgroundColor: bkD.map(b => b.color),
-          borderWidth: 2,
-          borderColor: getCSSVar('--bg2') || '#121212',
-          hoverBorderColor: getCSSVar('--bg2') || '#121212'
-        }]
+        labels: [m.label.slice(0, 3) + ' ' + m.year, prevM.label.slice(0, 3) + ' ' + prevM.year],
+        datasets: [{ data: [totalGasto, prevTotal], backgroundColor: [getCSSVar('--accent') || '#4d9eff', '#252528'], borderRadius: 4, borderSkipped: false }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '62%',
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmtT(ctx.raw) } } },
+        scales: {
+          x: { grid: { color: d.grid }, ticks: d.tick, border: { display: false } },
+          y: { grid: { display: false }, ticks: { ...d.tick, color: getCSSVar('--text2') || '#888' }, border: { display: false } }
+        }
+      }
+    });
+  }
+
+  if (bkRaw.length) {
+    _makeChart('repDonut', 'repBankDonut', {
+      type: 'doughnut',
+      data: { labels: bkRaw.map(b => b.name), datasets: [{ data: bkRaw.map(b => b.total), backgroundColor: bkColors, borderWidth: 0, borderRadius: 4, spacing: 3 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmtT(ctx.parsed) } } } }
+    });
+  }
+
+  _makeChart('repEvol', 'repEvol', {
+    type: 'line',
+    data: {
+      labels: dailyLabels,
+      datasets: [{
+        data: dailyData, borderColor: '#4d9eff',
+        backgroundColor: ctx => {
+          const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 150);
+          g.addColorStop(0, 'rgba(77,158,255,0.15)');
+          g.addColorStop(1, 'rgba(77,158,255,0)');
+          return g;
+        },
+        borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmtT(ctx.parsed.y) } } },
+      scales: {
+        x: { grid: { color: d.grid }, ticks: { ...d.tick, maxTicksLimit: 8 }, border: { display: false } },
+        y: { grid: { color: d.grid }, ticks: d.tick, border: { display: false } }
+      }
+    }
+  });
+
+  if (tiposSorted.length) {
+    _makeChart('repTipo', 'repTipo', {
+      type: 'bar',
+      data: { labels: tiposSorted.map(t => t.label), datasets: [{ data: tiposSorted.map(t => t.val), backgroundColor: tiposSorted.map(t => t.color), borderRadius: 4, borderSkipped: false }] },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmtT(ctx.parsed.x) } } },
+        scales: {
+          x: { grid: { color: d.grid }, ticks: d.tick, border: { display: false } },
+          y: { grid: { display: false }, ticks: { ...d.tick, color: d.text }, border: { display: false } }
+        }
+      }
+    });
+  }
+
+  if (catSorted.length) {
+    const topCats = catSorted.slice(0, 6);
+    _makeChart('repCat', 'repCat', {
+      type: 'bar',
+      data: { labels: topCats.map(([c]) => getCategoryIcon(c, c) + ' ' + c), datasets: [{ data: topCats.map(([, v]) => v), backgroundColor: topCats.map((_, i) => CAT_COLORS[i % CAT_COLORS.length]), borderRadius: 4, borderSkipped: false }] },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmtT(ctx.parsed.x) } } },
+        scales: {
+          x: { grid: { color: d.grid }, ticks: d.tick, border: { display: false } },
+          y: { grid: { display: false }, ticks: { ...d.tick, color: d.text }, border: { display: false } }
+        }
+      }
+    });
+  }
+
+  if (hasAnnual) {
+    _makeChart('repAnual', 'repAnual', {
+      type: 'bar',
+      data: {
+        labels: annualLabels,
+        datasets: [
+          { label: 'Gastos', data: annualGastos, backgroundColor: '#4d9eff', borderRadius: 3, borderSkipped: false },
+          { label: 'Entradas', data: annualEntradas, backgroundColor: '#4ade80', borderRadius: 3, borderSkipped: false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        onClick: (_, els) => { if (els.length) { selectMonth(allMonths[els[0].index].key); showView('dash'); } },
         plugins: {
-          legend: {
-            position: 'right',
-            labels: {
-              color: getCSSVar('--text2') || '#999',
-              font: { family: 'DM Mono, monospace', size: 11 },
-              padding: 14,
-              boxWidth: 10,
-              boxHeight: 10
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: ctx => ` ${ctx.label}: R$ ${fmt(ctx.parsed)}`
-            }
-          }
+          legend: { display: true, position: 'top', labels: { color: d.text, font: { size: 10, family: MONO_FONT }, boxWidth: 10, boxHeight: 10, padding: 14 } },
+          tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ':' + fmtT(ctx.parsed.y) } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: d.tick, border: { display: false } },
+          y: { grid: { color: d.grid }, ticks: d.tick, border: { display: false } }
         }
       }
     });
   }
 }
 
+
 // ══════════════════════════════════════════════════
-// YEAR SUMMARY
+// YEAR SUMMARY — Resumo anual
 // ══════════════════════════════════════════════════
 function renderYear() {
   const el = document.getElementById('yearContent');
   if (!el) return;
   if (!S.months.length) { el.innerHTML = '<div class="empty">nenhum mês cadastrado</div>'; return; }
 
-  const years = [...new Set(S.months.map(m => m.year))];
+  const years = [...new Set(S.months.map(m => m.year))].sort();
   const yearSub = document.getElementById('tbSub');
   let html = '';
 
   years.forEach(y => {
     const mths = S.months.filter(m => m.year === y);
-    const maxT = Math.max(...mths.map(m => monthTotal(m)), 1);
     const totalAnual = mths.reduce((s, m) => s + monthTotal(m), 0);
     const incAnual = mths.reduce((s, m) => s + (S.incomes[m.key] || []).reduce((ss, i) => ss + i.amount, 0), 0);
     const saldoAnual = incAnual - totalAnual;
 
-    // ── Top categorias do ano ──
+    // Categorias anuais
     const catAnual = {};
-    mths.forEach(m => {
-      m.banks.forEach(b => {
-        b.entries.filter(e => e.category).forEach(e => {
-          catAnual[e.category] = (catAnual[e.category] || 0) + e.amount;
-        });
-      });
-    });
-    const topCats = Object.entries(catAnual).sort((a, b) => b[1] - a[1]).slice(0, 6);
-    const maxCat = topCats.length ? topCats[0][1] : 1;
+    mths.forEach(m => m.banks.forEach(b =>
+      b.entries.filter(e => e.category).forEach(e => {
+        catAnual[e.category] = (catAnual[e.category] || 0) + e.amount;
+      })
+    ));
+    const topCats = Object.entries(catAnual).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+    const monthH = Math.max(mths.length * 40 + 20, 60);
+    const catH = Math.max(topCats.length * 38 + 20, 60);
 
     html += `
-      <div style="margin-bottom:32px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-          <div class="topbar-title">${y}</div>
-          <div style="display:flex;gap:16px;flex-wrap:wrap">
-            <span style="font-family:var(--mono);font-size:12px;color:var(--text2)">gastos: <span style="color:var(--text)">R$ ${fmt(totalAnual)}</span></span>
-            <span style="font-family:var(--mono);font-size:12px;color:var(--text2)">entradas: <span style="color:var(--green)">R$ ${fmt(incAnual)}</span></span>
-            <span style="font-family:var(--mono);font-size:12px;color:var(--text2)">saldo: <span style="color:${saldoAnual >= 0 ? 'var(--green)' : 'var(--red)'}">R$ ${fmt(saldoAnual)}</span></span>
+      <div class="yr-section">
+
+        <!-- Cabeçalho do ano -->
+        <div class="yr-header">
+          <span class="yr-title">${y}</span>
+          <div class="yr-stats">
+            <span class="yr-stat">gastos
+              <strong style="color:var(--text)">R$&nbsp;${fmt(totalAnual)}</strong>
+            </span>
+            <span class="yr-stat">entradas
+              <strong style="color:var(--green)">R$&nbsp;${fmt(incAnual)}</strong>
+            </span>
+            <span class="yr-stat">saldo
+              <strong style="color:${saldoAnual >= 0 ? 'var(--green)' : 'var(--red)'}">R$&nbsp;${fmt(saldoAnual)}</strong>
+            </span>
           </div>
         </div>
-        ${mths.length >= 2 ? `<div class="chart-wrap chart-bar"><canvas id="yearBarChart_${y}"></canvas></div>` : ''}
-        ${mths.map(m => `
-          <div class="comp-bar">
-            <span class="comp-label" style="cursor:pointer;color:var(--text2)"
-              onclick="selectMonth('${m.key}');showView('dash')">${m.label.slice(0, 3)}</span>
-            <div class="comp-track">
-              <div class="comp-fill" style="width:${(monthTotal(m) / maxT * 100).toFixed(1)}%">
-                <span class="comp-val">R$ ${fmt(monthTotal(m))}</span>
-              </div>
-            </div>
-            ${m.goal
-              ? `<span style="font-family:var(--mono);font-size:10px;color:${monthTotal(m) > m.goal ? 'var(--red)' : 'var(--text3)'};margin-left:6px;flex-shrink:0">
-                  ${(monthTotal(m) / m.goal * 100).toFixed(0)}%
-                </span>`
-              : ''}
-          </div>`).join('')}
 
-        ${topCats.length ? `
-          <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
-            <div class="sec-title" style="margin-bottom:10px;font-size:10px">Top Categorias ${y}</div>
-            ${topCats.map(([cat, val]) => `
-              <div class="bar-wrap" style="margin-bottom:7px">
-                <div class="bar-lbl">
-                  <span style="font-size:12px">${getCategoryIcon(cat, cat)} ${cat}</span>
-                  <span style="font-family:var(--mono);font-size:11px">R$ ${fmt(val)}</span>
-                </div>
-                <div class="bar-track">
-                  <div class="bar-fill" style="width:${(val / maxCat * 100).toFixed(1)}%;background:var(--purple)"></div>
-                </div>
-              </div>`).join('')}
-          </div>` : ''}
+        <!-- Entradas vs Gastos (apenas quando há 2+ meses) -->
+        ${mths.length >= 2 ? `
+          <div class="rep-card yr-card">
+            <div class="rep-card-title">Entradas vs Gastos</div>
+            <div style="position:relative;height:200px">
+              <canvas id="yrBar_${y}"></canvas>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Por Mês — Chart.js horizontal bar (clicável, substitui barras CSS) -->
+        <div class="rep-card yr-card">
+          <div class="rep-card-title">Por Mês</div>
+          <div style="position:relative;height:${monthH}px">
+            <canvas id="yrMonth_${y}"></canvas>
+          </div>
+        </div>
+
+        <!-- Top Categorias -->
+        <div class="rep-card yr-card">
+          <div class="rep-card-title">Top Categorias</div>
+          ${topCats.length ? `
+            <div style="position:relative;height:${catH}px">
+              <canvas id="yrCat_${y}"></canvas>
+            </div>
+          ` : `
+            <div style="height:60px;display:flex;align-items:center;justify-content:center;
+                 font-size:11px;color:var(--text3)">sem categorias registradas</div>
+          `}
+        </div>
+
       </div>`;
   });
 
   if (yearSub) yearSub.textContent = years.join(', ');
   el.innerHTML = html;
 
-  // ── Charts: bar por mês para cada ano ──
+  // ── Charts ─────────────────────────────────────────────────────────────────
+  const d = _chartDefaults();
+  const fmtT = v => ' R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
   years.forEach(y => {
     const mths = S.months.filter(m => m.year === y);
-    if (mths.length < 2) return;
-    const accentColor = getCSSVar('--accent') || '#4d9fff';
-    const borderColor = getCSSVar('--border') || '#2a2a2a';
-    const text3      = getCSSVar('--text3') || '#666';
-    _makeChart('yearBar_' + y, 'yearBarChart_' + y, {
+
+    // ── Entradas vs Gastos (grouped bar) ─────────────────────────────────
+    if (mths.length >= 2) {
+      _makeChart('yrBar_' + y, 'yrBar_' + y, {
+        type: 'bar',
+        data: {
+          labels: mths.map(m => m.label.slice(0, 3)),
+          datasets: [
+            {
+              label: 'Gastos',
+              data: mths.map(m => monthTotal(m)),
+              backgroundColor: '#4d9eff',
+              borderRadius: 4,
+              borderSkipped: false,
+            },
+            {
+              label: 'Entradas',
+              data: mths.map(m => (S.incomes[m.key] || []).reduce((s, i) => s + i.amount, 0)),
+              backgroundColor: '#4ade80',
+              borderRadius: 4,
+              borderSkipped: false,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (_, els) => {
+            if (els.length) { selectMonth(mths[els[0].index].key); showView('dash'); }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                color: d.text,
+                font: { size: 10, family: MONO_FONT },
+                boxWidth: 10,
+                boxHeight: 10,
+                padding: 14,
+              }
+            },
+            tooltip: {
+              callbacks: { label: ctx => ' ' + ctx.dataset.label + ':' + fmtT(ctx.parsed.y) }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: d.tick, border: { display: false } },
+            y: { grid: { color: d.grid }, ticks: d.tick, border: { display: false } }
+          }
+        }
+      });
+    }
+
+    // ── Por Mês (horizontal bar — clicável, com suporte a meta) ──────────
+    const hasGoals = mths.some(m => m.goal);
+
+    _makeChart('yrMonth_' + y, 'yrMonth_' + y, {
       type: 'bar',
       data: {
         labels: mths.map(m => m.label.slice(0, 3)),
-        datasets: [{
-          data: mths.map(m => monthTotal(m)),
-          backgroundColor: accentColor + 'cc',
-          borderColor: accentColor,
-          borderWidth: 1,
-          borderRadius: 4,
-          borderSkipped: false
-        }]
+        datasets: [
+          {
+            label: 'Gasto',
+            data: mths.map(m => monthTotal(m)),
+            // Vermelho quando passa da meta, azul normal
+            backgroundColor: mths.map(m => {
+              const tot = monthTotal(m);
+              return (m.goal && tot > m.goal) ? '#ff4d4d88' : (getCSSVar('--accent') || '#4d9eff');
+            }),
+            borderRadius: 4,
+            borderSkipped: false,
+          },
+          ...(hasGoals ? [{
+            label: 'Meta',
+            data: mths.map(m => m.goal || null),
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            borderColor: 'rgba(255,255,255,0.10)',
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false,
+          }] : [])
+        ]
       },
       options: {
+        indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
+        onClick: (_, els) => {
+          if (els.length) { selectMonth(mths[els[0].index].key); showView('dash'); }
+        },
         plugins: {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: ctx => ` R$ ${fmt(ctx.parsed.y)}`
+              label: ctx => {
+                if (ctx.dataset.label === 'Meta') return ' Meta:' + fmtT(ctx.parsed.x);
+                const m = mths[ctx.dataIndex];
+                const tot = monthTotal(m);
+                let str = fmtT(tot);
+                if (m.goal) str += `  (${(tot / m.goal * 100).toFixed(0)}% da meta)`;
+                return str;
+              }
             }
           }
         },
         scales: {
           x: {
-            grid: { color: borderColor },
-            ticks: { color: text3, font: { family: 'DM Mono, monospace', size: 11 } }
+            grid: { color: d.grid },
+            ticks: d.tick,
+            border: { display: false },
           },
           y: {
-            grid: { color: borderColor },
-            ticks: {
-              color: text3,
-              font: { family: 'DM Mono, monospace', size: 11 },
-              callback: v => 'R$' + fmt(v)
-            }
+            grid: { display: false },
+            ticks: { ...d.tick, color: getCSSVar('--text2') || '#888' },
+            border: { display: false },
           }
+        }
+      }
+    });
+
+    // ── Top Categorias ────────────────────────────────────────────────────
+    const catAnual = {};
+    mths.forEach(m => m.banks.forEach(b =>
+      b.entries.filter(e => e.category).forEach(e => {
+        catAnual[e.category] = (catAnual[e.category] || 0) + e.amount;
+      })
+    ));
+    const topCats = Object.entries(catAnual).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    if (!topCats.length) return;
+
+    _makeChart('yrCat_' + y, 'yrCat_' + y, {
+      type: 'bar',
+      data: {
+        labels: topCats.map(([c]) => getCategoryIcon(c, c) + ' ' + c),
+        datasets: [{
+          data: topCats.map(([, v]) => v),
+          backgroundColor: topCats.map((_, i) => CAT_COLORS[i % CAT_COLORS.length]),
+          borderRadius: 4,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => fmtT(ctx.parsed.x) } }
+        },
+        scales: {
+          x: { grid: { color: d.grid }, ticks: d.tick, border: { display: false } },
+          y: { grid: { display: false }, ticks: { ...d.tick, color: d.text }, border: { display: false } }
         }
       }
     });
   });
 }
 
-// renderHistory() movida para js/history.js
+// renderHistory() em js/history.js
