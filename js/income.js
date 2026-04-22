@@ -5,6 +5,8 @@
 function openIncomeM(editId = null) {
   document.getElementById('editIncomeId').value = '';
   clr('incDesc', 'incAmt', 'incFrom', 'incPerson');
+  const delBtn = document.getElementById('incDeleteBtn');
+  if (delBtn) delBtn.style.display = 'none';
   // Restringe data ao mês da pasta
   const _mi = getMonth();
   if (_mi) {
@@ -24,8 +26,7 @@ function openIncomeM(editId = null) {
   if (editId) {
     const inc = (S.incomes[S.currentMonth] || []).find(x => String(x.id) === String(editId));
     if (inc) {
-      document.getElementById('editIncomeId').value = editId;
-      if (titleEl) titleEl.firstChild.textContent = 'Editar Entrada ';
+      document.getElementById('editIncomeId').value = String(inc.id);
       document.getElementById('incDesc').value = inc.desc;
       document.getElementById('incAmt').value = inc.amount;
       document.getElementById('incDate').value = inc.date || today();
@@ -36,6 +37,7 @@ function openIncomeM(editId = null) {
       });
       setIncOwner(inc.owner || 'mine');
       if (inc.person) document.getElementById('incPerson').value = inc.person;
+      if (delBtn) delBtn.style.display = 'inline-flex';
     }
   }
   openModal('mIncome');
@@ -66,10 +68,9 @@ async function saveIncome() {
   if (!S.incomes[S.currentMonth]) S.incomes[S.currentMonth] = [];
   if (editId) {
     S.incomes[S.currentMonth] = S.incomes[S.currentMonth].filter(i => String(i.id) !== String(editId));
-    await dbDeleteIncome(editId);
   }
   const inc = {
-    id: editId || Date.now(),
+    id: editId ? String(editId) : String(Date.now()),
     desc, amount: amt, date, from,
     owner: S.incomeOwner, person,
     incType: S.incomeType
@@ -81,6 +82,19 @@ async function saveIncome() {
   renderDash();
   closeModal('mIncome');
   showToast('✓ Entrada salva');
+}
+
+async function deleteIncomeCurrent() {
+  const editId = document.getElementById('editIncomeId').value;
+  if (!editId) return;
+  if (!confirm('Excluir entrada?')) return;
+  closeModal('mIncome');
+  S.incomes[S.currentMonth] = S.incomes[S.currentMonth].filter(i => String(i.id) !== String(editId));
+  setSyncing(true);
+  await dbDeleteIncome(editId);
+  setSyncing(false);
+  renderDash();
+  showToast('Entrada excluída');
 }
 
 async function deleteIncome(id) {

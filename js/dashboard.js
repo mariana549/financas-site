@@ -226,7 +226,7 @@ function renderEntradasSection(incL, incMyT, incOthT, incPplMap) {
       : incType === 'Débito' ? `<span class="bm bm-debit">débito</span>`
       : incType === 'Dinheiro' ? `<span class="bm bm-cash">dinheiro</span>`
       : `<span class="bm bm-cat">${incType}</span>`;
-    return `<tr class="entry-row" onclick="openIncomeM(${i.id})">
+    return `<tr class="entry-row" onclick="openIncomeM('${String(i.id).replace(/'/g,"\\'")}')">
       <td>${i.desc} ${typeBadge}${i.from ? ` <span style="color:var(--text3);font-size:11px">· ${i.from}</span>` : ''}</td>
       <td>${i.owner === 'other' ? `<span class="bm bm-other">${i.person}</span>` : `<span class="bm bm-mine">meu</span>`}</td>
       <td><span class="amt" style="color:var(--green)">R$ ${fmt(i.amount)}</span></td>

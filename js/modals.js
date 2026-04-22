@@ -159,7 +159,11 @@ function injectModals() {
     <div class="fg"><label>Nome da pessoa</label><input type="text" id="incPerson" placeholder="quem vai me pagar..."></div>
   </div>
   <input type="hidden" id="editIncomeId">
-  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mIncome')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveIncome()">Salvar</button></div>
+  <div class="modal-actions">
+    <button id="incDeleteBtn" class="btn btn-danger btn-sm" style="display:none" onclick="deleteIncomeCurrent()">Excluir</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mIncome')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="saveIncome()">Salvar</button>
+  </div>
 </div></div>
 
 <!-- Recurrent -->
