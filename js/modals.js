@@ -233,6 +233,26 @@ function injectModals() {
     <div class="fg"><label>Cancelado em <span class="tip" data-tip="Deixe vazio se ainda está ativa.&#10;Preencha para marcar como cancelada&#10;e tirá-la do total mensal.">?</span></label><input type="month" id="sEnd" placeholder="vazio = ativa"></div>
   </div>
   <input type="hidden" id="editSubId">
+
+  <!-- Histórico de preço — só aparece ao editar -->
+  <div id="sHistorySection" style="display:none">
+    <div class="divider" style="margin:14px 0 12px"></div>
+    <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Histórico de Preço</div>
+    <div id="sHistoryList" style="margin-bottom:10px"></div>
+    <div id="sReajusteForm" style="display:none;background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:8px">
+      <div class="fr">
+        <div class="fg"><label>Novo valor (R$)</label><input type="number" id="sReajusteAmt" step="0.01" placeholder="0,00"></div>
+        <div class="fg"><label>Mês do reajuste</label><input type="month" id="sReajusteDate"></div>
+      </div>
+      <div class="fg"><label>Observação (opcional)</label><input type="text" id="sReajusteNote" placeholder="ex: Reajuste anual 2025"></div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-primary btn-sm" onclick="confirmReajuste()">Confirmar</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeReajusteForm()">Cancelar</button>
+      </div>
+    </div>
+    <button id="sReajusteBtn" class="btn btn-ghost btn-sm" onclick="openReajusteForm()">+ Registrar Reajuste</button>
+  </div>
+
   <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mSub')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveSub()">Salvar</button></div>
 </div></div>
 

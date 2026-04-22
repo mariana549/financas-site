@@ -86,7 +86,10 @@ async function loadAllFromSupabase() {
       bank: s.bank_name, day: s.due_day, startDate: s.start_date, endDate: s.end_date,
       owner: s.owner || 'mine',
       splitPeople: parsePeople(s.split_people),
-      splitValues: parseValues(s.split_values)
+      splitValues: parseValues(s.split_values),
+      priceHistory: s.price_history
+        ? (typeof s.price_history === 'string' ? JSON.parse(s.price_history) : s.price_history)
+        : null
     }));
 
     // ── Parcelas futuras ──

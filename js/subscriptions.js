@@ -161,12 +161,16 @@ function openSubM(editId = null) {
   S.subSplitPeople = [''];
   S.subSplitType = 'equal';
   S.subSplitValues = null;
+  S._editSubId = null;
   setSubOwner('mine');
+
+  const histSection = document.getElementById('sHistorySection');
+  if (histSection) histSection.style.display = 'none';
 
   if (editId) {
     const s = (S.subscriptions || []).find(x => String(x.id) === String(editId));
     if (s) {
-      document.getElementById('editSubId').value = editId;
+      document.getElementById('editSubId').value = String(s.id);
       if (subTitleEl) subTitleEl.firstChild.textContent = 'Editar Assinatura ';
       document.getElementById('sName').value = s.name || '';
       document.getElementById('sAmt').value = s.amount || '';
@@ -188,9 +192,93 @@ function openSubM(editId = null) {
         renderSubSplitUI();
         updateSubSplitHint();
       }
+      // Histórico de preço
+      S._editSubId = String(s.id);
+      if (histSection) histSection.style.display = 'block';
+      closeReajusteForm();
+      _renderSubHistoryInModal(s);
     }
   }
   openModal('mSub');
+}
+
+// ── Helpers de histórico de preço ──
+function _getEffectiveHistory(s) {
+  if (s.priceHistory && s.priceHistory.length) return s.priceHistory;
+  if (s.startDate) return [{ amount: s.amount, from: s.startDate, note: 'Valor inicial' }];
+  return [{ amount: s.amount, from: '', note: 'Valor inicial' }];
+}
+
+function _renderSubHistoryInModal(s) {
+  const el = document.getElementById('sHistoryList');
+  if (!el) return;
+  const h = _getEffectiveHistory(s);
+  if (h.length <= 1) {
+    el.innerHTML = `<div style="font-size:12px;color:var(--text3);padding:4px 0">Nenhum reajuste registrado ainda.</div>`;
+    return;
+  }
+  el.innerHTML = h.map((entry, i) => {
+    const isLast = i === h.length - 1;
+    const pct = i > 0 ? ((entry.amount - h[i - 1].amount) / h[i - 1].amount * 100).toFixed(1) : null;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;${isLast ? '' : 'border-bottom:1px solid var(--border)'}">
+      <div style="flex:1">
+        <span style="font-size:13px;font-family:var(--mono);${isLast ? 'color:var(--accent);font-weight:600' : 'color:var(--text2)'}">R$&nbsp;${fmt(entry.amount)}</span>
+        ${entry.note ? `<span style="font-size:11px;color:var(--text3);margin-left:6px">${entry.note}</span>` : ''}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${(entry.from || '').replace('-', '/')}</div>
+        <div style="font-size:11px;color:${pct ? 'var(--orange)' : 'var(--text3)'}">
+          ${pct ? '↑ +' + pct + '%' : 'inicial'}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openReajusteForm() {
+  document.getElementById('sReajusteForm').style.display = 'block';
+  document.getElementById('sReajusteBtn').style.display = 'none';
+  document.getElementById('sReajusteAmt').value = '';
+  document.getElementById('sReajusteDate').value = '';
+  document.getElementById('sReajusteNote').value = '';
+}
+
+function closeReajusteForm() {
+  const form = document.getElementById('sReajusteForm');
+  const btn  = document.getElementById('sReajusteBtn');
+  if (form) form.style.display = 'none';
+  if (btn)  btn.style.display  = 'inline-flex';
+}
+
+async function confirmReajuste() {
+  const newAmt = parseFloat(document.getElementById('sReajusteAmt').value);
+  const date   = document.getElementById('sReajusteDate').value;
+  const note   = document.getElementById('sReajusteNote').value.trim();
+
+  if (isNaN(newAmt) || newAmt <= 0) { alert('Informe o novo valor.'); return; }
+  if (!date) { alert('Informe o mês do reajuste.'); return; }
+
+  const sub = (S.subscriptions || []).find(s => String(s.id) === String(S._editSubId));
+  if (!sub) return;
+
+  if (!sub.priceHistory || !sub.priceHistory.length) {
+    sub.priceHistory = [{ amount: sub.amount, from: sub.startDate || '', note: 'Valor inicial' }];
+  }
+  sub.priceHistory.push({ amount: newAmt, from: date, note });
+  sub.amount = newAmt;
+
+  // Atualiza campo de valor no modal
+  const amtEl = document.getElementById('sAmt');
+  if (amtEl) amtEl.value = newAmt;
+
+  setSyncing(true);
+  await dbSaveSub(sub);
+  setSyncing(false);
+
+  closeReajusteForm();
+  _renderSubHistoryInModal(sub);
+  renderSubs();
+  showToast('✓ Reajuste registrado');
 }
 
 async function saveSub() {
@@ -222,15 +310,22 @@ async function saveSub() {
   }
 
   if (!S.subscriptions) S.subscriptions = [];
+
+  let priceHistory = null;
   if (editId) {
+    const existing = S.subscriptions.find(s => String(s.id) === String(editId));
+    if (existing) priceHistory = existing.priceHistory || null;
     S.subscriptions = S.subscriptions.filter(s => String(s.id) !== String(editId));
     await dbDeleteSub(editId);
+  } else {
+    priceHistory = [{ amount: amt, from: startDate, note: 'Valor inicial' }];
   }
+
   const sub = {
-    id: editId || Date.now(),
+    id: editId ? String(editId) : String(Date.now()),
     name, amount: amt, cycle, bank, day,
     startDate, endDate: endDate || null,
-    owner, splitPeople, splitValues
+    owner, splitPeople, splitValues, priceHistory
   };
   S.subscriptions.push(sub);
   setSyncing(true);
@@ -249,6 +344,54 @@ async function deleteSub(id) {
   setSyncing(false);
   renderSubs();
   showToast('Assinatura excluída');
+}
+
+function toggleSubEvolution(id) {
+  const el  = document.getElementById('subEvo_' + id);
+  const btn = document.getElementById('subEvoBtn_' + id);
+  if (!el) return;
+  const showing = el.style.display !== 'none';
+  el.style.display  = showing ? 'none' : 'block';
+  if (btn) btn.textContent = showing ? '📈 ver evolução' : '📈 ocultar';
+}
+
+function _buildSparkline(history) {
+  if (!history || history.length < 2) return '';
+  const W = 240, H = 52, PAD = 8;
+  const now = Date.now();
+  const pts = history.map(h => ({
+    t: new Date(((h.from || '2000-01') + '-01')).getTime(),
+    y: h.amount
+  }));
+  pts.push({ t: now, y: pts[pts.length - 1].y });
+
+  const minT = pts[0].t, maxT = now;
+  const amts = history.map(h => h.amount);
+  const minY = Math.min(...amts) * 0.88;
+  const maxY = Math.max(...amts) * 1.08;
+  const rangeY = maxY - minY || 1;
+  const rangeT = maxT - minT || 1;
+
+  const px = t => (PAD + ((t - minT) / rangeT) * (W - PAD * 2)).toFixed(1);
+  const py = y => ((H - PAD) - ((y - minY) / rangeY) * (H - PAD * 2)).toFixed(1);
+
+  let d = `M ${px(pts[0].t)} ${py(pts[0].y)}`;
+  for (let i = 1; i < pts.length; i++) {
+    d += ` H ${px(pts[i].t)} V ${py(pts[i].y)}`;
+  }
+  const fillD = d + ` V ${H - PAD} H ${px(pts[0].t)} Z`;
+
+  const dots = history.map(h => {
+    const x = px(new Date(((h.from || '2000-01') + '-01')).getTime());
+    const y = py(h.amount);
+    return `<circle cx="${x}" cy="${y}" r="3.5" fill="var(--accent)" stroke="var(--bg2)" stroke-width="1.5"/>`;
+  }).join('');
+
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;overflow:visible;margin-bottom:8px">
+    <path d="${fillD}" fill="var(--accent)" opacity="0.08"/>
+    <path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
+    ${dots}
+  </svg>`;
 }
 
 function renderSubs() {
@@ -282,31 +425,70 @@ function renderSubs() {
   const card = s => {
     const owner = s.owner || 'mine';
     const myPart = calcMySubPart(s);
+    const history = _getEffectiveHistory(s);
+    const hasHistory = history.length > 1;
+    const initialAmt = history[0].amount;
+    const totalPct = hasHistory
+      ? ((s.amount - initialAmt) / initialAmt * 100).toFixed(0)
+      : null;
+
     const ownerBadge = owner === 'other'
       ? `<span class="bm bm-other" style="font-size:10px;margin-left:4px">${(s.splitPeople || ['?'])[0]}</span>`
       : owner === 'split'
         ? `<span class="bm bm-split" style="font-size:10px;margin-left:4px">÷${(s.splitPeople || []).length + 1}</span>`
         : '';
-    const myPartLabel = owner !== 'mine'
-      ? `<div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-top:2px">meu: R$ ${fmt(myPart)}</div>`
+    const reajusteBadge = hasHistory
+      ? `<span class="bm" style="font-size:10px;margin-left:4px;background:rgba(251,146,60,.15);color:var(--orange)">↑ +${totalPct}%</span>`
       : '';
+    const myPartLabel = owner !== 'mine'
+      ? `<div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-top:2px">meu: R$&nbsp;${fmt(myPart)}</div>`
+      : '';
+
+    const evoSection = hasHistory ? `
+      <div id="subEvo_${s.id}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        ${_buildSparkline(history)}
+        ${history.map((h, i) => {
+          const isLast = i === history.length - 1;
+          const pct = i > 0
+            ? ((h.amount - history[i - 1].amount) / history[i - 1].amount * 100).toFixed(1)
+            : null;
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;${isLast ? '' : 'border-bottom:1px solid var(--border)'}">
+            <div>
+              <span style="font-family:var(--mono);font-size:12px;${isLast ? 'color:var(--accent);font-weight:600' : 'color:var(--text2)'}">R$&nbsp;${fmt(h.amount)}</span>
+              ${h.note ? `<span style="font-size:10px;color:var(--text3);margin-left:5px">${h.note}</span>` : ''}
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">${(h.from || '').replace('-', '/')}</div>
+              <div style="font-size:10px;color:${isLast ? 'var(--accent)' : pct ? 'var(--orange)' : 'var(--text3)'}">
+                ${isLast ? 'atual' : pct ? '↑ +' + pct + '%' : 'inicial'}
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <button id="subEvoBtn_${s.id}" onclick="event.stopPropagation();toggleSubEvolution('${s.id}')"
+        style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:6px 0 0;width:100%;text-align:left">
+        📈 ver evolução
+      </button>` : '';
+
     return `
     <div class="scard">
       <div style="position:absolute;top:8px;right:8px;display:flex;gap:3px">
         <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px;transition:color .15s"
           onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'"
-          onclick="openSubM(${s.id})">✎</button>
+          onclick="openSubM('${s.id}')">✎</button>
         <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px;transition:color .15s"
           onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'"
-          onclick="deleteSub(${s.id})">×</button>
+          onclick="deleteSub('${s.id}')">×</button>
       </div>
-      <div class="scard-name">${s.name}${ownerBadge}</div>
-      <div class="scard-amt">R$ ${fmt(s.amount)}</div>
+      <div class="scard-name">${s.name}${ownerBadge}${reajusteBadge}</div>
+      <div class="scard-amt">R$&nbsp;${fmt(s.amount)}</div>
       ${myPartLabel}
       <div class="scard-det">
         ${s.cycle}${s.day ? ' · dia ' + s.day : ''}${s.bank ? ' · ' + s.bank : ''}
         ${s.startDate ? ' · desde ' + s.startDate.replace('-', '/') : ''}
       </div>
+      ${evoSection}
     </div>`;
   };
 
