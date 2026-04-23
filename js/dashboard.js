@@ -65,6 +65,14 @@ function renderAlerts(m, metaGasto, recL) {
 
 function renderSummaryCards(m, totals) {
   const { totalGasto, metaGasto, othT, incMyT, incOthT, saldo, subM, mySubM, othSubM, pplMap, goalBar } = totals;
+
+  // Calcular recebidos e pendentes para o card A Receber
+  const aReceberBruto = Object.values(pplMap).reduce((s, d) => s + d.total, 0);
+  const aReceberRecebido = (S.receivableMarks || [])
+    .filter(r => r.monthKey === S.currentMonth && r.received)
+    .reduce((s, r) => s + r.amount, 0);
+  const aReceberPendente = Math.max(0, aReceberBruto - aReceberRecebido);
+
   return `
     <div class="summary-grid">
       <div class="card">
@@ -78,8 +86,11 @@ function renderSummaryCards(m, totals) {
       </div>
       ${Object.keys(pplMap).length > 0 ? `<div class="card card-link" onclick="toggleAReceber()" title="Ver quem deve — clique para expandir">
         <div class="card-lbl">A Receber ↗</div>
-        <div class="card-val b">R$ ${fmt(Object.values(pplMap).reduce((s, d) => s + d.total, 0))}</div>
-        <div class="card-sub">${Object.keys(pplMap).length} pessoa(s) · clique para ver</div>
+        <div class="card-val b">R$ ${fmt(aReceberPendente)}</div>
+        <div class="card-sub">
+          ${Object.keys(pplMap).length} pessoa(s) · clique para ver
+          ${aReceberRecebido > 0 ? `<div style="color:var(--green);font-size:10px;margin-top:1px">✓ R$ ${fmt(aReceberRecebido)} recebido(s)</div>` : ''}
+        </div>
       </div>` : `<div class="card"><div class="card-lbl">A Receber</div><div class="card-val b">R$ 0,00</div><div class="card-sub">ninguém deve</div></div>`}
       <div class="card card-link" onclick="setInnerTab('entradas')" title="Ver entradas do mês">
         <div class="card-lbl">Entradas ↗</div>
@@ -97,16 +108,38 @@ function renderSummaryCards(m, totals) {
 
 function renderAReceber(pplMap) {
   if (!Object.keys(pplMap).length) return '';
+
+  // Marks recebidos no mês corrente por pessoa
+  const rcvMap = {};
+  (S.receivableMarks || [])
+    .filter(r => r.monthKey === S.currentMonth && r.received)
+    .forEach(r => {
+      if (!rcvMap[r.person]) rcvMap[r.person] = { count: 0, total: 0 };
+      rcvMap[r.person].count++;
+      rcvMap[r.person].total += r.amount;
+    });
+
   return `
     <div id="dashAReceber" style="display:none;margin-bottom:4px">
       <div class="sec-title" style="margin-bottom:10px">A Receber</div>
       <div class="people-grid" style="margin-bottom:18px">
-        ${Object.entries(pplMap).map(([n, d]) => `
-          <div class="pcard" onclick="openCobranca('${n}')" style="cursor:pointer" title="Cobrar ${n}">
+        ${Object.entries(pplMap).map(([n, d]) => {
+          const rcv     = rcvMap[n] || { count: 0, total: 0 };
+          const allDone = rcv.total > 0 && rcv.total >= d.total - 0.01;
+          return `
+          <div class="pcard${allDone ? ' pcard-done' : ''}" onclick="openCobranca('${n}')" style="cursor:pointer" title="${allDone ? 'Quitado — ver detalhes' : 'Ver cobrança de ' + n}">
             <div class="pcard-name">${n}</div>
-            <div class="pcard-val">R$ ${fmt(d.total)}</div>
-            <div class="pcard-sub">${d.count} item(s) · toque para cobrar</div>
-          </div>`).join('')}
+            <div class="pcard-val${allDone ? ' g' : ' b'}">R$ ${fmt(d.total)}</div>
+            <div class="pcard-sub">
+              ${allDone
+                ? '✓ quitado · toque para ver'
+                : `${d.count} item(s) · toque para cobrar`}
+              ${rcv.count > 0 && !allDone
+                ? `<div style="color:var(--green);font-size:10px;margin-top:2px">✓ ${rcv.count} recebido(s) · R$ ${fmt(rcv.total)}</div>`
+                : ''}
+            </div>
+          </div>`;
+        }).join('')}
       </div>
     </div>`;
 }

@@ -8,7 +8,7 @@ async function loadAllFromSupabase() {
   setSyncing(true);
   try {
     const uid = currentUser.id;
-    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes] = await Promise.all([
+    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes, rmRes] = await Promise.all([
       sb.from('months').select('*').eq('user_id', uid).order('created_at'),
       sb.from('banks').select('*').eq('user_id', uid),
       sb.from('transacoes').select('*').eq('user_id', uid),
@@ -18,6 +18,7 @@ async function loadAllFromSupabase() {
       sb.from('subscriptions').select('*').eq('user_id', uid),
       sb.from('installments').select('*').eq('user_id', uid),
       sb.from('banks_global').select('*').eq('user_id', uid).order('created_at'),
+      sb.from('receivable_marks').select('*').eq('user_id', uid),
     ]);
 
     // ── Months + Banks (por mês) + Entries ──
@@ -105,6 +106,13 @@ async function loadAllFromSupabase() {
       id: g.id, name: g.name, color: g.color
     }));
 
+    // ── Marks de recebimento ──
+    const receivableMarks = (rmRes?.data || []).map(r => ({
+      id: r.id, monthKey: r.month_key, itemRef: r.item_ref, itemType: r.item_type,
+      person: r.person, amount: parseFloat(r.amount), desc: r.description,
+      bankName: r.bank_name, received: r.received, receivedAt: r.received_at
+    }));
+
     // ── Popula estado global ──
     S.months       = months;
     sortMonths();
@@ -114,6 +122,7 @@ async function loadAllFromSupabase() {
     S.subscriptions = subscriptions;
     S.installments = installments;
     S.globalBanks  = globalBanks;
+    S.receivableMarks = receivableMarks;
 
     // ── Seeding: migra bancos existentes para banks_global na primeira vez ──
     if (S.globalBanks.length === 0 && months.length > 0 && !gbRes?.error) {

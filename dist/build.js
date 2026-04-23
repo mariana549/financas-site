@@ -37,6 +37,7 @@ const JS_FILES = [
   'js/dbs/db-incomes.js',
   'js/dbs/db-subscriptions.js',
   'js/dbs/db-installments.js',
+  'js/dbs/db-receivables.js',
   'js/dbs/db.js',
   'js/auth.js',
   'js/months.js',

@@ -817,3 +817,84 @@ html[data-privacy="on"] .detail-amount {
   align-items: center;
   gap: 8px;
 }
+
+/* ══════════════════════════════════════════
+   RECEBIMENTOS — Cobrança com controle de status
+   ══════════════════════════════════════════ */
+
+/* Botão circular de toggle recebido/pendente */
+.rcv-toggle {
+  background: none;
+  border: 1.5px solid var(--border2);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  font-size: 11px;
+  color: var(--text3);
+  transition: border-color .15s, background .15s, color .15s;
+  flex-shrink: 0;
+}
+
+.rcv-toggle:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.rcv-toggle--done {
+  border-color: var(--green);
+  background: rgba(74, 222, 128, .12);
+  color: var(--green);
+  font-weight: 700;
+}
+
+.rcv-toggle--done:hover {
+  border-color: var(--red);
+  background: rgba(255, 77, 77, .08);
+  color: var(--red);
+}
+
+/* Badge "← Jan" para carry-over */
+.rcv-carry {
+  background: rgba(167, 139, 250, .12);
+  color: var(--purple, #a78bfa);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* Valor riscado para itens recebidos */
+.rcv-amt-done {
+  color: var(--green);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--green) 50%, transparent);
+}
+
+/* Banner de entrada registrada desta pessoa */
+.rcv-income-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(74, 222, 128, .07);
+  border: 1px solid rgba(74, 222, 128, .2);
+  border-radius: 8px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.rcv-income-bar:hover {
+  background: rgba(74, 222, 128, .13);
+}
+
+/* Person card "quitado" */
+.pcard-done {
+  border-color: rgba(74, 222, 128, .35) !important;
+  background: rgba(74, 222, 128, .04);
+}
