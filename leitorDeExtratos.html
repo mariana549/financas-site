@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leitor de Extratos Bancários</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    :root {
+      --bg: #f3f0e9;
+      --bg-subtle: #ebe7dd;
+      --surface: #fbfaf6;
+      --ink: #1c1a16;
+      --ink-soft: #5c5852;
+      --ink-mute: #8c867a;
+      --line: #ddd6c6;
+      --line-strong: #c8c0ac;
+      --accent: #2b4d3e;
+      --accent-soft: #d8e1d6;
+      --danger: #8a3324;
+      --danger-soft: #f0d9d2;
+      --gold: #a17628;
+      --gold-soft: #f0e3c4;
+      --indigo: #3d3a6e;
+      --indigo-soft: #d8d6e8;
+      --navy: #1f3a5f;
+      --navy-soft: #d3dbe6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Manrope', sans-serif;
+      font-weight: 400;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-image:
+        radial-gradient(circle at 15% 8%, rgba(43, 77, 62, 0.05), transparent 40%),
+        radial-gradient(circle at 88% 92%, rgba(138, 51, 36, 0.04), transparent 40%);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 48px 32px 96px;
+    }
+
+    /* HEADER */
+    header.brand {
+      margin-bottom: 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+    }
+
+    h1 {
+      font-family: 'Fraunces', serif;
+      font-weight: 400;
+      font-size: clamp(36px, 6vw, 64px);
+      letter-spacing: -0.025em;
+      line-height: 1.0;
+      color: var(--ink);
+      font-variation-settings: "opsz" 144, "SOFT" 50;
+    }
+
+    h1 em {
+      font-style: italic;
+      font-weight: 300;
+      color: var(--accent);
+    }
+
+    .lede {
+      font-size: 15px;
+      color: var(--ink-soft);
+      max-width: 580px;
+      margin-top: 12px;
+    }
+
+    /* UPLOAD */
+    .uploader {
+      background: var(--surface);
+      border: 1px dashed var(--line-strong);
+      border-radius: 4px;
+      padding: 40px 32px;
+      text-align: center;
+      transition: all 0.2s;
+      position: relative;
+      cursor: pointer;
+      display: block;
+    }
+
+    .uploader:hover,
+    .uploader.drag {
+      border-color: var(--accent);
+      background: #fff;
+    }
+
+    .upload-label {
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
+      font-weight: 400;
+      pointer-events: none;
+    }
+
+    .upload-hint {
+      font-size: 13px;
+      color: var(--ink-mute);
+      margin-top: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      pointer-events: none;
+    }
+
+    /* STATUS */
+    .status {
+      margin-top: 16px;
+      font-size: 14px;
+      padding: 14px 18px;
+      border-radius: 4px;
+      display: none;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.info {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-left: 3px solid var(--accent);
+    }
+
+    .status.warn {
+      background: var(--gold-soft);
+      color: var(--gold);
+      border-left: 3px solid var(--gold);
+    }
+
+    .status.error {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border-left: 3px solid var(--danger);
+    }
+
+    /* RESULTS */
+    .results {
+      margin-top: 56px;
+      display: none;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .results.show {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .summary {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .summary-cell .lbl {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 6px;
+    }
+
+    .summary-cell .val {
+      font-family: 'Fraunces', serif;
+      font-size: 28px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      font-variation-settings: "opsz" 144;
+    }
+
+    .summary-cell.entrada .val {
+      color: var(--accent);
+    }
+
+    .summary-cell.saida .val {
+      color: var(--danger);
+    }
+
+    /* BUTTONS */
+    .btn {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 500;
+      font-size: 13px;
+      background: var(--ink);
+      color: var(--bg);
+      border: 1px solid var(--ink);
+      padding: 10px 18px;
+      border-radius: 2px;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      background: transparent;
+      color: var(--ink);
+    }
+
+    .btn.ghost {
+      background: transparent;
+      color: var(--ink);
+      border-color: var(--line-strong);
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .btn.ghost:hover {
+      background: var(--ink);
+      color: var(--bg);
+      border-color: var(--ink);
+    }
+
+    .btn.copied {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    /* SECTIONS */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), transparent);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .section-title h2 {
+      font-family: 'Fraunces', serif;
+      font-weight: 400;
+      font-size: 22px;
+      letter-spacing: -0.015em;
+      font-variation-settings: "opsz" 24;
+    }
+
+    .section-title .count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--ink-mute);
+      padding: 3px 8px;
+      background: var(--bg-subtle);
+      border-radius: 2px;
+    }
+
+    .swatch {
+      width: 4px;
+      height: 28px;
+      border-radius: 1px;
+    }
+
+    .section[data-key="cartao"] .swatch {
+      background: var(--indigo);
+    }
+
+    .section[data-key="debitos"] .swatch {
+      background: var(--danger);
+    }
+
+    .section[data-key="boletos"] .swatch {
+      background: var(--gold);
+    }
+
+    .section[data-key="pixIn"] .swatch {
+      background: var(--accent);
+    }
+
+    .section[data-key="pixOut"] .swatch {
+      background: var(--navy);
+    }
+
+    .section-body {
+      padding: 8px 24px 16px;
+    }
+
+    .section-body.empty {
+      padding: 28px 24px;
+      text-align: center;
+      color: var(--ink-mute);
+      font-style: italic;
+      font-family: 'Fraunces', serif;
+      font-size: 15px;
+    }
+
+    .month-group {
+      margin: 16px 0 8px;
+    }
+
+    .month-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin: 16px 0 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      padding: 10px 0;
+      border-bottom: 1px dotted var(--line);
+      font-size: 14px;
+      align-items: baseline;
+    }
+
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .row .desc {
+      color: var(--ink);
+      word-break: break-word;
+    }
+
+    .row .desc .meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--ink-mute);
+      margin-right: 6px;
+    }
+
+    .row .desc .parcela {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--indigo);
+      background: var(--indigo-soft);
+      padding: 1px 6px;
+      border-radius: 2px;
+      margin-left: 6px;
+    }
+
+    .row .desc .ambig {
+      color: var(--gold);
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    .row .val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .section[data-key="pixIn"] .row .val {
+      color: var(--accent);
+    }
+
+    .section[data-key="pixOut"] .row .val,
+    .section[data-key="debitos"] .row .val,
+    .section[data-key="boletos"] .row .val,
+    .section[data-key="cartao"] .row .val {
+      color: var(--ink);
+    }
+
+    .section-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      border-top: 1px solid var(--line);
+      background: var(--bg-subtle);
+      font-size: 13px;
+    }
+
+    .section-foot .lbl {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+    }
+
+    .section-foot .total {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+
+    footer.foot {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+      font-size: 12px;
+      color: var(--ink-mute);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 640px) {
+      .wrap {
+        padding: 32px 20px 64px;
+      }
+
+      .section-head {
+        padding: 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .section-body {
+        padding: 4px 16px 12px;
+      }
+
+      .section-foot {
+        padding: 14px 16px;
+      }
+
+      .row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+
+      .row .val {
+        justify-self: end;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <header class="brand">
+      <div class="eyebrow">Ferramenta · Processamento local</div>
+      <h1>Leitor de <em>extratos</em><br />bancários</h1>
+      <p class="lede">Envie um ou mais PDFs (fatura de cartão, extrato de conta). Tudo é processado no seu navegador —
+        nada é enviado a servidores.</p>
+    </header>
+
+    <label class="uploader" id="dropzone" for="fileInput">
+      <input type="file" id="fileInput" accept="application/pdf,.pdf" multiple hidden />
+      <div class="upload-label">Clique ou arraste seus PDFs aqui</div>
+      <div class="upload-hint">.PDF · MÚLTIPLOS ARQUIVOS PERMITIDOS</div>
+    </label>
+
+    <div class="status" id="status"></div>
+
+    <section class="results" id="results">
+      <div class="top-bar">
+        <div class="summary">
+          <div class="summary-cell entrada">
+            <div class="lbl">Entradas</div>
+            <div class="val" id="totalEntradas">R$ 0,00</div>
+          </div>
+          <div class="summary-cell saida">
+            <div class="lbl">Saídas</div>
+            <div class="val" id="totalSaidas">R$ 0,00</div>
+          </div>
+        </div>
+        <button class="btn" id="copyAllBtn">Copiar tudo</button>
+      </div>
+
+      <div class="section" data-key="cartao">
+        <div class="section-head">
+          <div class="section-title">
+            <div class="swatch"></div>
+            <h2>Lançamentos / Compras no cartão</h2><span class="count" id="count-cartao">0</span>
+          </div>
+          <button class="btn ghost copy-btn" data-target="cartao">Copiar</button>
+        </div>
+        <div class="section-body" id="body-cartao"></div>
+        <div class="section-foot"><span class="lbl">Total do mês</span><span class="total" id="total-cartao">R$
+            0,00</span></div>
+      </div>
+
+      <div class="section" data-key="debitos">
+        <div class="section-head">
+          <div class="section-title">
+            <div class="swatch"></div>
+            <h2>Débitos em conta</h2><span class="count" id="count-debitos">0</span>
+          </div>
+          <button class="btn ghost copy-btn" data-target="debitos">Copiar</button>
+        </div>
+        <div class="section-body" id="body-debitos"></div>
+        <div class="section-foot"><span class="lbl">Total</span><span class="total" id="total-debitos">R$ 0,00</span>
+        </div>
+      </div>
+
+      <div class="section" data-key="boletos">
+        <div class="section-head">
+          <div class="section-title">
+            <div class="swatch"></div>
+            <h2>Boletos pagos</h2><span class="count" id="count-boletos">0</span>
+          </div>
+          <button class="btn ghost copy-btn" data-target="boletos">Copiar</button>
+        </div>
+        <div class="section-body" id="body-boletos"></div>
+        <div class="section-foot"><span class="lbl">Total</span><span class="total" id="total-boletos">R$ 0,00</span>
+        </div>
+      </div>
+
+      <div class="section" data-key="pixIn">
+        <div class="section-head">
+          <div class="section-title">
+            <div class="swatch"></div>
+            <h2>PIX Recebidos</h2><span class="count" id="count-pixIn">0</span>
+          </div>
+          <button class="btn ghost copy-btn" data-target="pixIn">Copiar</button>
+        </div>
+        <div class="section-body" id="body-pixIn"></div>
+        <div class="section-foot"><span class="lbl">Total</span><span class="total" id="total-pixIn">R$ 0,00</span>
+        </div>
+      </div>
+
+      <div class="section" data-key="pixOut">
+        <div class="section-head">
+          <div class="section-title">
+            <div class="swatch"></div>
+            <h2>PIX Enviados</h2><span class="count" id="count-pixOut">0</span>
+          </div>
+          <button class="btn ghost copy-btn" data-target="pixOut">Copiar</button>
+        </div>
+        <div class="section-body" id="body-pixOut"></div>
+        <div class="section-foot"><span class="lbl">Total</span><span class="total" id="total-pixOut">R$ 0,00</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <span>Sem upload · Sem rastreamento · 100% navegador</span>
+      <span id="meta"></span>
+    </footer>
+  </div>
+
+  <script>
+    // Global error visibility
+    window.addEventListener('error', e => {
+      const el = document.getElementById('status');
+      if (el) {
+        el.className = 'status show error';
+        el.textContent = 'Erro: ' + (e.message || e.error || 'desconhecido');
+      }
+    });
+
+    if (typeof pdfjsLib === 'undefined') {
+      document.addEventListener('DOMContentLoaded', () => {
+        const el = document.getElementById('status');
+        el.className = 'status show error';
+        el.textContent = 'Falha ao carregar PDF.js da CDN. Verifique sua conexão à internet e recarregue a página.';
+      });
+    } else {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    // ---------- helpers ----------
+    const MONTH_ABBR = { JAN: '01', FEV: '02', MAR: '03', ABR: '04', MAI: '05', JUN: '06', JUL: '07', AGO: '08', SET: '09', OUT: '10', NOV: '11', DEZ: '12' };
+    const MONTH_NAME = { '01': 'Janeiro', '02': 'Fevereiro', '03': 'Março', '04': 'Abril', '05': 'Maio', '06': 'Junho', '07': 'Julho', '08': 'Agosto', '09': 'Setembro', '10': 'Outubro', '11': 'Novembro', '12': 'Dezembro' };
+    const MONTH_ORDER = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+    function parseValor(s) {
+      if (!s) return 0;
+      return parseFloat(String(s).replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
+    }
+    function fmtBRL(n) {
+      return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function setStatus(msg, type = 'info') {
+      const el = document.getElementById('status');
+      el.className = 'status show ' + type;
+      el.textContent = msg;
+    }
+    function clearStatus() {
+      document.getElementById('status').className = 'status';
+    }
+
+    // ---------- PDF.js text extraction with line reconstruction ----------
+    async function extractLinesFromPdf(file) {
+      const buf = await file.arrayBuffer();
+      let pdf;
+      try {
+        pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      } catch (e) {
+        if (e && (e.name === 'PasswordException' || /password/i.test(e.message || ''))) {
+          throw new Error('PDF protegido por senha. Remova a senha e tente novamente.');
+        }
+        throw new Error('Não foi possível abrir o PDF: ' + (e.message || e));
+      }
+
+      const allLines = [];
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        if (!content.items.length) continue;
+
+        // Cluster items by Y with tolerance
+        const sorted = [...content.items].sort((a, b) => b.transform[5] - a.transform[5]);
+        const lines = [];
+        let cur = null, curY = null;
+        const TOL = 3;
+        for (const it of sorted) {
+          const y = it.transform[5];
+          if (curY === null || Math.abs(y - curY) > TOL) {
+            if (cur && cur.length) lines.push(cur);
+            cur = []; curY = y;
+          }
+          cur.push(it);
+        }
+        if (cur && cur.length) lines.push(cur);
+
+        for (const line of lines) {
+          const ordered = line.sort((a, b) => a.transform[4] - b.transform[4]);
+          const text = ordered.map(i => i.str).join(' ').replace(/\s+/g, ' ').trim();
+          if (text) allLines.push(text);
+        }
+        allLines.push('§§PAGE§§');
+      }
+
+      if (!allLines.length || allLines.every(l => l === '§§PAGE§§')) {
+        throw new Error('Não foi possível extrair texto do PDF (talvez seja uma imagem escaneada).');
+      }
+
+      return allLines;
+    }
+
+    // ---------- detect doc type ----------
+    function detectKind(lines) {
+      const text = lines.join('\n');
+      const isFatura = /TRANSAÇÕES\s+DE/i.test(text) || (/fatura/i.test(text) && /vencimento/i.test(text) && /Parcela/i.test(text));
+      const isExtrato = /Saldo inicial/i.test(text) || /Total de entradas/i.test(text) || /Movimentações/i.test(text);
+      return { isFatura, isExtrato };
+    }
+
+    // ---------- parse fatura (credit card bill) ----------
+    function parseFatura(lines, result) {
+      let inTransacoes = false;
+      let inPagamentos = false;
+
+      const txRegex = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(?:[•\.]+\s*\d+\s+|[\u2022\.\s]*\d{4}\s+)?(.+?)\s+R?\$?\s*([\d\.]+,\d{2})$/i;
+      const txRegex2 = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(.+?)\s+R?\$?\s*([\d\.]+,\d{2})$/i;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (/^TRANSAÇÕES/i.test(line) || /^TRANSAC/i.test(line)) {
+          inTransacoes = true; inPagamentos = false; continue;
+        }
+        if (!inTransacoes) continue;
+
+        if (/^Pagamentos\s+e\s+Financiamentos/i.test(line)) { inPagamentos = true; continue; }
+        if (inPagamentos) continue;
+
+        // Skip section headers like "Mariana A Evaristo R$ 1.861,15"
+        if (/^[A-Z][a-záâãéêíóôõúç]+(\s+[A-Z][a-záâãéêíóôõúç]*)*\s+R\$/i.test(line) && !/\d{2}\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)/i.test(line)) {
+          continue;
+        }
+
+        let m = line.match(txRegex) || line.match(txRegex2);
+        if (!m) continue;
+
+        const day = m[1];
+        const monAbbr = m[2].toUpperCase();
+        let desc = m[3].trim();
+        const valor = parseValor(m[4]);
+        if (!valor) continue;
+
+        // Strip leading card mask remnants like "•••• 7073" / "7073"
+        desc = desc.replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').trim();
+        desc = desc.replace(/^\d{4}\s+/, '').trim();
+
+        // Skip "Saldo restante da fatura anterior" and similar non-purchase rows
+        if (/Saldo\s+restante/i.test(desc)) continue;
+        if (/^Pagamento\s+em/i.test(desc)) continue;
+
+        // Extract parcela info
+        let parcela = '';
+        const pm = desc.match(/^(.+?)\s*-\s*Parcela\s*(\d+)\s*\/\s*(\d+)\s*$/i);
+        if (pm) { desc = pm[1].trim(); parcela = `${pm[2]}/${pm[3]}`; }
+
+        const monthName = MONTH_NAME[MONTH_ABBR[monAbbr]];
+        if (!result.cartao[monthName]) result.cartao[monthName] = [];
+        result.cartao[monthName].push({ desc, parcela, valor, day, mon: monAbbr });
+      }
+    }
+
+    // ---------- parse extrato (account statement) ----------
+    function parseExtrato(lines, result) {
+      let currentDate = null;
+
+      // Single-line transaction patterns. Each line has been reconstructed from PDF Y-grouping,
+      // so the value usually appears at the end of the same line.
+      const dateLine = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(\d{4})\b/i;
+      const valueAtEnd = /([\d\.]+,\d{2})\s*$/;
+
+      for (let i = 0; i < lines.length; i++) {
+        const raw = lines[i];
+        if (raw === '§§PAGE§§') continue;
+
+        // Date marker
+        const dm = raw.match(dateLine);
+        if (dm) {
+          currentDate = `${dm[1]}/${MONTH_ABBR[dm[2].toUpperCase()]}/${dm[3]}`;
+          // The date line itself ("01 JAN 2026 Total de entradas + 123,75") is just a header sum, skip
+          continue;
+        }
+
+        // Skip aggregate rows
+        if (/^Total\s+de\s+(entradas|saídas)/i.test(raw)) continue;
+        if (/^Saldo\s+(inicial|final|líquido)/i.test(raw)) continue;
+        if (/^Movimentações/i.test(raw)) continue;
+        if (/^Rendimento/i.test(raw)) continue;
+
+        // ---- PIX received (covers "Transferência Recebida" and "Transferência recebida pelo Pix") ----
+        let m = raw.match(/^Transferência\s+[Rr]ecebida(?:\s+pelo\s+Pix)?\s+(.+?)\s+([\d\.]+,\d{2})\s*$/);
+        if (m) {
+          const valor = parseValor(m[2]);
+          const nome = extractName(m[1]);
+          result.pixIn.push({ valor, nome, data: currentDate });
+          continue;
+        }
+        m = raw.match(/^Transferência\s+[Rr]ecebida(?:\s+pelo\s+Pix)?\s+(.+)$/);
+        if (m) {
+          const nome = extractName(m[1]);
+          const valor = lookForValue(lines, i);
+          if (valor) result.pixIn.push({ valor, nome, data: currentDate });
+          continue;
+        }
+
+        // ---- PIX sent ----
+        m = raw.match(/^Transferência\s+enviada(?:\s+pelo\s+Pix)?\s+(.+?)\s+([\d\.]+,\d{2})\s*$/);
+        if (m) {
+          const valor = parseValor(m[2]);
+          const nome = extractName(m[1]);
+          result.pixOut.push({ valor, nome, data: currentDate });
+          continue;
+        }
+        m = raw.match(/^Transferência\s+enviada(?:\s+pelo\s+Pix)?\s+(.+)$/);
+        if (m) {
+          const nome = extractName(m[1]);
+          const valor = lookForValue(lines, i);
+          if (valor) result.pixOut.push({ valor, nome, data: currentDate });
+          continue;
+        }
+
+        // ---- Pagamento de fatura (debit) ----
+        m = raw.match(/^Pagamento\s+de\s+fatura\s+([\d\.]+,\d{2})\s*$/i);
+        if (m) {
+          result.debitos.push({ data: currentDate, descricao: 'Pagamento de fatura', valor: parseValor(m[1]) });
+          continue;
+        }
+        if (/^Pagamento\s+de\s+fatura\s*$/i.test(raw)) {
+          const valor = lookForValue(lines, i);
+          if (valor) result.debitos.push({ data: currentDate, descricao: 'Pagamento de fatura', valor });
+          continue;
+        }
+
+        // ---- Boletos pagos ----
+        m = raw.match(/^Pagamento\s+de\s+boleto\s+(.+?)\s+([\d\.]+,\d{2})\s*$/i);
+        if (m) {
+          result.boletos.push({ data: currentDate, descricao: extractName(m[1]) || 'Boleto', valor: parseValor(m[2]) });
+          continue;
+        }
+        if (/^Pagamento\s+de\s+boleto/i.test(raw)) {
+          const valor = lookForValue(lines, i);
+          if (valor) result.boletos.push({ data: currentDate, descricao: 'Boleto', valor });
+          continue;
+        }
+
+        // ---- Tarifas, anuidades, débito automático, compras no débito, saques (todos viram Débito) ----
+        m = raw.match(/^(Tarifa|Anuidade|Débito\s+automático|Debito\s+automatico|Compra\s+no\s+débito|Saque|IOF|Mensalidade|Assinatura)\s+(.+?)\s+([\d\.]+,\d{2})\s*$/i);
+        if (m) {
+          result.debitos.push({ data: currentDate, descricao: `${m[1]} ${extractName(m[2])}`.trim(), valor: parseValor(m[3]) });
+          continue;
+        }
+
+        // ---- Outras saídas com valor: marcar como ambíguo ----
+        // Try to detect any other "saida-like" row that we couldn't classify
+        // Heuristic: a line that is NOT a "Transferência recebida" but has a value.
+        if (/transferência/i.test(raw) === false && /^[A-ZÁÂÃÉÊÍÓÔÕÚÇa-záâãéêíóôõúç]/.test(raw) && valueAtEnd.test(raw)) {
+          // Try to find the type+name+value, treating as ambiguous debit
+          const vm = raw.match(/^(.+?)\s+([\d\.]+,\d{2})\s*$/);
+          if (vm) {
+            const desc = vm[1].trim();
+            // Filter out obvious noise
+            if (desc.length > 4 && !/CNPJ/i.test(desc) && !/Agência/i.test(desc) && !/Conta:/i.test(desc) && !/extrato/i.test(desc)) {
+              // Don't double-count if it looks like a header
+              if (!/^Total/i.test(desc) && !/^Saldo/i.test(desc)) {
+                // Ambiguous: only add if not already captured
+                // (we'll dedupe later if needed)
+                // result.debitos.push({ data: currentDate, descricao: desc, valor: parseValor(vm[2]), ambig: true });
+                // Disabled by default to avoid noise; uncomment if you want aggressive capture.
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function extractName(rawDesc) {
+      if (!rawDesc) return '';
+      // Strip trailing CPF/CNPJ + bank info: split on " - "
+      // Typical: "Alice Evaristo Xavier - •••.300.426-•• - NU PAGAMENTOS - IP (0260)..."
+      // Or: "DOG FASHION - 57.013.467/0001-93 - STONE IP S.A. ..."
+      const parts = rawDesc.split(/\s+-\s+/);
+      // Take only the first segment as the human/legal name
+      let name = parts[0].trim();
+      // Strip if the part looks like a CPF/CNPJ mask
+      if (/^[•\u2022\.\d-]+$/.test(name)) {
+        name = (parts[1] || '').trim();
+      }
+      return name;
+    }
+
+    function lookForValue(lines, fromIdx) {
+      for (let j = fromIdx + 1; j < Math.min(lines.length, fromIdx + 6); j++) {
+        const l = lines[j];
+        if (l === '§§PAGE§§') continue;
+        const m = l.match(/^([\d\.]+,\d{2})\s*$/);
+        if (m) return parseValor(m[1]);
+        // If we hit another transaction marker, stop
+        if (/^(Transferência|Pagamento|Total\s+de|\d{2}\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ))/i.test(l)) break;
+      }
+      return null;
+    }
+
+    // ---------- aggregate parse ----------
+    async function processFile(file) {
+      const lines = await extractLinesFromPdf(file);
+      const kind = detectKind(lines);
+
+      const result = { cartao: {}, debitos: [], boletos: [], pixIn: [], pixOut: [] };
+
+      if (kind.isFatura) parseFatura(lines, result);
+      if (kind.isExtrato) parseExtrato(lines, result);
+
+      if (!kind.isFatura && !kind.isExtrato) {
+        // Best-effort: try both anyway
+        parseFatura(lines, result);
+        parseExtrato(lines, result);
+      }
+
+      return { result, kind };
+    }
+
+    function mergeResults(target, src) {
+      for (const [m, items] of Object.entries(src.cartao)) {
+        if (!target.cartao[m]) target.cartao[m] = [];
+        target.cartao[m].push(...items);
+      }
+      target.debitos.push(...src.debitos);
+      target.boletos.push(...src.boletos);
+      target.pixIn.push(...src.pixIn);
+      target.pixOut.push(...src.pixOut);
+    }
+
+    // ---------- rendering ----------
+    function render(result) {
+      // Cartão (grouped by month)
+      const cartaoBody = document.getElementById('body-cartao');
+      cartaoBody.innerHTML = '';
+      const months = Object.keys(result.cartao).sort((a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
+      let cartaoTotal = 0; let cartaoCount = 0;
+      if (!months.length) {
+        cartaoBody.classList.add('empty');
+        cartaoBody.textContent = 'Nenhum lançamento de cartão encontrado.';
+      } else {
+        cartaoBody.classList.remove('empty');
+        const showMonthLabels = months.length > 1;
+        for (const m of months) {
+          const items = result.cartao[m];
+          if (showMonthLabels) {
+            const lbl = document.createElement('div');
+            lbl.className = 'month-label';
+            lbl.textContent = m;
+            cartaoBody.appendChild(lbl);
+          }
+          for (const it of items) {
+            const row = document.createElement('div'); row.className = 'row';
+            const desc = document.createElement('div'); desc.className = 'desc';
+            desc.innerHTML = escape(it.desc) + (it.parcela ? ` <span class="parcela">${it.parcela}</span>` : '');
+            const val = document.createElement('div'); val.className = 'val'; val.textContent = fmtBRL(it.valor);
+            row.appendChild(desc); row.appendChild(val);
+            cartaoBody.appendChild(row);
+            cartaoTotal += it.valor; cartaoCount++;
+          }
+        }
+      }
+      document.getElementById('count-cartao').textContent = cartaoCount;
+      document.getElementById('total-cartao').textContent = fmtBRL(cartaoTotal);
+
+      renderFlatList('debitos', result.debitos, (it) => {
+        const ambig = it.ambig ? ' <span class="ambig">(?)</span>' : '';
+        return `<span class="meta">${escape(it.data || '')}</span>${escape(it.descricao)}${ambig}`;
+      });
+      renderFlatList('boletos', result.boletos, (it) => {
+        return `<span class="meta">${escape(it.data || '')}</span>${escape(it.descricao)}`;
+      });
+      renderFlatList('pixIn', result.pixIn, (it) => {
+        return `<span class="meta">${escape(it.data || '')}</span>${escape(it.nome || '—')}`;
+      });
+      renderFlatList('pixOut', result.pixOut, (it) => {
+        return `<span class="meta">${escape(it.data || '')}</span>para ${escape(it.nome || '—')}`;
+      });
+
+      // Compute totals
+      const totalDebitos = result.debitos.reduce((s, i) => s + i.valor, 0);
+      const totalBoletos = result.boletos.reduce((s, i) => s + i.valor, 0);
+      const totalPixIn = result.pixIn.reduce((s, i) => s + i.valor, 0);
+      const totalPixOut = result.pixOut.reduce((s, i) => s + i.valor, 0);
+
+      const totalSaidas = totalDebitos + totalBoletos + totalPixOut;
+      const totalEntradas = totalPixIn;
+
+      document.getElementById('totalEntradas').textContent = fmtBRL(totalEntradas);
+      document.getElementById('totalSaidas').textContent = fmtBRL(totalSaidas);
+    }
+
+    function renderFlatList(key, items, descRenderer) {
+      const body = document.getElementById('body-' + key);
+      body.innerHTML = '';
+      if (!items.length) {
+        body.classList.add('empty');
+        body.textContent = 'Nenhum lançamento encontrado.';
+        document.getElementById('count-' + key).textContent = 0;
+        document.getElementById('total-' + key).textContent = fmtBRL(0);
+        return;
+      }
+      body.classList.remove('empty');
+      let total = 0;
+      for (const it of items) {
+        const row = document.createElement('div'); row.className = 'row';
+        const desc = document.createElement('div'); desc.className = 'desc';
+        desc.innerHTML = descRenderer(it);
+        const val = document.createElement('div'); val.className = 'val'; val.textContent = fmtBRL(it.valor);
+        row.appendChild(desc); row.appendChild(val);
+        body.appendChild(row);
+        total += it.valor;
+      }
+      document.getElementById('count-' + key).textContent = items.length;
+      document.getElementById('total-' + key).textContent = fmtBRL(total);
+    }
+
+    function escape(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // ---------- text export (for clipboard) ----------
+    let LAST_RESULT = null;
+
+    function buildSectionText(key) {
+      if (!LAST_RESULT) return '';
+      const r = LAST_RESULT;
+      const lines = [];
+
+      if (key === 'cartao') {
+        const months = Object.keys(r.cartao).sort((a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
+        let total = 0;
+        const showLabels = months.length > 1;
+        for (const m of months) {
+          if (showLabels) lines.push(m, '');
+          for (const it of r.cartao[m]) {
+            const p = it.parcela ? ` [${it.parcela}]` : '';
+            lines.push(`${it.desc}${p} ${fmtBRL(it.valor)}`);
+            total += it.valor;
+          }
+          if (showLabels) lines.push('');
+        }
+        lines.push('—', `Total: ${fmtBRL(total)}`);
+      }
+      if (key === 'debitos') {
+        let total = 0;
+        for (const it of r.debitos) {
+          const ambig = it.ambig ? ' (?)' : '';
+          lines.push(`${it.data || ''} - ${it.descricao}${ambig} - ${fmtBRL(it.valor)}`);
+          total += it.valor;
+        }
+        lines.push('—', `Total: ${fmtBRL(total)}`);
+      }
+      if (key === 'boletos') {
+        let total = 0;
+        for (const it of r.boletos) {
+          lines.push(`${it.data || ''} - ${it.descricao} - ${fmtBRL(it.valor)}`);
+          total += it.valor;
+        }
+        lines.push('—', `Total: ${fmtBRL(total)}`);
+      }
+      if (key === 'pixIn') {
+        let total = 0;
+        for (const it of r.pixIn) {
+          lines.push(`${fmtBRL(it.valor)} - ${it.nome || '—'}`);
+          total += it.valor;
+        }
+        lines.push('—', `Total: ${fmtBRL(total)}`);
+      }
+      if (key === 'pixOut') {
+        let total = 0;
+        for (const it of r.pixOut) {
+          lines.push(`${fmtBRL(it.valor)} - para ${it.nome || '—'}`);
+          total += it.valor;
+        }
+        lines.push('—', `Total: ${fmtBRL(total)}`);
+      }
+      return lines.join('\n');
+    }
+
+    function buildAllText() {
+      const labels = {
+        cartao: 'LANÇAMENTOS / COMPRAS NO CARTÃO',
+        debitos: 'DÉBITOS EM CONTA',
+        boletos: 'BOLETOS PAGOS',
+        pixIn: 'PIX RECEBIDOS',
+        pixOut: 'PIX ENVIADOS'
+      };
+      const out = [];
+      for (const k of Object.keys(labels)) {
+        out.push('═══ ' + labels[k] + ' ═══', '');
+        out.push(buildSectionText(k));
+        out.push('', '');
+      }
+      // Totals
+      const totalDebitos = (LAST_RESULT?.debitos || []).reduce((s, i) => s + i.valor, 0);
+      const totalBoletos = (LAST_RESULT?.boletos || []).reduce((s, i) => s + i.valor, 0);
+      const totalPixIn = (LAST_RESULT?.pixIn || []).reduce((s, i) => s + i.valor, 0);
+      const totalPixOut = (LAST_RESULT?.pixOut || []).reduce((s, i) => s + i.valor, 0);
+      out.push('═══ TOTAIS GERAIS ═══');
+      out.push(`Entradas: ${fmtBRL(totalPixIn)}`);
+      out.push(`Saídas:   ${fmtBRL(totalDebitos + totalBoletos + totalPixOut)}`);
+      return out.join('\n');
+    }
+
+    async function copyText(text, btn) {
+      const giveFeedback = (label, isError) => {
+        if (!btn) return;
+        const orig = btn.dataset._orig || btn.textContent;
+        btn.dataset._orig = orig;
+        btn.textContent = label;
+        if (!isError) btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = orig;
+          btn.classList.remove('copied');
+        }, 1800);
+      };
+
+      // Try modern API first
+      try {
+        if (navigator.clipboard && window.isSecureContext !== false) {
+          await navigator.clipboard.writeText(text);
+          giveFeedback('✓ Copiado');
+          return;
+        }
+      } catch (e) {
+        console.warn('clipboard API falhou, tentando fallback:', e);
+      }
+
+      // Fallback: textarea + execCommand
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand('copy');
+        ta.remove();
+        if (ok) {
+          giveFeedback('✓ Copiado');
+        } else {
+          giveFeedback('✕ Erro', true);
+          alert('Não foi possível copiar automaticamente. Texto:\n\n' + text.slice(0, 200) + (text.length > 200 ? '…' : ''));
+        }
+      } catch (e) {
+        console.error('fallback de cópia também falhou:', e);
+        giveFeedback('✕ Erro', true);
+        alert('Não foi possível copiar: ' + e.message);
+      }
+    }
+
+    // ---------- bootstrapping ----------
+    const fileInput = document.getElementById('fileInput');
+    const dropzone = document.getElementById('dropzone');
+    const resultsEl = document.getElementById('results');
+
+    fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+    ['dragenter', 'dragover'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('drag'); }));
+    ['dragleave', 'drop'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove('drag'); }));
+    dropzone.addEventListener('drop', e => { if (e.dataTransfer?.files) handleFiles(e.dataTransfer.files); });
+
+    async function handleFiles(files) {
+      if (!files || !files.length) return;
+      clearStatus();
+      setStatus(`Processando ${files.length} arquivo${files.length > 1 ? 's' : ''}…`, 'info');
+
+      const merged = { cartao: {}, debitos: [], boletos: [], pixIn: [], pixOut: [] };
+      const kinds = [];
+      let errors = [];
+
+      for (const f of files) {
+        if (!/\.pdf$/i.test(f.name) && f.type !== 'application/pdf') {
+          errors.push(`${f.name}: não é um PDF`);
+          continue;
+        }
+        try {
+          const { result, kind } = await processFile(f);
+          mergeResults(merged, result);
+          kinds.push({ name: f.name, kind });
+        } catch (e) {
+          errors.push(`${f.name}: ${e.message}`);
+        }
+      }
+
+      if (errors.length) {
+        setStatus(errors.join(' · '), 'error');
+        if (errors.length === files.length) return;
+      } else {
+        const summary = kinds.map(k => {
+          const tags = [];
+          if (k.kind.isFatura) tags.push('fatura cartão');
+          if (k.kind.isExtrato) tags.push('extrato conta');
+          return `${k.name} → ${tags.join(' + ') || 'formato genérico'}`;
+        }).join(' · ');
+        setStatus(`Pronto. ${summary}`, 'info');
+      }
+
+      LAST_RESULT = merged;
+      render(merged);
+      resultsEl.classList.add('show');
+      document.getElementById('meta').textContent = new Date().toLocaleString('pt-BR');
+    }
+
+    // Copy buttons
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.target;
+        copyText(buildSectionText(key), btn);
+      });
+    });
+    document.getElementById('copyAllBtn').addEventListener('click', e => {
+      copyText(buildAllText(), e.currentTarget);
+    });
+  </script>
+</body>
+
+</html>

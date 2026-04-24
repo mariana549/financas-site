@@ -282,12 +282,41 @@ function injectModals() {
 
 <!-- AI Import -->
 <div class="modal-overlay" id="mAI"><div class="modal">
-  <div class="modal-title">📄 Importar Extrato com IA <button class="modal-close" onclick="closeModal('mAI')">×</button></div>
+  <div class="modal-title">📄 Importar Extrato <button class="modal-close" onclick="closeModal('mAI')">×</button></div>
+
+  <!-- Tipo de extrato -->
+  <div class="fg" style="margin-bottom:8px">
+    <label style="margin-bottom:6px">Tipo de extrato</label>
+    <div id="aiTypeChips" class="ai-type-chips">
+      <button class="ai-chip ai-chip--active" onclick="setAIType('auto',this)">Auto</button>
+      <button class="ai-chip" onclick="setAIType('cartao',this)">Cartão</button>
+      <button class="ai-chip" onclick="setAIType('debito',this)">Débito</button>
+      <button class="ai-chip" onclick="setAIType('pixout',this)">Pix enviado</button>
+      <button class="ai-chip" onclick="setAIType('pixin',this)">Pix recebido</button>
+      <button class="ai-chip" onclick="setAIType('boleto',this)">Boleto</button>
+    </div>
+  </div>
+
+  <!-- PDF upload zone -->
+  <div class="ai-pdf-zone" id="aiPdfZone"
+       onclick="document.getElementById('aiPdfInput').click()"
+       ondragover="event.preventDefault()"
+       ondrop="event.preventDefault();handleAIPdfFiles(event.dataTransfer.files)">
+    <input type="file" id="aiPdfInput" accept=".pdf" multiple style="display:none"
+           onchange="handleAIPdfFiles(this.files)">
+    <span class="ai-pdf-zone-icon">📎</span>
+    <span class="ai-pdf-zone-label">Solte PDFs aqui ou clique para selecionar</span>
+  </div>
+  <div id="aiPdfStatus" class="ai-pdf-status" style="display:none"></div>
+
+  <!-- PDF sections extracted -->
+  <div id="aiPdfSections" style="display:none;margin-bottom:8px"></div>
+
   <div class="fg"><label>Mês de destino</label><select id="aiMonthSel" onchange="updateAIBankSel()"></select></div>
-  <div class="fg"><label>Banco</label><select id="aiBankSel"></select></div>
+  <div class="fg" id="aiiBankRow"><label>Banco</label><select id="aiBankSel"></select></div>
   <div class="fg">
     <label>Cole o texto do extrato</label>
-    <textarea id="aiText" placeholder="eu: 55 + 25 + 44&#10;Sogra 13 + 44&#10;iFood 32,00&#10;Moto 195¹°" style="min-height:120px"></textarea>
+    <textarea id="aiText" placeholder="Cole aqui o texto extraído do PDF ou digite manualmente..." style="min-height:120px"></textarea>
   </div>
   <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:10px" onclick="runAI()">
     <span id="aiBtnText">✨ Interpretar</span>
