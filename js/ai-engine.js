@@ -636,6 +636,27 @@ async function runAI() {
 
 const _TYPE_LABEL = { cartao: 'cartão', debito: 'débito', boleto: 'boleto', pixin: 'pix recebido', pixout: 'pix enviado' };
 const _TYPE_COLOR = { cartao: 'var(--accent)', debito: 'var(--red)', boleto: 'var(--orange)', pixin: 'var(--green)', pixout: 'var(--blue)' };
+const _DEST_LABEL = { pixin: '→ entradas', pixout: '→ pix enviados', cartao: '→ banco', debito: '→ banco', boleto: '→ banco' };
+
+// Atualiza tipo de um item sem re-renderizar a lista inteira
+function _aiSetType(i, type) {
+  S.aiParsed[i].entryType = type;
+  const dest = document.getElementById('aiDest_' + i);
+  if (dest) dest.textContent = _DEST_LABEL[type] || '→ banco';
+}
+
+// Toggle "Meu / Não meu" sem re-renderizar
+function _aiToggleMine(i) {
+  const e = S.aiParsed[i];
+  e.isMine = !(e.isMine !== false);
+  const btn = document.getElementById('aiMineBtn_' + i);
+  const row = document.getElementById('aiPersonRow_' + i);
+  if (btn) {
+    btn.textContent = e.isMine ? 'Meu' : 'Não meu';
+    btn.classList.toggle('ai-mine-btn--mine', e.isMine);
+  }
+  if (row) row.style.display = e.isMine ? 'none' : 'flex';
+}
 
 function renderAIEntries() {
   document.getElementById('aiBtnText').textContent = '✨ Interpretar novamente';
@@ -648,26 +669,39 @@ function renderAIEntries() {
     return;
   }
 
+  // Inicializa isMine se ainda não foi definido
+  S.aiParsed.forEach(e => { if (e.isMine === undefined) e.isMine = true; });
+
   document.getElementById('aiEntryList').innerHTML = S.aiParsed.map((e, i) => {
-    const typeLabel = e.entryType ? _TYPE_LABEL[e.entryType] || e.entryType : null;
-    const typeColor = e.entryType ? (_TYPE_COLOR[e.entryType] || 'var(--text3)') : 'var(--text3)';
-    const destLabel = e.entryType === 'pixin' ? '→ entradas' : e.entryType === 'pixout' ? '→ pix enviados' : '→ banco';
+    const destLabel = _DEST_LABEL[e.entryType] || '→ banco';
+    const isMine = e.isMine !== false;
+    const typeOpts = [
+      ['cartao','🃏 Cartão'],['debito','💳 Débito'],
+      ['pixin','↙ Pix rec.'],['pixout','↗ Pix env.'],['boleto','📄 Boleto']
+    ].map(([v, l]) => `<option value="${v}"${e.entryType===v?' selected':''}>${l}</option>`).join('');
+
     return `
-    <div class="ai-entry-item">
+    <div class="ai-entry-item" id="aiItem_${i}">
       <input type="checkbox" id="aic${i}" checked>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:500">${e.desc}
-          ${e.person && e.entryType !== 'pixin' ? `<span style="color:var(--blue);margin-left:4px">→ ${e.person}</span>` : ''}
+        <div style="font-size:13px;font-weight:500;margin-bottom:5px">${e.desc}
+          ${e.installment ? `<span class="bm bm-inst" style="margin-left:4px">${e.installCurrent||1}/${e.installTotal||'?'}</span>` : ''}
         </div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">
-          ${e.installment ? `<span class="bm bm-inst">${e.installCurrent||1}/${e.installTotal||'?'}</span> ` : ''}
-          <span style="color:var(--accent)">R$ ${fmt(e.amount)}</span>
-          ${typeLabel ? `<span style="color:${typeColor};margin-left:4px">· ${typeLabel}</span>` : ''}
-          <span style="color:var(--text3);margin-left:4px">· ${destLabel}</span>
+        <div class="ai-item-meta">
+          <span style="color:var(--accent);font-size:11px;font-family:var(--mono)">R$ ${fmt(e.amount)}</span>
+          <select class="ai-mini-sel" onchange="_aiSetType(${i}, this.value)">${typeOpts}</select>
+          <span id="aiDest_${i}" style="font-size:11px;color:var(--text3);font-family:var(--mono)">${destLabel}</span>
+          <button class="ai-mine-btn${isMine ? ' ai-mine-btn--mine' : ''}" id="aiMineBtn_${i}" onclick="_aiToggleMine(${i})">${isMine ? 'Meu' : 'Não meu'}</button>
+        </div>
+        <div id="aiPersonRow_${i}" style="display:${isMine ? 'none' : 'flex'};align-items:center;gap:6px;margin-top:5px">
+          <span style="font-size:11px;color:var(--text3)">De quem:</span>
+          <input type="text" placeholder="nome da pessoa" value="${e.owner||e.person||''}"
+            style="font-size:11px;padding:3px 8px;border:1px solid var(--border2);border-radius:4px;background:var(--bg3);color:var(--text);flex:1;min-width:0"
+            oninput="S.aiParsed[${i}].owner = this.value">
         </div>
       </div>
       <input type="number" value="${e.amount.toFixed(2)}" step="0.01" min="0"
-        style="padding:4px 6px;font-size:11px;width:80px;text-align:right;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--text)"
+        style="padding:4px 6px;font-size:11px;width:78px;text-align:right;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--text);flex-shrink:0"
         onchange="S.aiParsed[${i}].amount = parseFloat(this.value) || 0">
     </div>`;
   }).join('');
@@ -704,11 +738,13 @@ async function importAIEntries() {
       const e = bankItems[i];
       const entryBaseType = (e.entryType === 'debito' || e.entryType === 'boleto') ? 'debit' : 'normal';
 
+      const entryOwner = (e.isMine !== false) ? null : (e.owner || null);
+
       if (e.installment && e.installTotal > 1) {
         const gId = 'grp_ai_' + Date.now() + '_' + i;
         const entry = {
           id: String(Date.now() + i), desc: e.desc, amount: e.amount, date: today(),
-          owner: e.owner, person: e.person || null, category: null, note: null,
+          owner: entryOwner, person: e.person || null, category: null, note: null,
           type: 'installment', installCurrent: e.installCurrent || 1,
           installTotal: e.installTotal, groupId: gId
         };
@@ -716,13 +752,13 @@ async function importAIEntries() {
         await dbSaveEntry(monthKey, bankName, entry);
         await registerFutureInst({
           desc: e.desc, partAmt: e.amount, total: e.installTotal,
-          cur: e.installCurrent || 1, bankName, owner: e.owner,
+          cur: e.installCurrent || 1, bankName, owner: entryOwner,
           person: e.person || null, cat: null, gId, startKey: monthKey, date: today()
         });
       } else {
         const entry = {
           id: String(Date.now() + i), desc: e.desc, amount: e.amount, date: today(),
-          owner: e.owner, person: e.person || null, category: null, note: null,
+          owner: entryOwner, person: e.person || null, category: null, note: null,
           type: entryBaseType
         };
         bank.entries.push(entry);

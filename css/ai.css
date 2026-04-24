@@ -31,9 +31,9 @@
 
 .ai-entry-item {
    display: flex;
-   align-items: center;
+   align-items: flex-start;
    gap: 8px;
-   padding: 7px 10px;
+   padding: 8px 10px;
    background: var(--bg3);
    border-radius: 6px;
    margin-bottom: 5px;
@@ -42,6 +42,47 @@
 .ai-entry-item input[type=checkbox] {
    width: auto;
    accent-color: var(--accent);
+   margin-top: 2px;
+   flex-shrink: 0;
+}
+
+/* ── meta row dentro de cada item ── */
+.ai-item-meta {
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 6px;
+}
+
+/* ── mini select de tipo por item ── */
+.ai-mini-sel {
+   font-size: 11px;
+   padding: 2px 4px;
+   border: 1px solid var(--border2);
+   border-radius: 4px;
+   background: var(--bg4, var(--bg2));
+   color: var(--text);
+   cursor: pointer;
+   max-width: 110px;
+}
+
+/* ── botão meu / não meu ── */
+.ai-mine-btn {
+   font-size: 11px;
+   padding: 2px 9px;
+   border-radius: 20px;
+   border: 1px solid var(--border2);
+   background: var(--bg2);
+   color: var(--text3);
+   cursor: pointer;
+   transition: background .15s, color .15s, border-color .15s;
+   white-space: nowrap;
+}
+
+.ai-mine-btn--mine {
+   background: var(--accent);
+   color: #fff;
+   border-color: var(--accent);
 }
 
 /* ── TYPE CHIPS ── */
