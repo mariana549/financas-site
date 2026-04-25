@@ -241,6 +241,51 @@ function _extractName(raw) {
   if (/^[•\u2022\.\d-]+$/.test(name)) name = (parts[1] || '').trim();
   return name;
 }
+// "DD/MM/YYYY" → "YYYY-MM-DD"
+function _fmtDate(s) {
+  if (!s) return null;
+  const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
+}
+
+// Sugestões de categoria baseadas em palavras-chave
+const _CAT_HINTS = [
+  [/ifood|rappi|uber\s*eat|delivery|mcdonald|burger|pizza|restaurante|lanche|padaria|mercado|atacad|carrefour|supermercado/i, 'Alimentação'],
+  [/netflix|spotify|amazon\s*prime|disney|hbo|globoplay|youtube|prime\s*video|deezer|streaming/i, 'Assinaturas'],
+  [/uber|99|cabify|ônibus|metro|passagem|combustível|gasolina|estacionamento|pedágio|posto/i, 'Transporte'],
+  [/farmácia|droga|remédio|médico|consulta|plano\s*de\s*saúde|unimed|amil|hospital|clínica/i, 'Saúde'],
+  [/escola|faculdade|curso|mensalidade\s*escola|educação|livro|material/i, 'Educação'],
+  [/luz|água|energia|cemig|copel|saneamento|gás|condomínio|iptu|aluguel|internet|vivo|claro|tim\b|oi\b|net\b/i, 'Moradia'],
+  [/roupa|calçado|tênis|loja|renner|riachuelo|zara|c&a|shein/i, 'Vestuário'],
+  [/ingresso|cinema|show|teatro|lazer|game|steam/i, 'Lazer'],
+];
+function _autoCategory(desc) {
+  for (const [re, cat] of _CAT_HINTS) {
+    if (re.test(desc)) return cat;
+  }
+  return null;
+}
+
+// Pessoas já conhecidas no app
+function _getKnownPeople() {
+  const set = new Set();
+  (S.months || []).forEach(m => (m.banks || []).forEach(b => (b.entries || []).forEach(e => {
+    if (e.person && e.person.length > 1) set.add(e.person);
+    if (e.owner && e.owner !== 'mine' && e.owner !== 'other' && e.owner.length > 1) set.add(e.owner);
+  })));
+  Object.values(S.pixEntries || {}).forEach(arr => arr.forEach(p => { if (p.to && p.to.length > 1) set.add(p.to); }));
+  (S.receivableMarks || []).forEach(r => { if (r.person) set.add(r.person); });
+  return [...set].sort((a, b) => a.localeCompare(b, 'pt'));
+}
+
+// Categorias já usadas no app
+function _getKnownCategories() {
+  const set = new Set();
+  (S.months || []).forEach(m => (m.banks || []).forEach(b => (b.entries || []).forEach(e => {
+    if (e.category) set.add(e.category);
+  })));
+  return [...set].sort((a, b) => a.localeCompare(b, 'pt'));
+}
 
 // ── Processar arquivo PDF ──
 async function _processPdf(file) {
@@ -332,36 +377,36 @@ async function handleAIPdfFiles(files) {
 
   const colorMap = { cartao: 'var(--accent)', debitos: 'var(--red)', boletos: 'var(--orange)', pixIn: 'var(--green)', pixOut: 'var(--blue)' };
 
-  sectEl.innerHTML = '<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px">SEÇÕES EXTRAÍDAS — clique em "Usar" para importar</div>' +
+  sectEl.innerHTML = '<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px">SEÇÕES EXTRAÍDAS — marque as que deseja importar</div>' +
     sections.map(sec => `
-      <div class="ai-pdf-sec">
+      <label class="ai-pdf-sec" style="cursor:pointer">
+        <input type="checkbox" id="aiSec_${sec.key}" checked style="width:auto;accent-color:var(--accent);flex-shrink:0">
         <div class="ai-pdf-sec-dot" style="background:${colorMap[sec.key] || 'var(--accent)'}"></div>
         <div class="ai-pdf-sec-info">
           <div class="ai-pdf-sec-name">${sec.label}</div>
           <div class="ai-pdf-sec-count">${sec.count} item(s) · ${fmtBRL(sec.total)}</div>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick='_usePdfSection(${JSON.stringify(sec.key)}, ${JSON.stringify(sec.type)})'>Usar</button>
-      </div>`).join('');
+      </label>`).join('') +
+    `<button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;margin-top:6px" onclick="_usePdfSections()">
+       Usar seções marcadas
+     </button>`;
 
-  // Guardar para uso em _usePdfSection
+  // Guardar para uso em _usePdfSections
   window._aiPdfMerged = merged;
+  window._aiPdfSectionsList = sections;
   sectEl.style.display = 'block';
 }
 
-// ── Usar seção do PDF: converter para S.aiParsed e mostrar review ──
-function _usePdfSection(key, type) {
-  const merged = window._aiPdfMerged;
-  if (!merged) return;
-
-  let entries = [];
+// ── Converter uma seção do PDF em entries ──
+function _sectionToEntries(key, merged) {
   if (key === 'cartao') {
-    const all = Object.entries(merged.cartao);
-    for (const [, items] of all) {
+    const out = [];
+    for (const [, items] of Object.entries(merged.cartao)) {
       for (const it of items) {
         const pm = it.parcela ? it.parcela.match(/(\d+)\/(\d+)/) : null;
-        entries.push({
-          desc: it.desc, amount: it.valor,
-          owner: 'mine', person: null,
+        out.push({
+          desc: it.desc, amount: it.valor, date: null,
+          category: _autoCategory(it.desc), owner: 'mine', person: null,
           installment: !!(pm && parseInt(pm[2]) > 1),
           installCurrent: pm ? parseInt(pm[1]) : null,
           installTotal: pm ? parseInt(pm[2]) : null,
@@ -369,44 +414,46 @@ function _usePdfSection(key, type) {
         });
       }
     }
-  } else if (key === 'debitos') {
-    entries = merged.debitos.map(it => ({
-      desc: it.descricao, amount: it.valor,
-      owner: 'mine', person: null,
-      installment: false, installCurrent: null, installTotal: null,
-      entryType: 'debito'
-    }));
-  } else if (key === 'boletos') {
-    entries = merged.boletos.map(it => ({
-      desc: it.descricao, amount: it.valor,
-      owner: 'mine', person: null,
-      installment: false, installCurrent: null, installTotal: null,
-      entryType: 'boleto'
-    }));
-  } else if (key === 'pixIn') {
-    entries = merged.pixIn.map(it => ({
-      desc: `Pix recebido${it.nome ? ' — ' + it.nome : ''}`, amount: it.valor,
-      owner: 'other', person: it.nome || null,
-      installment: false, installCurrent: null, installTotal: null,
-      entryType: 'pixin'
-    }));
-  } else if (key === 'pixOut') {
-    entries = merged.pixOut.map(it => ({
-      desc: `Pix para ${it.nome || '—'}`, amount: it.valor,
-      owner: 'mine', person: it.nome || null,
-      installment: false, installCurrent: null, installTotal: null,
-      entryType: 'pixout'
-    }));
+    return out;
   }
+  if (key === 'debitos') return merged.debitos.map(it => ({
+    desc: it.descricao, amount: it.valor, date: _fmtDate(it.data),
+    category: _autoCategory(it.descricao), owner: 'mine', person: null,
+    installment: false, installCurrent: null, installTotal: null, entryType: 'debito'
+  }));
+  if (key === 'boletos') return merged.boletos.map(it => ({
+    desc: it.descricao, amount: it.valor, date: _fmtDate(it.data),
+    category: _autoCategory(it.descricao), owner: 'mine', person: null,
+    installment: false, installCurrent: null, installTotal: null, entryType: 'boleto'
+  }));
+  if (key === 'pixIn') return merged.pixIn.map(it => ({
+    desc: `Pix recebido${it.nome ? ' — ' + it.nome : ''}`, amount: it.valor, date: _fmtDate(it.data),
+    category: null, owner: 'other', person: it.nome || null,
+    installment: false, installCurrent: null, installTotal: null, entryType: 'pixin'
+  }));
+  if (key === 'pixOut') return merged.pixOut.map(it => ({
+    desc: `Pix para ${it.nome || '—'}`, amount: it.valor, date: _fmtDate(it.data),
+    category: null, owner: 'mine', person: it.nome || null,
+    installment: false, installCurrent: null, installTotal: null, entryType: 'pixout'
+  }));
+  return [];
+}
 
-  // Selecionar tipo correto na UI
-  setAIType(type, null);
-  document.querySelectorAll('#aiTypeChips .chip').forEach(c => {
-    const ct = c.getAttribute('onclick')?.match(/setAIType\('([^']+)'/)?.[1];
-    c.classList.toggle('sel', ct === type);
+// ── Usar seções marcadas: junta todas as seções selecionadas em S.aiParsed ──
+function _usePdfSections() {
+  const merged = window._aiPdfMerged;
+  const sects  = window._aiPdfSectionsList || [];
+  if (!merged || !sects.length) return;
+
+  const all = [];
+  sects.forEach(sec => {
+    const cb = document.getElementById('aiSec_' + sec.key);
+    if (cb && cb.checked) all.push(..._sectionToEntries(sec.key, merged));
   });
 
-  S.aiParsed = entries;
+  if (!all.length) { showToast('Marque ao menos uma seção.'); return; }
+
+  S.aiParsed = all;
   document.getElementById('aiBaseActions').style.display = 'none';
   document.getElementById('aiBtnText').textContent = '✨ Interpretar novamente';
   renderAIEntries();
@@ -463,55 +510,68 @@ function _parseDebitoText(text, entryType) {
   const entries = [];
   const lines = text.split('\n').map(l => l.trim()).filter(l => l && l !== '—' && !/^Total:/i.test(l) && !/^═══/.test(l));
   for (const line of lines) {
-    // "01/01/2025 - Desc - R$ 9,90"
-    const mDate = line.match(/^(?:\d{2}\/\d{2}\/\d{4}\s+-\s+)?(.+?)\s+-\s+R\$\s*([\d\.]+,\d{2})$/);
+    // "01/01/2025 - Desc - R$ 9,90"  (date agora capturado)
+    const mDate = line.match(/^(?:(\d{2}\/\d{2}\/\d{4})\s+-\s+)?(.+?)\s+-\s+R\$\s*([\d\.]+,\d{2})$/);
     if (mDate) {
-      const a = _parseValor(mDate[2]);
-      if (a > 0) entries.push({ desc: mDate[1].trim(), amount: a, owner: 'mine', person: null, installment: false, installCurrent: null, installTotal: null, entryType });
+      const a = _parseValor(mDate[3]);
+      const desc = mDate[2].trim();
+      if (a > 0) entries.push({ desc, amount: a, date: _fmtDate(mDate[1]), category: _autoCategory(desc), owner: 'mine', person: null, installment: false, installCurrent: null, installTotal: null, entryType });
       continue;
     }
     // "Desc R$ valor"
     const mRs = line.match(/^(.+?)\s+R\$\s*([\d\.]+,\d{2})$/);
     if (mRs) {
+      const desc = mRs[1].trim();
       const a = _parseValor(mRs[2]);
-      if (a > 0) entries.push({ desc: mRs[1].trim(), amount: a, owner: 'mine', person: null, installment: false, installCurrent: null, installTotal: null, entryType });
+      if (a > 0) entries.push({ desc, amount: a, date: null, category: _autoCategory(desc), owner: 'mine', person: null, installment: false, installCurrent: null, installTotal: null, entryType });
       continue;
     }
     // "Desc valor"
     const std = line.match(/^(.+?)\s+([\d]+(?:\.[\d]{3})*,\d{2})$/);
     if (std) {
+      const desc = std[1].trim();
       const a = _parseValor(std[2]);
-      if (a > 0 && a < 100000) entries.push({ desc: std[1].trim(), amount: a, owner: 'mine', person: null, installment: false, installCurrent: null, installTotal: null, entryType });
+      if (a > 0 && a < 100000) entries.push({ desc, amount: a, date: null, category: _autoCategory(desc), owner: 'mine', person: null, installment: false, installCurrent: null, installTotal: null, entryType });
     }
   }
   return entries;
 }
 
-// Pix recebidos: "R$ valor - Nome"
+// Pix recebidos: "DD/MM/YYYY - R$ valor - Nome"  ou  "R$ valor - Nome"
 function _parsePixInText(text) {
   const entries = [];
   const lines = text.split('\n').map(l => l.trim()).filter(l => l && l !== '—' && !/^Total:/i.test(l) && !/^═══/.test(l));
   for (const line of lines) {
+    const mD = line.match(/^(\d{2}\/\d{2}\/\d{4})\s+-\s+R\$\s*([\d\.]+,\d{2})\s+-\s+(.+)$/);
+    if (mD) {
+      const a = _parseValor(mD[2]); const name = mD[3].trim();
+      if (a > 0) entries.push({ desc: `Pix recebido — ${name}`, amount: a, date: _fmtDate(mD[1]), owner: 'other', person: name, installment: false, installCurrent: null, installTotal: null, entryType: 'pixin' });
+      continue;
+    }
     const m = line.match(/^R\$\s*([\d\.]+,\d{2})\s+-\s+(.+)$/);
     if (m) {
-      const a = _parseValor(m[1]);
-      const name = m[2].trim();
-      if (a > 0) entries.push({ desc: `Pix recebido — ${name}`, amount: a, owner: 'other', person: name, installment: false, installCurrent: null, installTotal: null, entryType: 'pixin' });
+      const a = _parseValor(m[1]); const name = m[2].trim();
+      if (a > 0) entries.push({ desc: `Pix recebido — ${name}`, amount: a, date: null, owner: 'other', person: name, installment: false, installCurrent: null, installTotal: null, entryType: 'pixin' });
     }
   }
   return entries;
 }
 
-// Pix enviados: "R$ valor - para Nome" ou "R$ valor - Nome"
+// Pix enviados: "DD/MM/YYYY - R$ valor - para Nome"  ou  "R$ valor - para Nome"
 function _parsePixOutText(text) {
   const entries = [];
   const lines = text.split('\n').map(l => l.trim()).filter(l => l && l !== '—' && !/^Total:/i.test(l) && !/^═══/.test(l));
   for (const line of lines) {
+    const mD = line.match(/^(\d{2}\/\d{2}\/\d{4})\s+-\s+R\$\s*([\d\.]+,\d{2})\s+-\s+(?:para\s+)?(.+)$/i);
+    if (mD) {
+      const a = _parseValor(mD[2]); const name = mD[3].trim();
+      if (a > 0) entries.push({ desc: `Pix para ${name}`, amount: a, date: _fmtDate(mD[1]), owner: 'mine', person: name, installment: false, installCurrent: null, installTotal: null, entryType: 'pixout' });
+      continue;
+    }
     const m = line.match(/^R\$\s*([\d\.]+,\d{2})\s+-\s+(?:para\s+)?(.+)$/i);
     if (m) {
-      const a = _parseValor(m[1]);
-      const name = m[2].trim();
-      if (a > 0) entries.push({ desc: `Pix para ${name}`, amount: a, owner: 'mine', person: name, installment: false, installCurrent: null, installTotal: null, entryType: 'pixout' });
+      const a = _parseValor(m[1]); const name = m[2].trim();
+      if (a > 0) entries.push({ desc: `Pix para ${name}`, amount: a, date: null, owner: 'mine', person: name, installment: false, installCurrent: null, installTotal: null, entryType: 'pixout' });
     }
   }
   return entries;
@@ -672,13 +732,20 @@ function renderAIEntries() {
   // Inicializa isMine se ainda não foi definido
   S.aiParsed.forEach(e => { if (e.isMine === undefined) e.isMine = true; });
 
-  document.getElementById('aiEntryList').innerHTML = S.aiParsed.map((e, i) => {
+  const knownPeople = _getKnownPeople();
+  const knownCats   = _getKnownCategories();
+  const datalists = `
+    <datalist id="aiPersonList">${knownPeople.map(p => `<option value="${p.replace(/"/g,'&quot;')}">`).join('')}</datalist>
+    <datalist id="aiCatList">${knownCats.map(c => `<option value="${c.replace(/"/g,'&quot;')}">`).join('')}</datalist>`;
+
+  document.getElementById('aiEntryList').innerHTML = datalists + S.aiParsed.map((e, i) => {
     const destLabel = _DEST_LABEL[e.entryType] || '→ banco';
     const isMine = e.isMine !== false;
     const typeOpts = [
       ['cartao','🃏 Cartão'],['debito','💳 Débito'],
       ['pixin','↙ Pix rec.'],['pixout','↗ Pix env.'],['boleto','📄 Boleto']
     ].map(([v, l]) => `<option value="${v}"${e.entryType===v?' selected':''}>${l}</option>`).join('');
+    const personVal = (!isMine && (e.owner || e.person)) ? (e.owner !== 'mine' && e.owner !== 'other' ? e.owner : e.person) || '' : '';
 
     return `
     <div class="ai-entry-item" id="aiItem_${i}">
@@ -688,14 +755,22 @@ function renderAIEntries() {
           ${e.installment ? `<span class="bm bm-inst" style="margin-left:4px">${e.installCurrent||1}/${e.installTotal||'?'}</span>` : ''}
         </div>
         <div class="ai-item-meta">
-          <span style="color:var(--accent);font-size:11px;font-family:var(--mono)">R$ ${fmt(e.amount)}</span>
+          <span style="color:var(--accent);font-size:11px;font-family:var(--mono)">R$&nbsp;${fmt(e.amount)}</span>
           <select class="ai-mini-sel" onchange="_aiSetType(${i}, this.value)">${typeOpts}</select>
           <span id="aiDest_${i}" style="font-size:11px;color:var(--text3);font-family:var(--mono)">${destLabel}</span>
           <button class="ai-mine-btn${isMine ? ' ai-mine-btn--mine' : ''}" id="aiMineBtn_${i}" onclick="_aiToggleMine(${i})">${isMine ? 'Meu' : 'Não meu'}</button>
         </div>
+        <div class="ai-item-extra">
+          <input type="date" value="${e.date||''}"
+            style="flex:1;min-width:80px;font-size:11px;padding:3px 6px;border:1px solid var(--border2);border-radius:4px;background:var(--bg3);color:var(--text)"
+            onchange="S.aiParsed[${i}].date = this.value || null">
+          <input type="text" list="aiCatList" value="${(e.category||'').replace(/"/g,'&quot;')}" placeholder="Categoria"
+            style="flex:1;min-width:60px;font-size:11px;padding:3px 6px;border:1px solid var(--border2);border-radius:4px;background:var(--bg3);color:var(--text)"
+            oninput="S.aiParsed[${i}].category = this.value || null">
+        </div>
         <div id="aiPersonRow_${i}" style="display:${isMine ? 'none' : 'flex'};align-items:center;gap:6px;margin-top:5px">
-          <span style="font-size:11px;color:var(--text3)">De quem:</span>
-          <input type="text" placeholder="nome da pessoa" value="${e.owner||e.person||''}"
+          <span style="font-size:11px;color:var(--text3);white-space:nowrap">De quem:</span>
+          <input type="text" list="aiPersonList" placeholder="nome da pessoa" value="${personVal.replace(/"/g,'&quot;')}"
             style="font-size:11px;padding:3px 8px;border:1px solid var(--border2);border-radius:4px;background:var(--bg3);color:var(--text);flex:1;min-width:0"
             oninput="S.aiParsed[${i}].owner = this.value">
         </div>
@@ -740,11 +815,14 @@ async function importAIEntries() {
 
       const entryOwner = (e.isMine !== false) ? null : (e.owner || null);
 
+      const entryDate = e.date || today();
+      const entryCat  = e.category || null;
+
       if (e.installment && e.installTotal > 1) {
         const gId = 'grp_ai_' + Date.now() + '_' + i;
         const entry = {
-          id: String(Date.now() + i), desc: e.desc, amount: e.amount, date: today(),
-          owner: entryOwner, person: e.person || null, category: null, note: null,
+          id: String(Date.now() + i), desc: e.desc, amount: e.amount, date: entryDate,
+          owner: entryOwner, person: e.person || null, category: entryCat, note: null,
           type: 'installment', installCurrent: e.installCurrent || 1,
           installTotal: e.installTotal, groupId: gId
         };
@@ -753,12 +831,12 @@ async function importAIEntries() {
         await registerFutureInst({
           desc: e.desc, partAmt: e.amount, total: e.installTotal,
           cur: e.installCurrent || 1, bankName, owner: entryOwner,
-          person: e.person || null, cat: null, gId, startKey: monthKey, date: today()
+          person: e.person || null, cat: entryCat, gId, startKey: monthKey, date: entryDate
         });
       } else {
         const entry = {
-          id: String(Date.now() + i), desc: e.desc, amount: e.amount, date: today(),
-          owner: entryOwner, person: e.person || null, category: null, note: null,
+          id: String(Date.now() + i), desc: e.desc, amount: e.amount, date: entryDate,
+          owner: entryOwner, person: e.person || null, category: entryCat, note: null,
           type: entryBaseType
         };
         bank.entries.push(entry);
@@ -774,7 +852,7 @@ async function importAIEntries() {
       const e = pixInItems[i];
       const inc = {
         id: String(Date.now() + 1000 + i),
-        desc: e.desc, amount: e.amount, date: today(),
+        desc: e.desc, amount: e.amount, date: e.date || today(),
         from: null, owner: 'other', person: e.person || null,
         incType: 'Pix'
       };
@@ -791,7 +869,7 @@ async function importAIEntries() {
       const pix = {
         id: String(Date.now() + 2000 + i),
         to: e.person || e.desc, amount: e.amount,
-        date: today(), bank: bankName, obs: null
+        date: e.date || today(), bank: bankName, obs: null
       };
       S.pixEntries[monthKey].push(pix);
       await dbSavePix(monthKey, pix);

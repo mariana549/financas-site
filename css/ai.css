@@ -54,6 +54,13 @@
    gap: 6px;
 }
 
+/* ── data + categoria row ── */
+.ai-item-extra {
+   display: flex;
+   gap: 6px;
+   margin-top: 5px;
+}
+
 /* ── mini select de tipo por item ── */
 .ai-mini-sel {
    font-size: 11px;
