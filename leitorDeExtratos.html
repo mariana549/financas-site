@@ -717,9 +717,10 @@
       return { isFatura, isExtrato };
     }
 
-    // Helpers para parcela e crédito
+    // Helpers para parcela, crédito e tarifas
     function extractParcela(desc) {
-      const m = desc.match(/[Pp]arcela\s+(\d+)\/(\d+)/)
+      const m = desc.match(/[Pp]arcela\s+(\d+)\s+de\s+(\d+)/i)
+             || desc.match(/[Pp]arcela\s+(\d+)\/(\d+)/)
              || desc.match(/\((\d+)\/(\d+)\)/)
              || desc.match(/\s+(\d{1,2})\/(\d{2,3})\s*$/);
       return m ? { parcela: `${m[1]}/${m[2]}`, clean: desc.replace(m[0], '').trim() } : { parcela: '', clean: desc.trim() };
@@ -727,31 +728,96 @@
     function isFaturaCredit(desc) {
       return /^(Pagamento|Crédito|Estorno|Reembolso|Restituição|Cashback|Saldo\s+anterior|IOF\s+est)/i.test(desc);
     }
+    function isFaturaFee(desc) {
+      return /^(Tarifa|IOF\s+de\s+saque|Encargo|Juros|Multa\s+por|Valor\s+de\s+saque|Saque\s+de\s+cr|Disponível\s+para|Limite\s+de\s+cr|Total\s+de\s+encargo|Total\s+da\s+fatura|Total\s+em\s+aberto|Pagamentos?\s+realizados?|Fatura\s+anterior)/i.test(desc);
+    }
 
     // ---------- parse fatura Nubank: "DD MON [máscara] desc R$ valor" ----------
     function parseFatura(lines, result) {
+      // Extrair ano do cabeçalho
+      let yearHint = null;
+      const yearHeaderRe = /(?:Emiss[aã]o|envio|Transac|Vencimento|Fatura)\b.+?\b(20\d{2})\b/i;
+      for (let i = 0; i < Math.min(lines.length, 40); i++) {
+        const ym = lines[i].match(yearHeaderRe) || lines[i].match(/\b(20\d{2})\b/);
+        if (ym) { yearHint = ym[1]; break; }
+      }
+      if (!yearHint) yearHint = String(new Date().getFullYear());
+
       let inTransacoes = false;
-      let inPagamentos = false;
+      let skipSection  = false;
       const txRegex  = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(?:[•\.]+\s*\d+\s+|[\u2022\.\s]*\d{4}\s+)?(.+?)\s+R?\$?\s*([\d\.]+,\d{2})$/i;
       const txRegex2 = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(.+?)\s+R?\$?\s*([\d\.]+,\d{2})$/i;
+      const txNoVal  = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(?:[•\.]+\s*\d+\s+|[\u2022\.\s]*\d{4}\s+)?(.+)$/i;
+      let pending = null;
 
-      for (const line of lines) {
-        if (/^TRANSAÇÕES/i.test(line) || /^TRANSAC/i.test(line)) { inTransacoes = true; inPagamentos = false; continue; }
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (/^TRANSAÇÕES/i.test(line) || /^TRANSAC/i.test(line)) { inTransacoes = true; skipSection = false; continue; }
         if (!inTransacoes) continue;
-        if (/^Pagamentos\s+e\s+Financiamentos/i.test(line)) { inPagamentos = true; continue; }
-        if (inPagamentos) continue;
-        if (/^[A-Z][a-záâãéêíóôõúç]+(\s+[A-Z][a-záâãéêíóôõúç]*)*\s+R\$/i.test(line) && !/\d{2}\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)/i.test(line)) continue;
+        if (/^Pagamentos?\s+e\s+Financiamentos?/i.test(line) ||
+            /^Tarifas?\s+e\s+[Ee]ncargos?/i.test(line)       ||
+            /^Encargos?\s+e\s+Tarifas?/i.test(line)           ||
+            /^Outros\s+Cobranças?/i.test(line)) {
+          skipSection = true; pending = null; continue;
+        }
+        if (/^(Compras?(\s+e\s+[Pp]arcelas?)?|Parcelamentos?)\s*$/i.test(line)) { skipSection = false; continue; }
+        if (skipSection) { pending = null; continue; }
+        if (/^[A-Z][a-záâãéêíóôõúç]+(\s+[A-Z][a-záâãéêíóôõúç]*)*\s*$/.test(line) &&
+            !/\d{2}\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)/i.test(line)) continue;
+
+        if (pending) {
+          const contVal = line.match(/^R?\$?\s*([\d\.]+,\d{2})\s*$/);
+          const contParcela = line.match(/[Pp]arcela\s+(\d+)\s+de\s+(\d+)\s+R?\$?\s*([\d\.]+,\d{2})\s*$/i)
+                           || line.match(/[Pp]arcela\s+(\d+)\/(\d+)\s+R?\$?\s*([\d\.]+,\d{2})\s*$/i);
+          if (contParcela) {
+            const valor = parseValor(contParcela[3]);
+            if (valor) {
+              const parcelaStr = `${contParcela[1]}/${contParcela[2]}`;
+              const mon = MONTH_ABBR[pending.monAbbr];
+              const monthName = MONTH_NAME[mon];
+              if (!result.cartao[monthName]) result.cartao[monthName] = [];
+              result.cartao[monthName].push({ desc: pending.desc, parcela: parcelaStr, valor, date: `${pending.day}/${mon}/${yearHint}` });
+            }
+            pending = null; continue;
+          }
+          if (contVal) {
+            const valor = parseValor(contVal[1]);
+            if (valor) {
+              const { parcela, clean } = extractParcela(pending.desc);
+              const mon = MONTH_ABBR[pending.monAbbr];
+              const monthName = MONTH_NAME[mon];
+              if (!result.cartao[monthName]) result.cartao[monthName] = [];
+              result.cartao[monthName].push({ desc: clean, parcela, valor, date: `${pending.day}/${mon}/${yearHint}` });
+            }
+            pending = null; continue;
+          }
+          pending = null;
+        }
 
         const m = line.match(txRegex) || line.match(txRegex2);
-        if (!m) continue;
-        let desc = m[3].trim().replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').replace(/^\d{4}\s+/, '').trim();
-        const valor = parseValor(m[4]);
-        if (!valor || /Saldo\s+restante/i.test(desc) || /^Pagamento\s+em/i.test(desc)) continue;
+        if (m) {
+          const day = m[1], monAbbr = m[2].toUpperCase();
+          let desc = m[3].trim().replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').replace(/^\d{4}\s+/, '').trim();
+          const valor = parseValor(m[4]);
+          if (!valor) continue;
+          if (isFaturaCredit(desc) || isFaturaFee(desc)) continue;
+          if (/Saldo\s+restante/i.test(desc) || /^Pagamento\s+em/i.test(desc)) continue;
+          const { parcela, clean } = extractParcela(desc);
+          const mon = MONTH_ABBR[monAbbr];
+          const monthName = MONTH_NAME[mon];
+          if (!result.cartao[monthName]) result.cartao[monthName] = [];
+          result.cartao[monthName].push({ desc: clean, parcela, valor, date: `${day}/${mon}/${yearHint}` });
+          continue;
+        }
 
-        const { parcela, clean } = extractParcela(desc);
-        const monthName = MONTH_NAME[MONTH_ABBR[m[2].toUpperCase()]];
-        if (!result.cartao[monthName]) result.cartao[monthName] = [];
-        result.cartao[monthName].push({ desc: clean, parcela, valor });
+        const mn = line.match(txNoVal);
+        if (mn) {
+          const day = mn[1], monAbbr = mn[2].toUpperCase();
+          let desc = mn[3].trim().replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').replace(/^\d{4}\s+/, '').trim();
+          if (!desc || isFaturaCredit(desc) || isFaturaFee(desc)) continue;
+          if (/Saldo\s+restante/i.test(desc) || /^Pagamento\s+em/i.test(desc)) continue;
+          pending = { day, monAbbr, desc };
+        }
       }
     }
 
@@ -767,7 +833,7 @@
         if (!m) continue;
         const desc = m[4].trim();
         const valor = parseValor(m[5]);
-        if (!valor || valor > 100000 || isFaturaCredit(desc)) continue;
+        if (!valor || valor > 100000 || isFaturaCredit(desc) || isFaturaFee(desc)) continue;
         if (/^(Saldo|Total|Subtotal|Limite)/i.test(desc)) continue;
 
         const mon = m[2];

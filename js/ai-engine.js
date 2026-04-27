@@ -156,9 +156,10 @@ function _detectDocKind(lines) {
 const _MONTH_ABBR = { JAN:'01',FEV:'02',MAR:'03',ABR:'04',MAI:'05',JUN:'06',JUL:'07',AGO:'08',SET:'09',OUT:'10',NOV:'11',DEZ:'12' };
 const _MONTH_NAME = { '01':'Janeiro','02':'Fevereiro','03':'Março','04':'Abril','05':'Maio','06':'Junho','07':'Julho','08':'Agosto','09':'Setembro','10':'Outubro','11':'Novembro','12':'Dezembro' };
 
-// Extrai e limpa parcela da descrição: "- Parcela 2/12", " (2/12)", " 2/12"
+// Extrai e limpa parcela da descrição: "- Parcela 2/12", "Parcela 3 de 5", " (2/12)", " 2/12"
 function _extractParcela(desc) {
-  const m = desc.match(/[Pp]arcela\s+(\d+)\/(\d+)/)
+  const m = desc.match(/[Pp]arcela\s+(\d+)\s+de\s+(\d+)/i)
+         || desc.match(/[Pp]arcela\s+(\d+)\/(\d+)/)
          || desc.match(/\((\d+)\/(\d+)\)/)
          || desc.match(/\s+(\d{1,2})\/(\d{2,3})\s*$/);
   return m ? { parcela: `${m[1]}/${m[2]}`, clean: desc.replace(m[0], '').trim() } : { parcela: '', clean: desc.trim() };
@@ -169,31 +170,120 @@ function _isFaturaCredit(desc) {
   return /^(Pagamento|Crédito|Estorno|Reembolso|Restituição|Cashback|Saldo\s+anterior|IOF\s+est)/i.test(desc);
 }
 
+// Linhas de tarifas/encargos — devem ser ignoradas
+function _isFaturaFee(desc) {
+  return /^(Tarifa|IOF\s+de\s+saque|Encargo|Juros|Multa\s+por|Valor\s+de\s+saque|Saque\s+de\s+cr|Disponível\s+para|Limite\s+de\s+cr|Total\s+de\s+encargo|Total\s+da\s+fatura|Total\s+em\s+aberto|Pagamentos?\s+realizados?|Fatura\s+anterior)/i.test(desc);
+}
+
 // ── Parser de fatura Nubank: "DD MON [máscara] desc R$ valor" ──
 function _parseFaturaLines(lines, result) {
+  // 1. Extrair ano do cabeçalho (ex: "Emissão e envio 05 JAN 2026", "Transações de 05 DEZ a 05 JAN 2026")
+  let yearHint = null;
+  const yearHeaderRe = /(?:Emiss[aã]o|envio|Transac|Vencimento|Fatura)\b.+?\b(20\d{2})\b/i;
+  for (let i = 0; i < Math.min(lines.length, 40); i++) {
+    const ym = lines[i].match(yearHeaderRe) || lines[i].match(/\b(20\d{2})\b/);
+    if (ym) { yearHint = ym[1]; break; }
+  }
+  if (!yearHint) yearHint = String(new Date().getFullYear());
+
   let inTransacoes = false;
-  let inPag = false;
+  let skipSection  = false;
   const txRe  = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(?:[•\.]+\s*\d+\s+|[\u2022\.\s]*\d{4}\s+)?(.+?)\s+R?\$?\s*([\d\.]+,\d{2})$/i;
   const txRe2 = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(.+?)\s+R?\$?\s*([\d\.]+,\d{2})$/i;
+  // linha com só data + descrição (sem valor — valor virá na próxima linha)
+  const txNoVal = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(?:[•\.]+\s*\d+\s+|[\u2022\.\s]*\d{4}\s+)?(.+)$/i;
 
-  for (const line of lines) {
-    if (/^TRANSAÇÕES/i.test(line) || /^TRANSAC/i.test(line)) { inTransacoes = true; inPag = false; continue; }
+  let pending = null; // { day, monAbbr, desc }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Entrada na seção de transações
+    if (/^TRANSAÇÕES/i.test(line) || /^TRANSAC/i.test(line)) {
+      inTransacoes = true; skipSection = false; continue;
+    }
     if (!inTransacoes) continue;
-    if (/^Pagamentos\s+e\s+Financiamentos/i.test(line)) { inPag = true; continue; }
-    if (inPag) continue;
-    if (/^[A-Z][a-záâãéêíóôõúç]+(\s+[A-Z][a-záâãéêíóôõúç]*)*\s+R\$/i.test(line) && !/\d{2}\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)/i.test(line)) continue;
 
+    // Seções que devem ser puladas
+    if (/^Pagamentos?\s+e\s+Financiamentos?/i.test(line) ||
+        /^Tarifas?\s+e\s+[Ee]ncargos?/i.test(line)       ||
+        /^Encargos?\s+e\s+Tarifas?/i.test(line)           ||
+        /^Outros\s+Cobranças?/i.test(line)) {
+      skipSection = true; pending = null; continue;
+    }
+    // Reabilitar ao entrar em nova seção de compras
+    if (/^(Compras?(\s+e\s+[Pp]arcelas?)?|Parcelamentos?)\s*$/i.test(line)) {
+      skipSection = false; continue;
+    }
+    if (skipSection) { pending = null; continue; }
+
+    // Cabeçalho de pessoa (nome sem valor) — pular
+    if (/^[A-Z][a-záâãéêíóôõúç]+(\s+[A-Z][a-záâãéêíóôõúç]*)*\s*$/.test(line) &&
+        !/\d{2}\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)/i.test(line)) {
+      continue;
+    }
+
+    // ── Continuação de linha pendente (valor ou "Parcela X de Y R$ valor" na próxima linha) ──
+    if (pending) {
+      const contVal = line.match(/^R?\$?\s*([\d\.]+,\d{2})\s*$/);
+      const contParcela = line.match(/[Pp]arcela\s+(\d+)\s+de\s+(\d+)\s+R?\$?\s*([\d\.]+,\d{2})\s*$/i)
+                       || line.match(/[Pp]arcela\s+(\d+)\/(\d+)\s+R?\$?\s*([\d\.]+,\d{2})\s*$/i);
+      if (contParcela) {
+        const valor = _parseValor(contParcela[3]);
+        if (valor) {
+          const parcelaStr = `${contParcela[1]}/${contParcela[2]}`;
+          const mon = _MONTH_ABBR[pending.monAbbr];
+          const monthName = _MONTH_NAME[mon];
+          if (!result.cartao[monthName]) result.cartao[monthName] = [];
+          const date = `${pending.day}/${mon}/${yearHint}`;
+          result.cartao[monthName].push({ desc: pending.desc, parcela: parcelaStr, valor, date });
+        }
+        pending = null; continue;
+      }
+      if (contVal) {
+        const valor = _parseValor(contVal[1]);
+        if (valor) {
+          const { parcela, clean } = _extractParcela(pending.desc);
+          const mon = _MONTH_ABBR[pending.monAbbr];
+          const monthName = _MONTH_NAME[mon];
+          if (!result.cartao[monthName]) result.cartao[monthName] = [];
+          const date = `${pending.day}/${mon}/${yearHint}`;
+          result.cartao[monthName].push({ desc: clean, parcela, valor, date });
+        }
+        pending = null; continue;
+      }
+      // Linha não é valor — descartar pendente e processar normalmente
+      pending = null;
+    }
+
+    // ── Linha com data + desc + valor ──
     const m = line.match(txRe) || line.match(txRe2);
-    if (!m) continue;
-    const monAbbr = m[2].toUpperCase();
-    let desc = m[3].trim().replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').replace(/^\d{4}\s+/, '').trim();
-    const valor = _parseValor(m[4]);
-    if (!valor || /Saldo\s+restante/i.test(desc) || /^Pagamento\s+em/i.test(desc)) continue;
+    if (m) {
+      const day = m[1], monAbbr = m[2].toUpperCase();
+      let desc = m[3].trim().replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').replace(/^\d{4}\s+/, '').trim();
+      const valor = _parseValor(m[4]);
+      if (!valor) continue;
+      if (_isFaturaCredit(desc) || _isFaturaFee(desc)) continue;
+      if (/Saldo\s+restante/i.test(desc) || /^Pagamento\s+em/i.test(desc)) continue;
 
-    const { parcela, clean } = _extractParcela(desc);
-    const monthName = _MONTH_NAME[_MONTH_ABBR[monAbbr]];
-    if (!result.cartao[monthName]) result.cartao[monthName] = [];
-    result.cartao[monthName].push({ desc: clean, parcela, valor });
+      const { parcela, clean } = _extractParcela(desc);
+      const mon = _MONTH_ABBR[monAbbr];
+      const monthName = _MONTH_NAME[mon];
+      if (!result.cartao[monthName]) result.cartao[monthName] = [];
+      const date = `${day}/${mon}/${yearHint}`;
+      result.cartao[monthName].push({ desc: clean, parcela, valor, date });
+      continue;
+    }
+
+    // ── Linha com data + desc sem valor (multi-line) ──
+    const mn = line.match(txNoVal);
+    if (mn) {
+      const day = mn[1], monAbbr = mn[2].toUpperCase();
+      let desc = mn[3].trim().replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').replace(/^\d{4}\s+/, '').trim();
+      if (!desc || _isFaturaCredit(desc) || _isFaturaFee(desc)) continue;
+      if (/Saldo\s+restante/i.test(desc) || /^Pagamento\s+em/i.test(desc)) continue;
+      pending = { day, monAbbr, desc };
+    }
   }
 }
 
@@ -215,7 +305,7 @@ function _parseFaturaGeneric(lines, result) {
     const day = m[1], mon = m[2], year = m[3] || yearHint || new Date().getFullYear();
     const desc = m[4].trim();
     const valor = _parseValor(m[5]);
-    if (!valor || valor > 100000 || _isFaturaCredit(desc)) continue;
+    if (!valor || valor > 100000 || _isFaturaCredit(desc) || _isFaturaFee(desc)) continue;
     // Skip balance-like lines
     if (/^(Saldo|Total|Subtotal|Limite)/i.test(desc)) continue;
 
@@ -503,7 +593,7 @@ function _sectionToEntries(key, merged) {
       for (const it of items) {
         const pm = it.parcela ? it.parcela.match(/(\d+)\/(\d+)/) : null;
         out.push({
-          desc: it.desc, amount: it.valor, date: null,
+          desc: it.desc, amount: it.valor, date: _fmtDate(it.date || null),
           category: _autoCategory(it.desc), owner: 'mine', person: null,
           installment: !!(pm && parseInt(pm[2]) > 1),
           installCurrent: pm ? parseInt(pm[1]) : null,
