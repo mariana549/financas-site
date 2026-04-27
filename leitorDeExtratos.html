@@ -699,170 +699,168 @@
     // ---------- detect doc type ----------
     function detectKind(lines) {
       const text = lines.join('\n');
-      const isFatura = /TRANSAÇÕES\s+DE/i.test(text) || (/fatura/i.test(text) && /vencimento/i.test(text) && /Parcela/i.test(text));
-      const isExtrato = /Saldo inicial/i.test(text) || /Total de entradas/i.test(text) || /Movimentações/i.test(text);
+      const isFatura =
+        /TRANSAÇÕES\s+DE/i.test(text) ||
+        /COMPRAS\s+NO\s+CART[ÃA]O/i.test(text) ||
+        /FATURA\s+CART[ÃA]O/i.test(text) ||
+        /Lançamentos\s+do\s+cartão/i.test(text) ||
+        /Lançamentos\s+na\s+fatura/i.test(text) ||
+        (/fatura/i.test(text) && /vencimento/i.test(text)) ||
+        (/TRANSAÇÕES/i.test(text) && /Parcela/i.test(text));
+      const isExtrato =
+        /Saldo\s+(inicial|anterior|em\s+conta)/i.test(text) ||
+        /Total\s+de\s+(entradas|saídas)/i.test(text) ||
+        /Movimentações/i.test(text) ||
+        /Extrato\s+(de\s+)?[Cc]onta/i.test(text) ||
+        /Extrato\s+[Bb]ancário/i.test(text) ||
+        /Saldo\s+[Ff]inal/i.test(text);
       return { isFatura, isExtrato };
     }
 
-    // ---------- parse fatura (credit card bill) ----------
+    // Helpers para parcela e crédito
+    function extractParcela(desc) {
+      const m = desc.match(/[Pp]arcela\s+(\d+)\/(\d+)/)
+             || desc.match(/\((\d+)\/(\d+)\)/)
+             || desc.match(/\s+(\d{1,2})\/(\d{2,3})\s*$/);
+      return m ? { parcela: `${m[1]}/${m[2]}`, clean: desc.replace(m[0], '').trim() } : { parcela: '', clean: desc.trim() };
+    }
+    function isFaturaCredit(desc) {
+      return /^(Pagamento|Crédito|Estorno|Reembolso|Restituição|Cashback|Saldo\s+anterior|IOF\s+est)/i.test(desc);
+    }
+
+    // ---------- parse fatura Nubank: "DD MON [máscara] desc R$ valor" ----------
     function parseFatura(lines, result) {
       let inTransacoes = false;
       let inPagamentos = false;
-
-      const txRegex = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(?:[•\.]+\s*\d+\s+|[\u2022\.\s]*\d{4}\s+)?(.+?)\s+R?\$?\s*([\d\.]+,\d{2})$/i;
+      const txRegex  = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(?:[•\.]+\s*\d+\s+|[\u2022\.\s]*\d{4}\s+)?(.+?)\s+R?\$?\s*([\d\.]+,\d{2})$/i;
       const txRegex2 = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(.+?)\s+R?\$?\s*([\d\.]+,\d{2})$/i;
 
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-
-        if (/^TRANSAÇÕES/i.test(line) || /^TRANSAC/i.test(line)) {
-          inTransacoes = true; inPagamentos = false; continue;
-        }
+      for (const line of lines) {
+        if (/^TRANSAÇÕES/i.test(line) || /^TRANSAC/i.test(line)) { inTransacoes = true; inPagamentos = false; continue; }
         if (!inTransacoes) continue;
-
         if (/^Pagamentos\s+e\s+Financiamentos/i.test(line)) { inPagamentos = true; continue; }
         if (inPagamentos) continue;
+        if (/^[A-Z][a-záâãéêíóôõúç]+(\s+[A-Z][a-záâãéêíóôõúç]*)*\s+R\$/i.test(line) && !/\d{2}\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)/i.test(line)) continue;
 
-        // Skip section headers like "Mariana A Evaristo R$ 1.861,15"
-        if (/^[A-Z][a-záâãéêíóôõúç]+(\s+[A-Z][a-záâãéêíóôõúç]*)*\s+R\$/i.test(line) && !/\d{2}\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)/i.test(line)) {
-          continue;
-        }
-
-        let m = line.match(txRegex) || line.match(txRegex2);
+        const m = line.match(txRegex) || line.match(txRegex2);
         if (!m) continue;
-
-        const day = m[1];
-        const monAbbr = m[2].toUpperCase();
-        let desc = m[3].trim();
+        let desc = m[3].trim().replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').replace(/^\d{4}\s+/, '').trim();
         const valor = parseValor(m[4]);
-        if (!valor) continue;
+        if (!valor || /Saldo\s+restante/i.test(desc) || /^Pagamento\s+em/i.test(desc)) continue;
 
-        // Strip leading card mask remnants like "•••• 7073" / "7073"
-        desc = desc.replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').trim();
-        desc = desc.replace(/^\d{4}\s+/, '').trim();
-
-        // Skip "Saldo restante da fatura anterior" and similar non-purchase rows
-        if (/Saldo\s+restante/i.test(desc)) continue;
-        if (/^Pagamento\s+em/i.test(desc)) continue;
-
-        // Extract parcela info
-        let parcela = '';
-        const pm = desc.match(/^(.+?)\s*-\s*Parcela\s*(\d+)\s*\/\s*(\d+)\s*$/i);
-        if (pm) { desc = pm[1].trim(); parcela = `${pm[2]}/${pm[3]}`; }
-
-        const monthName = MONTH_NAME[MONTH_ABBR[monAbbr]];
+        const { parcela, clean } = extractParcela(desc);
+        const monthName = MONTH_NAME[MONTH_ABBR[m[2].toUpperCase()]];
         if (!result.cartao[monthName]) result.cartao[monthName] = [];
-        result.cartao[monthName].push({ desc, parcela, valor, day, mon: monAbbr });
+        result.cartao[monthName].push({ desc: clean, parcela, valor });
       }
     }
 
-    // ---------- parse extrato (account statement) ----------
+    // ---------- parse fatura genérica: "DD/MM desc R$ valor" ou "DD/MM/YYYY desc R$ valor" ----------
+    function parseFaturaGeneric(lines, result) {
+      const reFull = /^(\d{2})\/(\d{2})(?:\/(\d{4}))?\s+(.+?)\s+([\d\.]+,\d{2})\s*$/;
+      let yearHint = null;
+      for (const l of lines) { const ym = l.match(/\b(20\d{2})\b/); if (ym) { yearHint = ym[1]; break; } }
+
+      for (const line of lines) {
+        if (line === '§§PAGE§§') continue;
+        const m = line.match(reFull);
+        if (!m) continue;
+        const desc = m[4].trim();
+        const valor = parseValor(m[5]);
+        if (!valor || valor > 100000 || isFaturaCredit(desc)) continue;
+        if (/^(Saldo|Total|Subtotal|Limite)/i.test(desc)) continue;
+
+        const mon = m[2];
+        const monthName = MONTH_NAME[mon] || 'Outros';
+        if (!result.cartao[monthName]) result.cartao[monthName] = [];
+        const { parcela, clean } = extractParcela(desc);
+        result.cartao[monthName].push({ desc: clean, parcela, valor, date: `${m[1]}/${mon}/${m[3] || yearHint || ''}` });
+      }
+    }
+
+    // ---------- parse extrato — todos os bancos ----------
     function parseExtrato(lines, result) {
       let currentDate = null;
 
-      // Single-line transaction patterns. Each line has been reconstructed from PDF Y-grouping,
-      // so the value usually appears at the end of the same line.
-      const dateLine = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(\d{4})\b/i;
-      const valueAtEnd = /([\d\.]+,\d{2})\s*$/;
+      const lookForValue = (fromIdx) => {
+        for (let j = fromIdx + 1; j < Math.min(lines.length, fromIdx + 6); j++) {
+          const l = lines[j];
+          if (l === '§§PAGE§§') continue;
+          const mv = l.match(/^([\d\.]+,\d{2})\s*$/);
+          if (mv) return parseValor(mv[1]);
+          if (/^(Transferência|Pagamento|Pix|PIX|TED|DOC|Total\s+de|\d{2}[\s\/])/i.test(l)) break;
+        }
+        return null;
+      };
+
+      const _name = (raw, re) => extractName(raw.replace(re, '').trim());
 
       for (let i = 0; i < lines.length; i++) {
-        const raw = lines[i];
+        let raw = lines[i];
         if (raw === '§§PAGE§§') continue;
 
-        // Date marker
-        const dm = raw.match(dateLine);
-        if (dm) {
-          currentDate = `${dm[1]}/${MONTH_ABBR[dm[2].toUpperCase()]}/${dm[3]}`;
-          // The date line itself ("01 JAN 2026 Total de entradas + 123,75") is just a header sum, skip
-          continue;
-        }
+        // Data "DD MON YYYY"
+        const dmMon = raw.match(/^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(\d{4})\b/i);
+        if (dmMon) { currentDate = `${dmMon[1]}/${MONTH_ABBR[dmMon[2].toUpperCase()]}/${dmMon[3]}`; continue; }
 
-        // Skip aggregate rows
+        // Data inline "DD/MM/YYYY" — strip para processar o restante
+        const dmDMY = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+/);
+        if (dmDMY) { currentDate = `${dmDMY[1]}/${dmDMY[2]}/${dmDMY[3]}`; raw = raw.slice(dmDMY[0].length).trim(); }
+
+        if (!raw) continue;
         if (/^Total\s+de\s+(entradas|saídas)/i.test(raw)) continue;
-        if (/^Saldo\s+(inicial|final|líquido)/i.test(raw)) continue;
-        if (/^Movimentações/i.test(raw)) continue;
-        if (/^Rendimento/i.test(raw)) continue;
+        if (/^Saldo\s+(inicial|anterior|final|líquido|em\s+conta)/i.test(raw)) continue;
+        if (/^(Movimentações|Rendimento|Extrato|Comprovante|Período)/i.test(raw)) continue;
 
-        // ---- PIX received (covers "Transferência Recebida" and "Transferência recebida pelo Pix") ----
-        let m = raw.match(/^Transferência\s+[Rr]ecebida(?:\s+pelo\s+Pix)?\s+(.+?)\s+([\d\.]+,\d{2})\s*$/);
-        if (m) {
-          const valor = parseValor(m[2]);
-          const nome = extractName(m[1]);
-          result.pixIn.push({ valor, nome, data: currentDate });
-          continue;
-        }
-        m = raw.match(/^Transferência\s+[Rr]ecebida(?:\s+pelo\s+Pix)?\s+(.+)$/);
-        if (m) {
-          const nome = extractName(m[1]);
-          const valor = lookForValue(lines, i);
-          if (valor) result.pixIn.push({ valor, nome, data: currentDate });
+        let m;
+
+        // PIX / TED / DOC recebido
+        const pixInRe = /^(?:(?:Pix|PIX)\s+(?:recebido|crédito|creditado|em\s+conta|Crédito)|Recebimento\s+(?:Pix|PIX)|Transferência\s+(?:PIX\s+)?[Rr]ecebida(?:\s+pelo\s+Pix)?|TED\s+[Rr]ecebida?|DOC\s+[Rr]ecebido?|Transferência\s+TED\s+[Rr]ecebida?|Transferência\s+[Rr]ecebida)/i;
+        if (pixInRe.test(raw)) {
+          m = raw.match(/(.+?)\s+([\d\.]+,\d{2})\s*$/);
+          if (m) result.pixIn.push({ valor: parseValor(m[2]), nome: _name(m[1], pixInRe), data: currentDate });
+          else { const v = lookForValue(i); if (v) result.pixIn.push({ valor: v, nome: _name(raw, pixInRe), data: currentDate }); }
           continue;
         }
 
-        // ---- PIX sent ----
-        m = raw.match(/^Transferência\s+enviada(?:\s+pelo\s+Pix)?\s+(.+?)\s+([\d\.]+,\d{2})\s*$/);
-        if (m) {
-          const valor = parseValor(m[2]);
-          const nome = extractName(m[1]);
-          result.pixOut.push({ valor, nome, data: currentDate });
-          continue;
-        }
-        m = raw.match(/^Transferência\s+enviada(?:\s+pelo\s+Pix)?\s+(.+)$/);
-        if (m) {
-          const nome = extractName(m[1]);
-          const valor = lookForValue(lines, i);
-          if (valor) result.pixOut.push({ valor, nome, data: currentDate });
+        // PIX / TED / DOC enviado
+        const pixOutRe = /^(?:(?:Pix|PIX)\s+(?:enviado|débito)|Transferência\s+(?:PIX\s+)?[Ee]nviada(?:\s+pelo\s+Pix)?|TED\s+[Ee]nviada?|DOC\s+[Ee]nviado?|Transferência\s+TED\s+[Ee]nviada?|Transferência\s+[Ee]nviada)/i;
+        if (pixOutRe.test(raw)) {
+          m = raw.match(/(.+?)\s+([\d\.]+,\d{2})\s*$/);
+          if (m) result.pixOut.push({ valor: parseValor(m[2]), nome: _name(m[1], pixOutRe), data: currentDate });
+          else { const v = lookForValue(i); if (v) result.pixOut.push({ valor: v, nome: _name(raw, pixOutRe), data: currentDate }); }
           continue;
         }
 
-        // ---- Pagamento de fatura (debit) ----
+        // Pagamento de fatura
         m = raw.match(/^Pagamento\s+de\s+fatura\s+([\d\.]+,\d{2})\s*$/i);
-        if (m) {
-          result.debitos.push({ data: currentDate, descricao: 'Pagamento de fatura', valor: parseValor(m[1]) });
-          continue;
-        }
+        if (m) { result.debitos.push({ data: currentDate, descricao: 'Pagamento de fatura', valor: parseValor(m[1]) }); continue; }
         if (/^Pagamento\s+de\s+fatura\s*$/i.test(raw)) {
-          const valor = lookForValue(lines, i);
-          if (valor) result.debitos.push({ data: currentDate, descricao: 'Pagamento de fatura', valor });
+          const v = lookForValue(i); if (v) result.debitos.push({ data: currentDate, descricao: 'Pagamento de fatura', valor: v }); continue;
+        }
+
+        // Boleto / Pagamento de contas / Débito automático
+        const boletoRe = /^(?:Pagamento\s+de\s+boleto|Pgto\.?\s+[Bb]oleto|Pagamento\s+de\s+conta|Pagamento\s+de\s+[Cc]oncess|Pagamento\s+conta|Débito\s+automático|Debito\s+automatico)/i;
+        if (boletoRe.test(raw)) {
+          m = raw.match(/^(.+?)\s+([\d\.]+,\d{2})\s*$/);
+          if (m) result.boletos.push({ data: currentDate, descricao: extractName(m[1]) || m[1].trim(), valor: parseValor(m[2]) });
+          else { const v = lookForValue(i); if (v) result.boletos.push({ data: currentDate, descricao: raw.replace(boletoRe, '').trim() || 'Boleto', valor: v }); }
           continue;
         }
 
-        // ---- Boletos pagos ----
-        m = raw.match(/^Pagamento\s+de\s+boleto\s+(.+?)\s+([\d\.]+,\d{2})\s*$/i);
-        if (m) {
-          result.boletos.push({ data: currentDate, descricao: extractName(m[1]) || 'Boleto', valor: parseValor(m[2]) });
-          continue;
-        }
-        if (/^Pagamento\s+de\s+boleto/i.test(raw)) {
-          const valor = lookForValue(lines, i);
-          if (valor) result.boletos.push({ data: currentDate, descricao: 'Boleto', valor });
-          continue;
-        }
+        // Compra débito / Tarifas / Saques / IOF
+        m = raw.match(/^(Tarifa[^,\d]*|Anuidade[^,\d]*|Compra\s+(?:no\s+|c\/\s*|on-?line\s+)?[Dd]ébito[^,\d]*|Débito\s+em\s+conta[^,\d]*|Saque[^,\d]*|IOF[^,\d]*|Mensalidade[^,\d]*|Assinatura[^,\d]*)(.+?)\s+([\d\.]+,\d{2})\s*$/i);
+        if (m) { result.debitos.push({ data: currentDate, descricao: (m[1] + m[2]).replace(/\s+/g,' ').trim(), valor: parseValor(m[3]) }); continue; }
 
-        // ---- Tarifas, anuidades, débito automático, compras no débito, saques (todos viram Débito) ----
-        m = raw.match(/^(Tarifa|Anuidade|Débito\s+automático|Debito\s+automatico|Compra\s+no\s+débito|Saque|IOF|Mensalidade|Assinatura)\s+(.+?)\s+([\d\.]+,\d{2})\s*$/i);
-        if (m) {
-          result.debitos.push({ data: currentDate, descricao: `${m[1]} ${extractName(m[2])}`.trim(), valor: parseValor(m[3]) });
-          continue;
-        }
-
-        // ---- Outras saídas com valor: marcar como ambíguo ----
-        // Try to detect any other "saida-like" row that we couldn't classify
-        // Heuristic: a line that is NOT a "Transferência recebida" but has a value.
-        if (/transferência/i.test(raw) === false && /^[A-ZÁÂÃÉÊÍÓÔÕÚÇa-záâãéêíóôõúç]/.test(raw) && valueAtEnd.test(raw)) {
-          // Try to find the type+name+value, treating as ambiguous debit
-          const vm = raw.match(/^(.+?)\s+([\d\.]+,\d{2})\s*$/);
-          if (vm) {
-            const desc = vm[1].trim();
-            // Filter out obvious noise
-            if (desc.length > 4 && !/CNPJ/i.test(desc) && !/Agência/i.test(desc) && !/Conta:/i.test(desc) && !/extrato/i.test(desc)) {
-              // Don't double-count if it looks like a header
-              if (!/^Total/i.test(desc) && !/^Saldo/i.test(desc)) {
-                // Ambiguous: only add if not already captured
-                // (we'll dedupe later if needed)
-                // result.debitos.push({ data: currentDate, descricao: desc, valor: parseValor(vm[2]), ambig: true });
-                // Disabled by default to avoid noise; uncomment if you want aggressive capture.
-              }
+        // Fallback genérico para linhas com data inline + desc + valor
+        if (currentDate && dmDMY && raw) {
+          m = raw.match(/^(.+?)\s+([\d\.]+,\d{2})\s*$/);
+          if (m) {
+            const desc = m[1].trim(); const valor = parseValor(m[2]);
+            if (valor > 0 && valor < 1000000 && desc.length > 2 && !/^(Saldo|Total|Extrato|Limite|Rendimento)/i.test(desc)) {
+              if (/[Rr]eceb|[Cc]rédito\s+em|entrada/i.test(desc)) result.pixIn.push({ valor, nome: extractName(desc), data: currentDate });
+              else if (/boleto|concession|pgto\b/i.test(desc)) result.boletos.push({ data: currentDate, descricao: desc, valor });
+              else result.debitos.push({ data: currentDate, descricao: desc, valor });
             }
           }
         }
@@ -884,18 +882,6 @@
       return name;
     }
 
-    function lookForValue(lines, fromIdx) {
-      for (let j = fromIdx + 1; j < Math.min(lines.length, fromIdx + 6); j++) {
-        const l = lines[j];
-        if (l === '§§PAGE§§') continue;
-        const m = l.match(/^([\d\.]+,\d{2})\s*$/);
-        if (m) return parseValor(m[1]);
-        // If we hit another transaction marker, stop
-        if (/^(Transferência|Pagamento|Total\s+de|\d{2}\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ))/i.test(l)) break;
-      }
-      return null;
-    }
-
     // ---------- aggregate parse ----------
     async function processFile(file) {
       const lines = await extractLinesFromPdf(file);
@@ -903,12 +889,17 @@
 
       const result = { cartao: {}, debitos: [], boletos: [], pixIn: [], pixOut: [] };
 
-      if (kind.isFatura) parseFatura(lines, result);
-      if (kind.isExtrato) parseExtrato(lines, result);
-
+      if (kind.isFatura) {
+        parseFatura(lines, result);         // Nubank: DD MON
+        parseFaturaGeneric(lines, result);  // outros bancos: DD/MM ou DD/MM/YYYY
+      }
+      if (kind.isExtrato) {
+        parseExtrato(lines, result);
+      }
       if (!kind.isFatura && !kind.isExtrato) {
-        // Best-effort: try both anyway
+        // PDF de formato desconhecido — tenta tudo
         parseFatura(lines, result);
+        parseFaturaGeneric(lines, result);
         parseExtrato(lines, result);
       }
 

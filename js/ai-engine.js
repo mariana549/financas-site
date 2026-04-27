@@ -134,99 +134,189 @@ async function _extractLinesFromPdf(file) {
 // ── Detectar tipo de documento ──
 function _detectDocKind(lines) {
   const text = lines.join('\n');
-  const isFatura = /TRANSAÇÕES\s+DE/i.test(text)
-    || (/fatura/i.test(text) && /vencimento/i.test(text) && /Parcela/i.test(text));
-  const isExtrato = /Saldo inicial/i.test(text)
-    || /Total de entradas/i.test(text)
-    || /Movimentações/i.test(text);
+  const isFatura =
+    /TRANSAÇÕES\s+DE/i.test(text) ||
+    /COMPRAS\s+NO\s+CART[ÃA]O/i.test(text) ||
+    /FATURA\s+CART[ÃA]O/i.test(text) ||
+    /Lançamentos\s+do\s+cartão/i.test(text) ||
+    /Lançamentos\s+na\s+fatura/i.test(text) ||
+    (/fatura/i.test(text) && /vencimento/i.test(text)) ||
+    (/TRANSAÇÕES/i.test(text) && /Parcela/i.test(text));
+  const isExtrato =
+    /Saldo\s+(inicial|anterior|em\s+conta)/i.test(text) ||
+    /Total\s+de\s+(entradas|saídas)/i.test(text) ||
+    /Movimentações/i.test(text) ||
+    /Extrato\s+(de\s+)?[Cc]onta/i.test(text) ||
+    /Extrato\s+[Bb]ancário/i.test(text) ||
+    /Saldo\s+[Ff]inal/i.test(text);
   return { isFatura, isExtrato };
 }
 
-// ── Parser de fatura de cartão ──
+// ── Helpers compartilhados pelos parsers ──
 const _MONTH_ABBR = { JAN:'01',FEV:'02',MAR:'03',ABR:'04',MAI:'05',JUN:'06',JUL:'07',AGO:'08',SET:'09',OUT:'10',NOV:'11',DEZ:'12' };
 const _MONTH_NAME = { '01':'Janeiro','02':'Fevereiro','03':'Março','04':'Abril','05':'Maio','06':'Junho','07':'Julho','08':'Agosto','09':'Setembro','10':'Outubro','11':'Novembro','12':'Dezembro' };
 
+// Extrai e limpa parcela da descrição: "- Parcela 2/12", " (2/12)", " 2/12"
+function _extractParcela(desc) {
+  const m = desc.match(/[Pp]arcela\s+(\d+)\/(\d+)/)
+         || desc.match(/\((\d+)\/(\d+)\)/)
+         || desc.match(/\s+(\d{1,2})\/(\d{2,3})\s*$/);
+  return m ? { parcela: `${m[1]}/${m[2]}`, clean: desc.replace(m[0], '').trim() } : { parcela: '', clean: desc.trim() };
+}
+
+// Linhas de crédito/estorno — não são compras
+function _isFaturaCredit(desc) {
+  return /^(Pagamento|Crédito|Estorno|Reembolso|Restituição|Cashback|Saldo\s+anterior|IOF\s+est)/i.test(desc);
+}
+
+// ── Parser de fatura Nubank: "DD MON [máscara] desc R$ valor" ──
 function _parseFaturaLines(lines, result) {
   let inTransacoes = false;
+  let inPag = false;
   const txRe  = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(?:[•\.]+\s*\d+\s+|[\u2022\.\s]*\d{4}\s+)?(.+?)\s+R?\$?\s*([\d\.]+,\d{2})$/i;
   const txRe2 = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(.+?)\s+R?\$?\s*([\d\.]+,\d{2})$/i;
-  let inPag = false;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (const line of lines) {
     if (/^TRANSAÇÕES/i.test(line) || /^TRANSAC/i.test(line)) { inTransacoes = true; inPag = false; continue; }
     if (!inTransacoes) continue;
     if (/^Pagamentos\s+e\s+Financiamentos/i.test(line)) { inPag = true; continue; }
     if (inPag) continue;
     if (/^[A-Z][a-záâãéêíóôõúç]+(\s+[A-Z][a-záâãéêíóôõúç]*)*\s+R\$/i.test(line) && !/\d{2}\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)/i.test(line)) continue;
 
-    let m = line.match(txRe) || line.match(txRe2);
+    const m = line.match(txRe) || line.match(txRe2);
     if (!m) continue;
     const monAbbr = m[2].toUpperCase();
     let desc = m[3].trim().replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').replace(/^\d{4}\s+/, '').trim();
     const valor = _parseValor(m[4]);
-    if (!valor) continue;
-    if (/Saldo\s+restante/i.test(desc) || /^Pagamento\s+em/i.test(desc)) continue;
+    if (!valor || /Saldo\s+restante/i.test(desc) || /^Pagamento\s+em/i.test(desc)) continue;
 
-    let parcela = '';
-    const pm = desc.match(/^(.+?)\s*-\s*Parcela\s*(\d+)\s*\/\s*(\d+)\s*$/i);
-    if (pm) { desc = pm[1].trim(); parcela = `${pm[2]}/${pm[3]}`; }
-
+    const { parcela, clean } = _extractParcela(desc);
     const monthName = _MONTH_NAME[_MONTH_ABBR[monAbbr]];
     if (!result.cartao[monthName]) result.cartao[monthName] = [];
-    result.cartao[monthName].push({ desc, parcela, valor });
+    result.cartao[monthName].push({ desc: clean, parcela, valor });
   }
 }
 
-// ── Parser de extrato de conta ──
+// ── Parser de fatura genérico: "DD/MM desc R$ valor" ou "DD/MM/YYYY desc R$ valor" (Itaú, C6, Bradesco, etc.) ──
+function _parseFaturaGeneric(lines, result) {
+  // "DD/MM/YYYY desc valor" or "DD/MM desc valor"
+  const reFull = /^(\d{2})\/(\d{2})(?:\/(\d{4}))?\s+(.+?)\s+([\d\.]+,\d{2})\s*$/;
+  let yearHint = null;
+  // Try to grab year from any header line
+  for (const l of lines) {
+    const ym = l.match(/\b(20\d{2})\b/);
+    if (ym) { yearHint = ym[1]; break; }
+  }
+
+  for (const line of lines) {
+    if (line === '§§PAGE§§') continue;
+    const m = line.match(reFull);
+    if (!m) continue;
+    const day = m[1], mon = m[2], year = m[3] || yearHint || new Date().getFullYear();
+    const desc = m[4].trim();
+    const valor = _parseValor(m[5]);
+    if (!valor || valor > 100000 || _isFaturaCredit(desc)) continue;
+    // Skip balance-like lines
+    if (/^(Saldo|Total|Subtotal|Limite)/i.test(desc)) continue;
+
+    const monthName = _MONTH_NAME[mon] || 'Outros';
+    if (!result.cartao[monthName]) result.cartao[monthName] = [];
+    const { parcela, clean } = _extractParcela(desc);
+    result.cartao[monthName].push({ desc: clean, parcela, valor, date: `${day}/${mon}/${year}` });
+  }
+}
+
+// ── Parser de extrato de conta — todos os bancos ──
 function _parseExtratoLines(lines, result) {
   let currentDate = null;
-  const dateRe = /^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(\d{4})\b/i;
+
+  // Helpers de data
+  const _setDateMon = (d, monAbbr, y) => { currentDate = `${d}/${_MONTH_ABBR[monAbbr.toUpperCase()]}/${y}`; };
+  const _setDateDMY = (d, m, y) => { currentDate = `${d}/${m}/${y}`; };
 
   const lookVal = (fromIdx) => {
     for (let j = fromIdx + 1; j < Math.min(lines.length, fromIdx + 6); j++) {
       if (lines[j] === '§§PAGE§§') continue;
       const mv = lines[j].match(/^([\d\.]+,\d{2})\s*$/);
       if (mv) return _parseValor(mv[1]);
-      if (/^(Transferência|Pagamento|Total\s+de|\d{2}\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ))/i.test(lines[j])) break;
+      if (/^(Transferência|Pagamento|Pix|PIX|TED|DOC|Total\s+de|\d{2}[\s\/])/i.test(lines[j])) break;
     }
     return null;
   };
 
+  // Extrai nome após prefixo de tipo
+  const _name = (raw, prefix) => _extractName(raw.replace(prefix, '').trim());
+
   for (let i = 0; i < lines.length; i++) {
-    const raw = lines[i];
+    let raw = lines[i];
     if (raw === '§§PAGE§§') continue;
-    const dm = raw.match(dateRe);
-    if (dm) { currentDate = `${dm[1]}/${_MONTH_ABBR[dm[2].toUpperCase()]}/${dm[3]}`; continue; }
+
+    // ── Linha de data: "DD MON YYYY" (Nubank, Inter, alguns outros) ──
+    const dmMon = raw.match(/^(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(\d{4})\b/i);
+    if (dmMon) { _setDateMon(dmMon[1], dmMon[2], dmMon[3]); continue; }
+
+    // ── Prefixo "DD/MM/YYYY" na própria linha de transação (maioria dos bancos) ──
+    const dmDMY = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+/);
+    if (dmDMY) { _setDateDMY(dmDMY[1], dmDMY[2], dmDMY[3]); raw = raw.slice(dmDMY[0].length).trim(); }
+
+    // ── Skip: linhas de agregado / ruído ──
+    if (!raw) continue;
     if (/^Total\s+de\s+(entradas|saídas)/i.test(raw)) continue;
-    if (/^Saldo\s+(inicial|final|líquido)/i.test(raw)) continue;
-    if (/^Movimentações/i.test(raw)) continue;
-    if (/^Rendimento/i.test(raw)) continue;
+    if (/^Saldo\s+(inicial|anterior|final|líquido|em\s+conta)/i.test(raw)) continue;
+    if (/^(Movimentações|Rendimento|Extrato|Comprovante|Período)/i.test(raw)) continue;
 
-    let m = raw.match(/^Transferência\s+[Rr]ecebida(?:\s+pelo\s+Pix)?\s+(.+?)\s+([\d\.]+,\d{2})\s*$/);
-    if (m) { result.pixIn.push({ valor: _parseValor(m[2]), nome: _extractName(m[1]), data: currentDate }); continue; }
-    m = raw.match(/^Transferência\s+[Rr]ecebida(?:\s+pelo\s+Pix)?\s+(.+)$/);
-    if (m) { const v = lookVal(i); if (v) result.pixIn.push({ valor: v, nome: _extractName(m[1]), data: currentDate }); continue; }
+    let m;
 
-    m = raw.match(/^Transferência\s+enviada(?:\s+pelo\s+Pix)?\s+(.+?)\s+([\d\.]+,\d{2})\s*$/);
-    if (m) { result.pixOut.push({ valor: _parseValor(m[2]), nome: _extractName(m[1]), data: currentDate }); continue; }
-    m = raw.match(/^Transferência\s+enviada(?:\s+pelo\s+Pix)?\s+(.+)$/);
-    if (m) { const v = lookVal(i); if (v) result.pixOut.push({ valor: v, nome: _extractName(m[1]), data: currentDate }); continue; }
+    // ── PIX / TED / DOC recebido ──
+    const pixInRe = /^(?:(?:Pix|PIX)\s+(?:recebido|crédito|creditado|em\s+conta|Crédito)|Recebimento\s+(?:Pix|PIX)|Transferência\s+(?:PIX\s+)?[Rr]ecebida(?:\s+pelo\s+Pix)?|TED\s+[Rr]ecebida?|DOC\s+[Rr]ecebido?|Transferência\s+TED\s+[Rr]ecebida?|Transferência\s+[Rr]ecebida)/i;
+    if (pixInRe.test(raw)) {
+      m = raw.match(/(.+?)\s+([\d\.]+,\d{2})\s*$/);
+      if (m) { result.pixIn.push({ valor: _parseValor(m[2]), nome: _name(m[1], pixInRe), data: currentDate }); }
+      else { const v = lookVal(i); if (v) result.pixIn.push({ valor: v, nome: _name(raw, pixInRe), data: currentDate }); }
+      continue;
+    }
 
+    // ── PIX / TED / DOC enviado ──
+    const pixOutRe = /^(?:(?:Pix|PIX)\s+(?:enviado|débito)|Transferência\s+(?:PIX\s+)?[Ee]nviada(?:\s+pelo\s+Pix)?|TED\s+[Ee]nviada?|DOC\s+[Ee]nviado?|Transferência\s+TED\s+[Ee]nviada?|Transferência\s+[Ee]nviada)/i;
+    if (pixOutRe.test(raw)) {
+      m = raw.match(/(.+?)\s+([\d\.]+,\d{2})\s*$/);
+      if (m) { result.pixOut.push({ valor: _parseValor(m[2]), nome: _name(m[1], pixOutRe), data: currentDate }); }
+      else { const v = lookVal(i); if (v) result.pixOut.push({ valor: v, nome: _name(raw, pixOutRe), data: currentDate }); }
+      continue;
+    }
+
+    // ── Pagamento de fatura ──
     m = raw.match(/^Pagamento\s+de\s+fatura\s+([\d\.]+,\d{2})\s*$/i);
     if (m) { result.debitos.push({ data: currentDate, descricao: 'Pagamento de fatura', valor: _parseValor(m[1]) }); continue; }
     if (/^Pagamento\s+de\s+fatura\s*$/i.test(raw)) {
       const v = lookVal(i); if (v) result.debitos.push({ data: currentDate, descricao: 'Pagamento de fatura', valor: v }); continue;
     }
 
-    m = raw.match(/^Pagamento\s+de\s+boleto\s+(.+?)\s+([\d\.]+,\d{2})\s*$/i);
-    if (m) { result.boletos.push({ data: currentDate, descricao: _extractName(m[1]) || 'Boleto', valor: _parseValor(m[2]) }); continue; }
-    if (/^Pagamento\s+de\s+boleto/i.test(raw)) {
-      const v = lookVal(i); if (v) result.boletos.push({ data: currentDate, descricao: 'Boleto', valor: v }); continue;
+    // ── Boleto / Pagamento de contas / Débito automático ──
+    const boletoRe = /^(?:Pagamento\s+de\s+boleto|Pgto\.?\s+[Bb]oleto|Pagamento\s+de\s+conta|Pagamento\s+de\s+[Cc]oncess|Pagamento\s+conta|Débito\s+automático|Debito\s+automatico)/i;
+    if (boletoRe.test(raw)) {
+      m = raw.match(/^(.+?)\s+([\d\.]+,\d{2})\s*$/);
+      if (m) result.boletos.push({ data: currentDate, descricao: _extractName(m[1]) || m[1].trim(), valor: _parseValor(m[2]) });
+      else { const v = lookVal(i); if (v) result.boletos.push({ data: currentDate, descricao: raw.replace(boletoRe, '').trim() || 'Boleto', valor: v }); }
+      continue;
     }
 
-    m = raw.match(/^(Tarifa|Anuidade|Débito\s+automático|Compra\s+no\s+débito|Saque|IOF|Mensalidade|Assinatura)\s+(.+?)\s+([\d\.]+,\d{2})\s*$/i);
-    if (m) { result.debitos.push({ data: currentDate, descricao: `${m[1]} ${_extractName(m[2])}`.trim(), valor: _parseValor(m[3]) }); continue; }
+    // ── Compra débito / Tarifas / Saques / IOF ──
+    m = raw.match(/^(Tarifa[^,\d]*|Anuidade[^,\d]*|Compra\s+(?:no\s+|c\/\s*|on-?line\s+)?[Dd]ébito[^,\d]*|Débito\s+em\s+conta[^,\d]*|Saque[^,\d]*|IOF[^,\d]*|Mensalidade[^,\d]*|Assinatura[^,\d]*)(.+?)\s+([\d\.]+,\d{2})\s*$/i);
+    if (m) { result.debitos.push({ data: currentDate, descricao: (m[1] + m[2]).replace(/\s+/g,' ').trim(), valor: _parseValor(m[3]) }); continue; }
+
+    // ── Fallback genérico: qualquer linha com desc + valor (só quando há data no contexto) ──
+    if (currentDate && dmDMY) {
+      m = raw.match(/^(.+?)\s+([\d\.]+,\d{2})\s*$/);
+      if (m) {
+        const desc = m[1].trim(); const valor = _parseValor(m[2]);
+        if (valor > 0 && valor < 1000000 && desc.length > 2 && !/^(Saldo|Total|Extrato|Limite|Rendimento)/i.test(desc)) {
+          if (/[Rr]eceb|[Cc]rédito\s+em|entrada/i.test(desc)) result.pixIn.push({ valor, nome: _extractName(desc), data: currentDate });
+          else if (/boleto|concession|pgto\b/i.test(desc)) result.boletos.push({ data: currentDate, descricao: desc, valor });
+          else result.debitos.push({ data: currentDate, descricao: desc, valor });
+        }
+      }
+    }
   }
 }
 
@@ -292,10 +382,18 @@ async function _processPdf(file) {
   const lines = await _extractLinesFromPdf(file);
   const kind = _detectDocKind(lines);
   const result = { cartao: {}, debitos: [], boletos: [], pixIn: [], pixOut: [] };
-  if (kind.isFatura) _parseFaturaLines(lines, result);
-  if (kind.isExtrato) _parseExtratoLines(lines, result);
+
+  if (kind.isFatura) {
+    _parseFaturaLines(lines, result);        // Nubank: DD MON
+    _parseFaturaGeneric(lines, result);      // outros bancos: DD/MM ou DD/MM/YYYY
+  }
+  if (kind.isExtrato) {
+    _parseExtratoLines(lines, result);
+  }
   if (!kind.isFatura && !kind.isExtrato) {
+    // Tenta tudo — PDF de formato desconhecido
     _parseFaturaLines(lines, result);
+    _parseFaturaGeneric(lines, result);
     _parseExtratoLines(lines, result);
   }
   return { result, kind };
