@@ -1,4 +1,4 @@
-const CACHE_NAME = 'financas-v32';
+const CACHE_NAME = 'financas-v33';
 const ASSETS = [
   './',
   './index.html',
@@ -7,7 +7,6 @@ const ASSETS = [
   './dist/app.min.js',
   './js/lib/supabase.min.js',
 ];
-
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME)

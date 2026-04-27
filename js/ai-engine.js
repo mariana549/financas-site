@@ -290,7 +290,7 @@ function _parseFaturaLines(lines, result) {
 // ── Parser de fatura genérico: "DD/MM desc R$ valor" ou "DD/MM/YYYY desc R$ valor" (Itaú, C6, Bradesco, etc.) ──
 function _parseFaturaGeneric(lines, result) {
   // "DD/MM/YYYY desc valor" or "DD/MM desc valor"
-  const reFull = /^(\d{2})\/(\d{2})(?:\/(\d{4}))?\s+(.+?)\s+([\d\.]+,\d{2})\s*$/;
+  const reFull = /^(\d{2})\/(\d{2})(?:\/(\d{4}))?\s+(.+?)\s+R?\$?\s*([\d\.]+,\d{2})\s*$/;
   let yearHint = null;
   // Try to grab year from any header line
   for (const l of lines) {
@@ -303,7 +303,7 @@ function _parseFaturaGeneric(lines, result) {
     const m = line.match(reFull);
     if (!m) continue;
     const day = m[1], mon = m[2], year = m[3] || yearHint || new Date().getFullYear();
-    const desc = m[4].trim();
+    const desc = m[4].trim().replace(/\s+R?\$\s*$/, '');
     const valor = _parseValor(m[5]);
     if (!valor || valor > 100000 || _isFaturaCredit(desc) || _isFaturaFee(desc)) continue;
     // Skip balance-like lines
@@ -1007,7 +1007,11 @@ async function importAIEntries() {
       const e = bankItems[i];
       const entryBaseType = (e.entryType === 'debito' || e.entryType === 'boleto') ? 'debit' : 'normal';
 
-      const entryOwner = (e.isMine !== false) ? null : (e.owner || null);
+      // owner deve ser 'mine' | 'other' (nunca null), person é o nome quando 'other'
+      const isMine = e.isMine !== false;
+      const entryOwner  = isMine ? 'mine' : 'other';
+      const entryPerson = isMine ? null
+        : (e.owner && e.owner !== 'mine' && e.owner !== 'other' ? e.owner : e.person) || null;
 
       const entryDate = e.date || today();
       const entryCat  = e.category || null;
@@ -1016,7 +1020,7 @@ async function importAIEntries() {
         const gId = 'grp_ai_' + Date.now() + '_' + i;
         const entry = {
           id: String(Date.now() + i), desc: e.desc, amount: e.amount, date: entryDate,
-          owner: entryOwner, person: e.person || null, category: entryCat, note: null,
+          owner: entryOwner, person: entryPerson, category: entryCat, note: null,
           type: 'installment', installCurrent: e.installCurrent || 1,
           installTotal: e.installTotal, groupId: gId
         };
@@ -1025,12 +1029,12 @@ async function importAIEntries() {
         await registerFutureInst({
           desc: e.desc, partAmt: e.amount, total: e.installTotal,
           cur: e.installCurrent || 1, bankName, owner: entryOwner,
-          person: e.person || null, cat: entryCat, gId, startKey: monthKey, date: entryDate
+          person: entryPerson, cat: entryCat, gId, startKey: monthKey, date: entryDate
         });
       } else {
         const entry = {
           id: String(Date.now() + i), desc: e.desc, amount: e.amount, date: entryDate,
-          owner: entryOwner, person: e.person || null, category: entryCat, note: null,
+          owner: entryOwner, person: entryPerson, category: entryCat, note: null,
           type: entryBaseType
         };
         bank.entries.push(entry);

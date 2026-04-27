@@ -823,7 +823,7 @@
 
     // ---------- parse fatura genérica: "DD/MM desc R$ valor" ou "DD/MM/YYYY desc R$ valor" ----------
     function parseFaturaGeneric(lines, result) {
-      const reFull = /^(\d{2})\/(\d{2})(?:\/(\d{4}))?\s+(.+?)\s+([\d\.]+,\d{2})\s*$/;
+      const reFull = /^(\d{2})\/(\d{2})(?:\/(\d{4}))?\s+(.+?)\s+R?\$?\s*([\d\.]+,\d{2})\s*$/;
       let yearHint = null;
       for (const l of lines) { const ym = l.match(/\b(20\d{2})\b/); if (ym) { yearHint = ym[1]; break; } }
 
@@ -831,7 +831,7 @@
         if (line === '§§PAGE§§') continue;
         const m = line.match(reFull);
         if (!m) continue;
-        const desc = m[4].trim();
+        const desc = m[4].trim().replace(/\s+R?\$\s*$/, '');
         const valor = parseValor(m[5]);
         if (!valor || valor > 100000 || isFaturaCredit(desc) || isFaturaFee(desc)) continue;
         if (/^(Saldo|Total|Subtotal|Limite)/i.test(desc)) continue;
