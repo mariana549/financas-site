@@ -813,7 +813,7 @@
         const mn = line.match(txNoVal);
         if (mn) {
           const day = mn[1], monAbbr = mn[2].toUpperCase();
-          let desc = mn[3].trim().replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').replace(/^\d{4}\s+/, '').trim();
+          let desc = mn[3].trim().replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').replace(/^\d{4}\s+/, '').replace(/\s+R?\$\s*$/, '').trim();
           if (!desc || isFaturaCredit(desc) || isFaturaFee(desc)) continue;
           if (/Saldo\s+restante/i.test(desc) || /^Pagamento\s+em/i.test(desc)) continue;
           pending = { day, monAbbr, desc };

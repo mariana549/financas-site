@@ -279,7 +279,7 @@ function _parseFaturaLines(lines, result) {
     const mn = line.match(txNoVal);
     if (mn) {
       const day = mn[1], monAbbr = mn[2].toUpperCase();
-      let desc = mn[3].trim().replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').replace(/^\d{4}\s+/, '').trim();
+      let desc = mn[3].trim().replace(/^(?:[•\u2022\.\s]+\d{4}\s+)/, '').replace(/^\d{4}\s+/, '').replace(/\s+R?\$\s*$/, '').trim();
       if (!desc || _isFaturaCredit(desc) || _isFaturaFee(desc)) continue;
       if (/Saldo\s+restante/i.test(desc) || /^Pagamento\s+em/i.test(desc)) continue;
       pending = { day, monAbbr, desc };
@@ -886,6 +886,12 @@ const _TYPE_LABEL = { cartao: 'cartão', debito: 'débito', boleto: 'boleto', pi
 const _TYPE_COLOR = { cartao: 'var(--accent)', debito: 'var(--red)', boleto: 'var(--orange)', pixin: 'var(--green)', pixout: 'var(--blue)' };
 const _DEST_LABEL = { pixin: '→ entradas', pixout: '→ pix enviados', cartao: '→ banco', debito: '→ banco', boleto: '→ banco' };
 
+// Converte input DD/MM/AAAA → ISO e salva
+function _aiSetDate(i, val) {
+  const m = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  S.aiParsed[i].date = m ? `${m[3]}-${m[2]}-${m[1]}` : null;
+}
+
 // Atualiza tipo de um item sem re-renderizar a lista inteira
 function _aiSetType(i, type) {
   S.aiParsed[i].entryType = type;
@@ -949,9 +955,9 @@ function renderAIEntries() {
           <button class="ai-mine-btn${isMine ? ' ai-mine-btn--mine' : ''}" id="aiMineBtn_${i}" onclick="_aiToggleMine(${i})">${isMine ? 'Meu' : 'Não meu'}</button>
         </div>
         <div class="ai-item-extra">
-          <input type="date" value="${e.date||''}"
-            style="flex:1;min-width:80px;font-size:11px;padding:3px 6px;border:1px solid var(--border2);border-radius:4px;background:var(--bg3);color:var(--text)"
-            onchange="S.aiParsed[${i}].date = this.value || null">
+          <input type="text" placeholder="DD/MM/AAAA" value="${e.date ? e.date.split('-').reverse().join('/') : ''}"
+            style="flex:1;min-width:90px;font-size:11px;padding:3px 6px;border:1px solid var(--border2);border-radius:4px;background:var(--bg3);color:var(--text)"
+            oninput="_aiSetDate(${i}, this.value)">
           <input type="text" list="aiCatList" value="${(e.category||'').replace(/"/g,'&quot;')}" placeholder="Categoria"
             style="flex:1;min-width:60px;font-size:11px;padding:3px 6px;border:1px solid var(--border2);border-radius:4px;background:var(--bg3);color:var(--text)"
             oninput="S.aiParsed[${i}].category = this.value || null">
