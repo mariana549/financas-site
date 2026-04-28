@@ -72,6 +72,7 @@ const VIEW_LABELS = {
   year:      ['Resumo Anual',         'visão geral do ano'],
   history:   ['Histórico de Pessoas', 'quem comprou no seu cartão · todos os meses'],
   changelog: ['Novidades',            'o que mudou em cada versão'],
+  dev:       ['Dev Panel',            'changelog · usuários dev'],
 };
 
 function showView(v) {
@@ -124,4 +125,5 @@ function showView(v) {
     if (dot) dot.style.display = 'none';
     localStorage.setItem('fin_seen_version', APP_VERSION);
   }
+  if (v === 'dev') renderDev();
 }

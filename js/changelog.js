@@ -74,10 +74,13 @@ function renderChangelog() {
     improve: { bg: 'rgba(255,159,77,.1)',  text: 'var(--orange)',  border: 'rgba(255,159,77,.25)' },
   };
 
+  // Usa entradas do Supabase se disponíveis, senão usa as hardcoded
+  const source = (S.changelogEntries && S.changelogEntries.length > 0) ? S.changelogEntries : CHANGELOG;
+
   // Agrupar entradas com mesma versão em uma única "release"
   const releases = [];
   let lastVer = null;
-  for (const entry of CHANGELOG) {
+  for (const entry of source) {
     if (entry.version !== lastVer) {
       releases.push({ version: entry.version, date: entry.date, groups: [] });
       lastVer = entry.version;

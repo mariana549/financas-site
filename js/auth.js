@@ -66,6 +66,16 @@ async function onLoginSuccess() {
   if (dashEl) dashEl.innerHTML = renderSkeleton();
 
   await loadAllFromSupabase();
+
+  // ── Dev Panel ──
+  S.isDev = S.devUsers.some(d => d.email === currentUser.email);
+  const devNav = document.getElementById('nav-dev');
+  if (devNav) devNav.style.display = S.isDev ? 'flex' : 'none';
+  if (S.isDev && S.changelogEntries.length === 0) {
+    await dbSeedChangelog(CHANGELOG);
+    S.changelogEntries = await dbLoadChangelogEntries();
+  }
+
   renderMonthList();
   renderSubs();
   checkVersionBanner();
@@ -96,6 +106,8 @@ async function confirmLogout() {
   await sb.auth.signOut();
   currentUser = null;
   S = { ...defaultState() };
+  const devNavEl = document.getElementById('nav-dev');
+  if (devNavEl) devNavEl.style.display = 'none';
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('authEmail').value = '';
   document.getElementById('authPassword').value = '';

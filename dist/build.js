@@ -38,6 +38,7 @@ const JS_FILES = [
   'js/dbs/db-subscriptions.js',
   'js/dbs/db-installments.js',
   'js/dbs/db-receivables.js',
+  'js/dbs/db-dev.js',
   'js/dbs/db.js',
   'js/auth.js',
   'js/months.js',
@@ -55,6 +56,7 @@ const JS_FILES = [
   'js/backup.js',
   'js/ai-engine.js',
   'js/changelog.js',
+  'js/dev.js',
   'js/modals.js',
   'js/main.js',
 ];
