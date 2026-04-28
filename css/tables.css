@@ -32,34 +32,23 @@
 table {
    width: 100%;
    border-collapse: collapse;
-   table-layout: fixed;
 }
 
-/* Coluna de descrição ocupa o espaço disponível e quebra texto longo */
+/* Coluna de descrição estica e quebra texto longo sem criar scroll */
 table td:first-child,
 table th:first-child {
-   width: auto;
+   width: 100%;
    overflow-wrap: break-word;
    word-break: break-word;
-   min-width: 0;
 }
 
-/* Colunas de tipo/dono e valor têm largura fixa */
+/* Colunas de tipo/dono e valor não encolhem */
 table td:nth-child(2),
-table th:nth-child(2) {
-   width: 80px;
-   white-space: nowrap;
-}
-
+table th:nth-child(2),
 table td:nth-child(3),
 table th:nth-child(3) {
-   width: 100px;
    white-space: nowrap;
-   text-align: right;
-}
-
-table th:nth-child(3) {
-   text-align: right;
+   width: 1px;
 }
 
 th {
