@@ -8,7 +8,7 @@ async function loadAllFromSupabase() {
   setSyncing(true);
   try {
     const uid = currentUser.id;
-    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes] = await Promise.all([
+    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes, rmRes, dvRes, clRes] = await Promise.all([
       sb.from('months').select('*').eq('user_id', uid).order('created_at'),
       sb.from('banks').select('*').eq('user_id', uid),
       sb.from('transacoes').select('*').eq('user_id', uid),
@@ -18,6 +18,9 @@ async function loadAllFromSupabase() {
       sb.from('subscriptions').select('*').eq('user_id', uid),
       sb.from('installments').select('*').eq('user_id', uid),
       sb.from('banks_global').select('*').eq('user_id', uid).order('created_at'),
+      sb.from('receivable_marks').select('*').eq('user_id', uid),
+      sb.from('dev_users').select('*').order('added_at'),
+      sb.from('changelog_entries').select('*').order('position', { ascending: false }).order('created_at', { ascending: false }),
     ]);
 
     // ── Months + Banks (por mês) + Entries ──
@@ -86,7 +89,10 @@ async function loadAllFromSupabase() {
       bank: s.bank_name, day: s.due_day, startDate: s.start_date, endDate: s.end_date,
       owner: s.owner || 'mine',
       splitPeople: parsePeople(s.split_people),
-      splitValues: parseValues(s.split_values)
+      splitValues: parseValues(s.split_values),
+      priceHistory: s.price_history
+        ? (typeof s.price_history === 'string' ? JSON.parse(s.price_history) : s.price_history)
+        : null
     }));
 
     // ── Parcelas futuras ──
@@ -102,7 +108,23 @@ async function loadAllFromSupabase() {
       id: g.id, name: g.name, color: g.color
     }));
 
+    // ── Marks de recebimento ──
+    const receivableMarks = (rmRes?.data || []).map(r => ({
+      id: r.id, monthKey: r.month_key, itemRef: r.item_ref, itemType: r.item_type,
+      person: r.person, amount: parseFloat(r.amount), desc: r.description,
+      bankName: r.bank_name, received: r.received, receivedAt: r.received_at
+    }));
+
     // ── Popula estado global ──
+    // ── Dev Users ──
+    const devUsers = (dvRes?.data || []).map(r => ({ id: r.id, email: r.email, addedAt: r.added_at }));
+
+    // ── Changelog Entries ──
+    const changelogEntries = (clRes?.data || []).map(r => ({
+      id: r.id, version: r.version, date: r.entry_date,
+      title: r.title, summary: r.summary, items: r.items, position: r.position
+    }));
+
     S.months       = months;
     sortMonths();
     S.pixEntries   = pixEntries;
@@ -111,6 +133,9 @@ async function loadAllFromSupabase() {
     S.subscriptions = subscriptions;
     S.installments = installments;
     S.globalBanks  = globalBanks;
+    S.receivableMarks = receivableMarks;
+    S.devUsers     = devUsers;
+    S.changelogEntries = changelogEntries;
 
     // ── Seeding: migra bancos existentes para banks_global na primeira vez ──
     if (S.globalBanks.length === 0 && months.length > 0 && !gbRes?.error) {

@@ -1,0 +1,32 @@
+﻿📑 Roadmap de Desenvolvimento: Finanças PWA (Versão Profissional)
+Este documento detalha todas as funcionalidades, correções de UX e novas lógicas de negócio a serem implementadas para transformar o protótipo em uma aplicação robusta.
+________________
+
+
+2. Novos Módulos e Workspaces
+* Separação Pessoal vs. Profissional (PJ):
+   * Criação de contextos isolados. Gastos de trabalho (gasolina de funcionário, social media, fornecedores) ficam em uma aba separada das finanças pessoais? sim 
+
+   * Quantos contextos? Só 2 fixos (Pessoal + PJ) ou quer poder criar contextos customizados (ex: "Freelance", "Empresa X", "Empresa Y")? quero dois fixos pessoal e pj. dentro do pj da para criar cotextos constumizados para area empresarial
+   * Categorias compartilhadas? As categorias de despesa (Alimentação, Transporte...) são as mesmas nos dois contextos ou cada um tem suas próprias? separadas, tudo do pessoal e separado do prfissional 
+   * Qual abordagem prefere? Opção A (prefixo, mais rápido de implementar) ou Opção B (coluna no Supabase, mais escalável)? B
+   * Backup separado? O backup exporta tudo junto ou separado por contexto? separado 
+   
+________________
+
+4. Categorização por Ícones Automáticos
+* O que faltava: O app identificar o que é o gasto pelo nome. ✅
+* Lógica: Se o utilizador escrever "Uber", o app coloca um ícone de 🚗. Se escrever "Restaurante", coloca 🍴. Isso torna a leitura do extrato muito mais rápida.✅
+* ou pode ja ter uns icones padrão para a pessoa escolher e colocar la 🤷‍♀️
+________________
+
+
+
+
+[ADENDO DE ÚLTIMA HORA - UX & LOGIC]
+* Transações Split: Implementar lógica de divisão (50/50 ou personalizada) entre 'Eu' e 'Terceiro' no mesmo lançamento.
+* Busca Instantânea: Filtro de texto no topo de todas as listas.
+* Indicadores de Cor: Lógica de semáforo (Verde/Amarelo/Vermelho) para metas e saldos.
+* Ícones Inteligentes: Mapeamento de palavras-chave para ícones automáticos nas transações.
+* UX Mobile: Implementar Swipe Actions (deslizar) para ações rápidas no extrato.
+* Feedback de Carregamento: Substituir o ecrã vazio por Skeleton Screens durante o fetch de dados.

@@ -144,11 +144,21 @@ function calcAnualTotal(subs) {
   }, 0);
 }
 
+let _subProjFilter = 'all';
+
 function toggleSubProjection() {
   const el = document.getElementById('subProjection');
   if (!el) return;
   const hidden = el.style.display === 'none';
   el.style.display = hidden ? 'block' : 'none';
+}
+
+function setSubProjFilter(f) {
+  _subProjFilter = f;
+  renderSubs();
+  // Reabre a projeção após re-render
+  const el = document.getElementById('subProjection');
+  if (el) el.style.display = 'block';
 }
 
 function openSubM(editId = null) {
@@ -161,12 +171,16 @@ function openSubM(editId = null) {
   S.subSplitPeople = [''];
   S.subSplitType = 'equal';
   S.subSplitValues = null;
+  S._editSubId = null;
   setSubOwner('mine');
+
+  const histSection = document.getElementById('sHistorySection');
+  if (histSection) histSection.style.display = 'none';
 
   if (editId) {
     const s = (S.subscriptions || []).find(x => String(x.id) === String(editId));
     if (s) {
-      document.getElementById('editSubId').value = editId;
+      document.getElementById('editSubId').value = String(s.id);
       if (subTitleEl) subTitleEl.firstChild.textContent = 'Editar Assinatura ';
       document.getElementById('sName').value = s.name || '';
       document.getElementById('sAmt').value = s.amount || '';
@@ -188,9 +202,93 @@ function openSubM(editId = null) {
         renderSubSplitUI();
         updateSubSplitHint();
       }
+      // Histórico de preço
+      S._editSubId = String(s.id);
+      if (histSection) histSection.style.display = 'block';
+      closeReajusteForm();
+      _renderSubHistoryInModal(s);
     }
   }
   openModal('mSub');
+}
+
+// ── Helpers de histórico de preço ──
+function _getEffectiveHistory(s) {
+  if (s.priceHistory && s.priceHistory.length) return s.priceHistory;
+  if (s.startDate) return [{ amount: s.amount, from: s.startDate, note: 'Valor inicial' }];
+  return [{ amount: s.amount, from: '', note: 'Valor inicial' }];
+}
+
+function _renderSubHistoryInModal(s) {
+  const el = document.getElementById('sHistoryList');
+  if (!el) return;
+  const h = _getEffectiveHistory(s);
+  if (h.length <= 1) {
+    el.innerHTML = `<div style="font-size:12px;color:var(--text3);padding:4px 0">Nenhum reajuste registrado ainda.</div>`;
+    return;
+  }
+  el.innerHTML = h.map((entry, i) => {
+    const isLast = i === h.length - 1;
+    const pct = i > 0 ? ((entry.amount - h[i - 1].amount) / h[i - 1].amount * 100).toFixed(1) : null;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;${isLast ? '' : 'border-bottom:1px solid var(--border)'}">
+      <div style="flex:1">
+        <span style="font-size:13px;font-family:var(--mono);${isLast ? 'color:var(--accent);font-weight:600' : 'color:var(--text2)'}">R$&nbsp;${fmt(entry.amount)}</span>
+        ${entry.note ? `<span style="font-size:11px;color:var(--text3);margin-left:6px">${entry.note}</span>` : ''}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${(entry.from || '').replace('-', '/')}</div>
+        <div style="font-size:11px;color:${pct ? 'var(--orange)' : 'var(--text3)'}">
+          ${pct ? '↑ +' + pct + '%' : 'inicial'}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openReajusteForm() {
+  document.getElementById('sReajusteForm').style.display = 'block';
+  document.getElementById('sReajusteBtn').style.display = 'none';
+  document.getElementById('sReajusteAmt').value = '';
+  document.getElementById('sReajusteDate').value = '';
+  document.getElementById('sReajusteNote').value = '';
+}
+
+function closeReajusteForm() {
+  const form = document.getElementById('sReajusteForm');
+  const btn  = document.getElementById('sReajusteBtn');
+  if (form) form.style.display = 'none';
+  if (btn)  btn.style.display  = 'inline-flex';
+}
+
+async function confirmReajuste() {
+  const newAmt = parseFloat(document.getElementById('sReajusteAmt').value);
+  const date   = document.getElementById('sReajusteDate').value;
+  const note   = document.getElementById('sReajusteNote').value.trim();
+
+  if (isNaN(newAmt) || newAmt <= 0) { alert('Informe o novo valor.'); return; }
+  if (!date) { alert('Informe o mês do reajuste.'); return; }
+
+  const sub = (S.subscriptions || []).find(s => String(s.id) === String(S._editSubId));
+  if (!sub) return;
+
+  if (!sub.priceHistory || !sub.priceHistory.length) {
+    sub.priceHistory = [{ amount: sub.amount, from: sub.startDate || '', note: 'Valor inicial' }];
+  }
+  sub.priceHistory.push({ amount: newAmt, from: date, note });
+  sub.amount = newAmt;
+
+  // Atualiza campo de valor no modal
+  const amtEl = document.getElementById('sAmt');
+  if (amtEl) amtEl.value = newAmt;
+
+  setSyncing(true);
+  await dbSaveSub(sub);
+  setSyncing(false);
+
+  closeReajusteForm();
+  _renderSubHistoryInModal(sub);
+  renderSubs();
+  showToast('✓ Reajuste registrado');
 }
 
 async function saveSub() {
@@ -222,15 +320,22 @@ async function saveSub() {
   }
 
   if (!S.subscriptions) S.subscriptions = [];
+
+  let priceHistory = null;
   if (editId) {
+    const existing = S.subscriptions.find(s => String(s.id) === String(editId));
+    if (existing) priceHistory = existing.priceHistory || null;
     S.subscriptions = S.subscriptions.filter(s => String(s.id) !== String(editId));
     await dbDeleteSub(editId);
+  } else {
+    priceHistory = [{ amount: amt, from: startDate, note: 'Valor inicial' }];
   }
+
   const sub = {
-    id: editId || Date.now(),
+    id: editId ? String(editId) : String(Date.now()),
     name, amount: amt, cycle, bank, day,
     startDate, endDate: endDate || null,
-    owner, splitPeople, splitValues
+    owner, splitPeople, splitValues, priceHistory
   };
   S.subscriptions.push(sub);
   setSyncing(true);
@@ -250,6 +355,17 @@ async function deleteSub(id) {
   renderSubs();
   showToast('Assinatura excluída');
 }
+
+function toggleSubEvolution(id) {
+  const el  = document.getElementById('subEvo_' + id);
+  const btn = document.getElementById('subEvoBtn_' + id);
+  if (!el) return;
+  const showing = el.style.display !== 'none';
+  el.style.display  = showing ? 'none' : 'block';
+  if (btn) btn.textContent = showing ? '📈 ver evolução' : '📈 ocultar';
+}
+
+function _buildSparkline() { return ''; } // replaced by CSS timeline
 
 function renderSubs() {
   const el = document.getElementById('subsContent');
@@ -282,31 +398,71 @@ function renderSubs() {
   const card = s => {
     const owner = s.owner || 'mine';
     const myPart = calcMySubPart(s);
+    const history = _getEffectiveHistory(s);
+    const hasHistory = history.length > 1;
+    const initialAmt = history[0].amount;
+    const totalPct = hasHistory
+      ? ((s.amount - initialAmt) / initialAmt * 100).toFixed(0)
+      : null;
+
     const ownerBadge = owner === 'other'
       ? `<span class="bm bm-other" style="font-size:10px;margin-left:4px">${(s.splitPeople || ['?'])[0]}</span>`
       : owner === 'split'
         ? `<span class="bm bm-split" style="font-size:10px;margin-left:4px">÷${(s.splitPeople || []).length + 1}</span>`
         : '';
-    const myPartLabel = owner !== 'mine'
-      ? `<div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-top:2px">meu: R$ ${fmt(myPart)}</div>`
+    const reajusteBadge = hasHistory
+      ? `<span class="bm" style="font-size:10px;margin-left:4px;background:rgba(251,146,60,.15);color:var(--orange)">↑ +${totalPct}%</span>`
       : '';
+    const myPartLabel = owner === 'split'
+      ? `<div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-top:2px">meu: R$&nbsp;${fmt(myPart)}</div>`
+      : '';
+
+    const evoSection = hasHistory ? `
+      <div id="subEvo_${s.id}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <div class="sub-evo-timeline">
+          ${history.map((h, i) => {
+            const isLast = i === history.length - 1;
+            const pct = i > 0
+              ? ((h.amount - history[i - 1].amount) / history[i - 1].amount * 100).toFixed(1)
+              : null;
+            return `<div class="sub-evo-item${isLast ? ' sub-evo-item--current' : ''}">
+              <div class="sub-evo-track">
+                <div class="sub-evo-dot"></div>
+                <div class="sub-evo-line"></div>
+              </div>
+              <div class="sub-evo-body">
+                <div class="sub-evo-amount">R$\u00a0${fmt(h.amount)}</div>
+                <div class="sub-evo-meta">${(h.from || '').replace('-', '/')}${isLast ? ' · atual' : i === 0 ? ' · inicial' : ''}</div>
+                ${h.note ? `<div class="sub-evo-note">${h.note}</div>` : ''}
+                ${pct ? `<span class="sub-evo-change">&#x2191; +${pct}%</span>` : ''}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      <button id="subEvoBtn_${s.id}" onclick="event.stopPropagation();toggleSubEvolution('${s.id}')"
+        style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:6px 0 0;width:100%;text-align:left">
+        &#x1F4C8; ver evolução
+      </button>` : '';
+
     return `
     <div class="scard">
       <div style="position:absolute;top:8px;right:8px;display:flex;gap:3px">
         <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px;transition:color .15s"
           onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'"
-          onclick="openSubM(${s.id})">✎</button>
+          onclick="openSubM('${s.id}')">✎</button>
         <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px;transition:color .15s"
           onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'"
-          onclick="deleteSub(${s.id})">×</button>
+          onclick="deleteSub('${s.id}')">×</button>
       </div>
-      <div class="scard-name">${s.name}${ownerBadge}</div>
-      <div class="scard-amt">R$ ${fmt(s.amount)}</div>
+      <div class="scard-name">${s.name}${ownerBadge}${reajusteBadge}</div>
+      <div class="scard-amt">R$&nbsp;${fmt(s.amount)}</div>
       ${myPartLabel}
       <div class="scard-det">
         ${s.cycle}${s.day ? ' · dia ' + s.day : ''}${s.bank ? ' · ' + s.bank : ''}
         ${s.startDate ? ' · desde ' + s.startDate.replace('-', '/') : ''}
       </div>
+      ${evoSection}
     </div>`;
   };
 
@@ -333,7 +489,9 @@ function renderSubs() {
     </div>`;
 
   // ── Projeção Anual Detalhada ──
-  const projList = [...active]
+  const projFiltered = _subProjFilter === 'all' ? active
+    : active.filter(s => (s.owner || 'mine') === _subProjFilter);
+  const projList = [...projFiltered]
     .map(s => {
       const anual = s.cycle === 'anual' ? s.amount : s.cycle === 'semanal' ? s.amount * 52 : s.amount * 12;
       const mensal_val = s.cycle === 'anual' ? s.amount / 12 : s.cycle === 'semanal' ? s.amount * 52 / 12 : s.amount;
@@ -342,10 +500,18 @@ function renderSubs() {
     .sort((a, b) => b.anual - a.anual);
   const maxProj = Math.max(...projList.map(s => s.anual), 1);
 
+  const filterChips = ['all', 'mine', 'other', 'split'].map(f => {
+    const labels = { all: 'Tudo', mine: 'Minhas', other: 'De outros', split: 'Em conjunto' };
+    return `<div class="chip ${_subProjFilter === f ? 'sel' : ''}" onclick="setSubProjFilter('${f}')">${labels[f]}</div>`;
+  }).join('');
+
   html += `
     <div id="subProjection" style="display:none;margin-bottom:24px">
-      <div class="sec-title" style="margin-bottom:12px">Projeção por Serviço (12 meses)</div>
-      <div class="tbl-block">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div class="sec-title">Projeção por Serviço (12 meses)</div>
+        <div class="chips">${filterChips}</div>
+      </div>
+      ${projList.length === 0 ? `<div class="empty" style="padding:20px 0">nenhuma assinatura nesta categoria</div>` : `<div class="tbl-block">
         <table>
           <thead><tr><th>Serviço</th><th>Ciclo</th><th style="text-align:right">Mensal</th><th style="text-align:right">Anual</th></tr></thead>
           <tbody>
@@ -364,10 +530,10 @@ function renderSubs() {
           </tbody>
         </table>
         <div class="foot-row">
-          <div class="foot-grp"><span class="foot-lbl">Total Anual</span><span class="foot-amt" style="color:var(--accent)">R$ ${fmt(calcAnualTotal(active))}</span></div>
-          <div class="foot-grp"><span class="foot-lbl">Média Mensal</span><span class="foot-amt">R$ ${fmt(calcAnualTotal(active) / 12)}</span></div>
+          <div class="foot-grp"><span class="foot-lbl">Total Anual</span><span class="foot-amt" style="color:var(--accent)">R$ ${fmt(calcAnualTotal(projFiltered))}</span></div>
+          <div class="foot-grp"><span class="foot-lbl">Média Mensal</span><span class="foot-amt">R$ ${fmt(calcAnualTotal(projFiltered) / 12)}</span></div>
         </div>
-      </div>
+      </div>`}
     </div>`;
 
   Object.entries(byBank).forEach(([bank, subs]) => {

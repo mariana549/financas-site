@@ -66,8 +66,27 @@ async function onLoginSuccess() {
   if (dashEl) dashEl.innerHTML = renderSkeleton();
 
   await loadAllFromSupabase();
+
+  // ── Dev Panel ──
+  S.isDev = S.devUsers.some(d => d.email === currentUser.email);
+  const devNav = document.getElementById('nav-dev');
+  if (devNav) devNav.style.display = S.isDev ? 'flex' : 'none';
+  if (S.isDev && S.changelogEntries.length === 0) {
+    await dbSeedChangelog(CHANGELOG);
+    S.changelogEntries = await dbLoadChangelogEntries();
+  }
+
   renderMonthList();
   renderSubs();
+  checkVersionBanner();
+  // Mostra ponto vermelho no nav se versão nova
+  const seen = localStorage.getItem('fin_seen_version');
+  if (seen !== APP_VERSION) {
+    const dot = document.getElementById('changelogDot');
+    if (dot) dot.style.display = 'block';
+    const banner = document.getElementById('bannerVersion');
+    if (banner) banner.textContent = APP_VERSION;
+  }
 
   if (S.currentMonth) {
     selectMonth(S.currentMonth, false);
@@ -87,6 +106,8 @@ async function confirmLogout() {
   await sb.auth.signOut();
   currentUser = null;
   S = { ...defaultState() };
+  const devNavEl = document.getElementById('nav-dev');
+  if (devNavEl) devNavEl.style.display = 'none';
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('authEmail').value = '';
   document.getElementById('authPassword').value = '';

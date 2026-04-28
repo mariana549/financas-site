@@ -176,7 +176,11 @@ function injectModals() {
   </div>
   <div class="fg"><label>Observação</label><textarea id="rObs" placeholder="detalhes..."></textarea></div>
   <input type="hidden" id="editRecId">
-  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mRec')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveRec()">Salvar</button></div>
+  <div class="modal-actions">
+    <button id="recDeleteBtn" class="btn btn-danger btn-sm" style="display:none" onclick="deleteRecCurrent()">Excluir</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mRec')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="saveRec()">Salvar</button>
+  </div>
 </div></div>
 
 <!-- Pix -->
@@ -233,6 +237,26 @@ function injectModals() {
     <div class="fg"><label>Cancelado em <span class="tip" data-tip="Deixe vazio se ainda está ativa.&#10;Preencha para marcar como cancelada&#10;e tirá-la do total mensal.">?</span></label><input type="month" id="sEnd" placeholder="vazio = ativa"></div>
   </div>
   <input type="hidden" id="editSubId">
+
+  <!-- Histórico de preço — só aparece ao editar -->
+  <div id="sHistorySection" style="display:none">
+    <div class="divider" style="margin:14px 0 12px"></div>
+    <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Histórico de Preço</div>
+    <div id="sHistoryList" style="margin-bottom:10px"></div>
+    <div id="sReajusteForm" style="display:none;background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:8px">
+      <div class="fr">
+        <div class="fg"><label>Novo valor (R$)</label><input type="number" id="sReajusteAmt" step="0.01" placeholder="0,00"></div>
+        <div class="fg"><label>Mês do reajuste</label><input type="month" id="sReajusteDate"></div>
+      </div>
+      <div class="fg"><label>Observação (opcional)</label><input type="text" id="sReajusteNote" placeholder="ex: Reajuste anual 2025"></div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-primary btn-sm" onclick="confirmReajuste()">Confirmar</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeReajusteForm()">Cancelar</button>
+      </div>
+    </div>
+    <button id="sReajusteBtn" class="btn btn-ghost btn-sm" onclick="openReajusteForm()">+ Registrar Reajuste</button>
+  </div>
+
   <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mSub')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="saveSub()">Salvar</button></div>
 </div></div>
 
@@ -258,12 +282,41 @@ function injectModals() {
 
 <!-- AI Import -->
 <div class="modal-overlay" id="mAI"><div class="modal">
-  <div class="modal-title">📄 Importar Extrato com IA <button class="modal-close" onclick="closeModal('mAI')">×</button></div>
+  <div class="modal-title">📄 Importar Extrato <button class="modal-close" onclick="closeModal('mAI')">×</button></div>
+
+  <!-- Tipo de extrato -->
+  <div class="fg" style="margin-bottom:8px">
+    <label style="margin-bottom:6px">Tipo de extrato</label>
+    <div id="aiTypeChips" class="ai-type-chips">
+      <button class="ai-chip ai-chip--active" onclick="setAIType('auto',this)">Auto</button>
+      <button class="ai-chip" onclick="setAIType('cartao',this)">Cartão</button>
+      <button class="ai-chip" onclick="setAIType('debito',this)">Débito</button>
+      <button class="ai-chip" onclick="setAIType('pixout',this)">Pix enviado</button>
+      <button class="ai-chip" onclick="setAIType('pixin',this)">Pix recebido</button>
+      <button class="ai-chip" onclick="setAIType('boleto',this)">Boleto</button>
+    </div>
+  </div>
+
+  <!-- PDF upload zone -->
+  <div class="ai-pdf-zone" id="aiPdfZone"
+       onclick="document.getElementById('aiPdfInput').click()"
+       ondragover="event.preventDefault()"
+       ondrop="event.preventDefault();handleAIPdfFiles(event.dataTransfer.files)">
+    <input type="file" id="aiPdfInput" accept=".pdf" multiple style="display:none"
+           onchange="handleAIPdfFiles(this.files)">
+    <span class="ai-pdf-zone-icon">📎</span>
+    <span class="ai-pdf-zone-label">Solte PDFs aqui ou clique para selecionar</span>
+  </div>
+  <div id="aiPdfStatus" class="ai-pdf-status" style="display:none"></div>
+
+  <!-- PDF sections extracted -->
+  <div id="aiPdfSections" style="display:none;margin-bottom:8px"></div>
+
   <div class="fg"><label>Mês de destino</label><select id="aiMonthSel" onchange="updateAIBankSel()"></select></div>
-  <div class="fg"><label>Banco</label><select id="aiBankSel"></select></div>
+  <div class="fg" id="aiiBankRow"><label>Banco</label><select id="aiBankSel"></select></div>
   <div class="fg">
     <label>Cole o texto do extrato</label>
-    <textarea id="aiText" placeholder="eu: 55 + 25 + 44&#10;Sogra 13 + 44&#10;iFood 32,00&#10;Moto 195¹°" style="min-height:120px"></textarea>
+    <textarea id="aiText" placeholder="Cole aqui o texto extraído do PDF ou digite manualmente..." style="min-height:120px"></textarea>
   </div>
   <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:10px" onclick="runAI()">
     <span id="aiBtnText">✨ Interpretar</span>

@@ -10,7 +10,8 @@ async function dbSaveSub(sub) {
     start_date: sub.startDate || null, end_date: sub.endDate || null,
     owner: sub.owner || 'mine',
     split_people: sub.splitPeople ? JSON.stringify(sub.splitPeople) : null,
-    split_values: sub.splitValues ? JSON.stringify(sub.splitValues) : null
+    split_values: sub.splitValues ? JSON.stringify(sub.splitValues) : null,
+    price_history: sub.priceHistory ? JSON.stringify(sub.priceHistory) : '[]'
   }, { onConflict: 'id' });
 }
 

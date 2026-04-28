@@ -6,7 +6,8 @@ function defaultState() {
   return {
     months: [], currentMonth: null, currentBank: null, currentInnerTab: 'gastos',
     subscriptions: [], pixEntries: {}, recurrents: {}, incomes: {}, installments: [],
-    globalBanks: [],
+    globalBanks: [], receivableMarks: [],
+    devUsers: [], changelogEntries: [], isDev: false,
     currentView: 'dash', entryOwner: 'mine', entryType: 'normal',
     incomeOwner: 'mine', incomeType: 'Salário', pickedColor: 'azure',
     theme: 'dark', aiParsed: [], aiFileData: null, aiFileType: null,
