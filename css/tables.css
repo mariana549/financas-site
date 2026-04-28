@@ -34,6 +34,23 @@ table {
    border-collapse: collapse;
 }
 
+/* Coluna de descrição estica e quebra texto longo sem criar scroll */
+table td:first-child,
+table th:first-child {
+   width: 100%;
+   overflow-wrap: break-word;
+   word-break: break-word;
+}
+
+/* Colunas de tipo/dono e valor não encolhem */
+table td:nth-child(2),
+table th:nth-child(2),
+table td:nth-child(3),
+table th:nth-child(3) {
+   white-space: nowrap;
+   width: 1px;
+}
+
 th {
    padding: 8px 16px;
    text-align: left;
