@@ -348,6 +348,29 @@ function injectModals() {
   </div>
 </div></div>
 
+<!-- Trocar Senha -->
+<div class="modal-overlay" id="mChangePwd"><div class="modal modal-sm">
+  <div class="modal-title">Trocar senha <button class="modal-close" onclick="closeModal('mChangePwd')">×</button></div>
+  <div class="fg auth-pwd-wrap">
+    <label>Nova senha</label>
+    <input type="password" id="changePwd" placeholder="mínimo 6 caracteres" autocomplete="new-password">
+    <button type="button" class="auth-eye" onclick="toggleAuthEye('changePwd',this)" tabindex="-1">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+  </div>
+  <div class="fg auth-pwd-wrap">
+    <label>Confirmar nova senha</label>
+    <input type="password" id="changePwdConfirm" placeholder="repita a senha" autocomplete="new-password" onkeydown="if(event.key==='Enter')handleChangePwd()">
+    <button type="button" class="auth-eye" onclick="toggleAuthEye('changePwdConfirm',this)" tabindex="-1">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+  </div>
+  <div class="modal-actions">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mChangePwd')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="handleChangePwd()" id="changePwdBtn">Salvar</button>
+  </div>
+</div></div>
+
 <!-- Editar Mês -->
 <div class="modal-overlay" id="mEditMonth"><div class="modal modal-sm">
   <div class="modal-title">Editar Mês <button class="modal-close" onclick="closeModal('mEditMonth')">×</button></div>

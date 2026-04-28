@@ -104,3 +104,68 @@
    margin-top: 16px;
    font-family: var(--mono);
 }
+
+/* Wrapper para input de senha com botão olho */
+.auth-pwd-wrap {
+   position: relative;
+}
+
+.auth-pwd-wrap input {
+   padding-right: 38px;
+}
+
+.auth-eye {
+   position: absolute;
+   right: 10px;
+   bottom: 9px;
+   background: none;
+   border: none;
+   cursor: pointer;
+   color: var(--text3);
+   padding: 2px;
+   display: flex;
+   align-items: center;
+   opacity: 0.4;
+   transition: opacity .15s;
+}
+
+.auth-eye:hover {
+   opacity: 1;
+}
+
+/* Link "Esqueci minha senha" */
+.auth-link {
+   background: none;
+   border: none;
+   color: var(--accent);
+   font-size: 12px;
+   cursor: pointer;
+   font-family: var(--mono);
+   padding: 0;
+   text-decoration: underline;
+   text-underline-offset: 2px;
+   opacity: 0.8;
+   transition: opacity .15s;
+}
+
+.auth-link:hover {
+   opacity: 1;
+}
+
+/* Botão voltar no painel de recuperação */
+.auth-back {
+   background: none;
+   border: none;
+   color: var(--text3);
+   font-size: 12px;
+   cursor: pointer;
+   font-family: var(--mono);
+   padding: 0;
+   margin-bottom: 16px;
+   display: block;
+   transition: color .15s;
+}
+
+.auth-back:hover {
+   color: var(--text);
+}
