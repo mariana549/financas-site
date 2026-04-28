@@ -314,7 +314,7 @@ function showMeusGastosReport() {
   const splitAmt = splitEntries.reduce((s, e) => s + e.amount * (e.splitRatio ?? 0.5), 0);
   const pixTotal = pixL.reduce((s, p) => s + p.amount, 0);
   const recTotal = recL.reduce((s, r) => s + r.amount, 0);
-  const mySubs = (S.subscriptions || []).filter(s => !s.endDate && s.cycle === 'mensal');
+  const mySubs = (S.subscriptions || []).filter(s => !s.endDate && s.cycle === 'mensal' && (s.owner || 'mine') !== 'other');
   const mySubTotal = mySubs.reduce((s, sub) => s + calcMySubPart(sub), 0);
   const grandTotal = myEntriesAmt + splitAmt + pixTotal + recTotal + mySubTotal;
 

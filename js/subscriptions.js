@@ -413,7 +413,7 @@ function renderSubs() {
     const reajusteBadge = hasHistory
       ? `<span class="bm" style="font-size:10px;margin-left:4px;background:rgba(251,146,60,.15);color:var(--orange)">↑ +${totalPct}%</span>`
       : '';
-    const myPartLabel = owner !== 'mine'
+    const myPartLabel = owner === 'split'
       ? `<div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-top:2px">meu: R$&nbsp;${fmt(myPart)}</div>`
       : '';
 
