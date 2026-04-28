@@ -3,55 +3,46 @@
 // Adicionar nova entrada aqui antes de cada deploy.
 // ══════════════════════════════════════════════════
 
-const APP_VERSION = '1.1.1';
+const APP_VERSION = '1.1.3';
 
-// Tipos: 'feat' (novo) | 'fix' (correção) | 'improve' (melhoria)
+// Cada entrada representa um lote de melhorias visível ao usuário.
+// types disponíveis: 'feat' | 'fix' | 'improve'
 const CHANGELOG = [
   {
-    version: '1.1.1',
-    date: '28/04/2026',
+    version: '1.1',
+    date: 'Abril 2026',
+    title: 'Import por IA muito melhorado',
+    summary: 'A importação de extratos e faturas ficou muito mais inteligente e flexível.',
     items: [
-      { type: 'fix',     text: 'Assinatura "de outra pessoa" não aparece mais em Meus Gastos com R$ 0,00' },
-      { type: 'fix',     text: 'Card de assinatura não exibe mais "meu: R$ 0,00" quando é de terceiro' },
+      { type: 'feat',    text: 'Cada item importado tem seu próprio tipo (cartão, débito, PIX, boleto)' },
+      { type: 'feat',    text: 'Toggle "Meu / Não meu" por item — com sugestão das pessoas já cadastradas' },
+      { type: 'feat',    text: 'Categoria detectada automaticamente por palavras-chave, editável na hora' },
+      { type: 'feat',    text: 'Data de cada compra extraída direto do extrato ou fatura' },
+      { type: 'feat',    text: 'Suporte a faturas do Mercado Livre: filtra tarifas, lê parcelas "X de Y", extrai o ano do cabeçalho' },
+      { type: 'feat',    text: 'Funciona com qualquer banco: Nubank, Itaú, Bradesco, C6, Santander e outros' },
+      { type: 'improve', text: 'Campo de data como DD/MM/AAAA — mais fácil de editar manualmente' },
+      { type: 'fix',     text: 'Lançamentos importados agora aparecem corretamente nos totais e em Meus Gastos' },
+      { type: 'fix',     text: 'Nome da pessoa sempre salvo com capitalização correta, sem duplicatas' },
     ]
   },
   {
-    version: '1.1.0',
-    date: '28/04/2026',
+    version: '1.1',
+    date: 'Abril 2026',
+    title: 'Assinaturas de terceiros corrigidas',
+    summary: 'Assinaturas marcadas como "de outra pessoa" agora se comportam corretamente.',
     items: [
-      { type: 'feat',    text: 'Import IA: nome de pessoa normalizado automaticamente (sem duplicatas de capitalização)' },
-      { type: 'fix',     text: 'Import IA: lançamentos agora contabilizam corretamente em Meus Gastos e totais' },
-      { type: 'fix',     text: 'Import IA: "R$" não aparece mais no final da descrição do item' },
+      { type: 'fix', text: 'Não aparecem mais em Meus Gastos com valor R$ 0,00' },
+      { type: 'fix', text: 'Card da assinatura não exibe mais "meu: R$ 0,00" — só aparece quando é conjunto' },
     ]
   },
   {
-    version: '1.0.9',
-    date: '27/04/2026',
+    version: '1.1',
+    date: 'Abril 2026',
+    title: 'Página de novidades',
+    summary: 'Agora você sabe o que mudou a cada atualização.',
     items: [
-      { type: 'improve', text: 'Campo de data no import IA agora aceita texto DD/MM/AAAA (mais fácil de editar)' },
-      { type: 'fix',     text: 'R$ residual removido da descrição em faturas com valor na linha seguinte' },
-    ]
-  },
-  {
-    version: '1.0.7',
-    date: '27/04/2026',
-    items: [
-      { type: 'feat',    text: 'Parser de fatura: extrai ano do cabeçalho (Emissão, Transações de...)' },
-      { type: 'feat',    text: 'Parser de fatura: suporte a "Parcela X de Y" (formato Mercado Livre / Nubank)' },
-      { type: 'feat',    text: 'Parser de fatura: filtra automaticamente seção Tarifas e Encargos' },
-      { type: 'feat',    text: 'Parser de fatura: lida com valor na linha seguinte à descrição (multi-linha)' },
-      { type: 'feat',    text: 'Data de compra incluída em cada item importado da fatura' },
-    ]
-  },
-  {
-    version: '1.0.6',
-    date: '26/04/2026',
-    items: [
-      { type: 'feat',    text: 'Import IA: cada lançamento tem seu próprio tipo (cartão, débito, pix, boleto)' },
-      { type: 'feat',    text: 'Import IA: toggle "Meu / Não meu" por item com sugestão de pessoas cadastradas' },
-      { type: 'feat',    text: 'Import IA: categoria automática por palavras-chave, editável com sugestões' },
-      { type: 'feat',    text: 'Import IA: múltiplas seções de PDF selecionáveis de uma vez' },
-      { type: 'feat',    text: 'Import IA: suporte a extratos de qualquer banco (Itaú, Bradesco, C6, Santander, BB...)' },
+      { type: 'feat', text: 'Banner aparece uma vez após cada atualização com link para ver as novidades' },
+      { type: 'feat', text: 'Página de histórico acessível pelo menu a qualquer momento' },
     ]
   },
 ];
@@ -77,27 +68,75 @@ function renderChangelog() {
   if (!el) return;
 
   const typeLabel = { feat: 'novo', fix: 'correção', improve: 'melhoria' };
-  const typeColor = { feat: 'var(--accent)', fix: 'var(--green)', improve: 'var(--orange)' };
+  const typeColor = {
+    feat:    { bg: 'rgba(77,159,255,.12)', text: 'var(--accent)',  border: 'rgba(77,159,255,.3)' },
+    fix:     { bg: 'rgba(77,255,145,.1)',  text: 'var(--green)',   border: 'rgba(77,255,145,.25)' },
+    improve: { bg: 'rgba(255,159,77,.1)',  text: 'var(--orange)',  border: 'rgba(255,159,77,.25)' },
+  };
 
-  el.innerHTML = CHANGELOG.map((entry, idx) => {
-    const isLatest = idx === 0;
-    const rows = entry.items.map(it => `
-      <div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
-        <span style="flex-shrink:0;font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:20px;
-          background:${typeColor[it.type]}22;color:${typeColor[it.type]};border:1px solid ${typeColor[it.type]}55;
-          margin-top:1px;white-space:nowrap">${typeLabel[it.type]}</span>
-        <span style="font-size:13px;color:var(--text);line-height:1.4">${it.text}</span>
-      </div>`).join('');
+  // Agrupar entradas com mesma versão em uma única "release"
+  const releases = [];
+  let lastVer = null;
+  for (const entry of CHANGELOG) {
+    if (entry.version !== lastVer) {
+      releases.push({ version: entry.version, date: entry.date, groups: [] });
+      lastVer = entry.version;
+    }
+    releases[releases.length - 1].groups.push(entry);
+  }
+
+  const header = `
+    <div style="margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+      <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px">O que há de novo ✨</div>
+      <div style="font-size:13px;color:var(--text2)">Acompanhe as melhorias e correções de cada versão</div>
+    </div>`;
+
+  el.innerHTML = header + releases.map((rel, ri) => {
+    const isLatest = ri === 0;
+
+    const groups = rel.groups.map(g => {
+      const rows = g.items.map(it => {
+        const c = typeColor[it.type];
+        return `
+        <li style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="flex-shrink:0;font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:20px;
+            background:${c.bg};color:${c.text};border:1px solid ${c.border};margin-top:2px;white-space:nowrap;letter-spacing:.3px">
+            ${typeLabel[it.type]}
+          </span>
+          <span style="font-size:13px;color:var(--text);line-height:1.5">${it.text}</span>
+        </li>`;
+      }).join('');
+
+      return `
+      <div style="margin-bottom:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border)">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">${g.title}</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.4">${g.summary}</div>
+        </div>
+        <ul style="list-style:none;margin:0;padding:0 16px">${rows}
+          <li style="height:4px"></li>
+        </ul>
+      </div>`;
+    }).join('');
 
     return `
-    <div style="margin-bottom:20px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-        <span style="font-size:15px;font-weight:600;color:var(--text)">v${entry.version}</span>
-        ${isLatest ? `<span style="font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:20px;background:var(--accent);color:#fff">atual</span>` : ''}
-        <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:auto">${entry.date}</span>
+    <div style="display:flex;gap:16px;margin-bottom:28px">
+      <!-- Linha do tempo -->
+      <div style="display:flex;flex-direction:column;align-items:center;padding-top:4px;flex-shrink:0">
+        <div style="width:12px;height:12px;border-radius:50%;
+          background:${isLatest ? 'var(--accent)' : 'var(--border2)'};
+          box-shadow:${isLatest ? '0 0 0 3px rgba(77,159,255,.2)' : 'none'};
+          flex-shrink:0"></div>
+        ${ri < releases.length - 1 ? `<div style="flex:1;width:2px;background:var(--border);margin-top:4px;min-height:20px"></div>` : ''}
       </div>
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px 12px">
-        ${rows}
+      <!-- Conteúdo -->
+      <div style="flex:1;min-width:0;padding-bottom:4px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:16px;font-weight:700;color:var(--text);font-family:var(--mono)">v${rel.version}</span>
+          ${isLatest ? `<span style="font-size:10px;font-family:var(--mono);padding:2px 9px;border-radius:20px;background:var(--accent);color:#fff;letter-spacing:.3px">atual</span>` : ''}
+          <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:auto">${rel.date}</span>
+        </div>
+        ${groups}
       </div>
     </div>`;
   }).join('');
