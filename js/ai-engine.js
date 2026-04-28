@@ -446,16 +446,21 @@ function _autoCategory(desc) {
   return null;
 }
 
-// Pessoas já conhecidas no app
+// Pessoas já conhecidas no app — normalizadas para evitar duplicatas de capitalização
 function _getKnownPeople() {
-  const set = new Set();
+  const map = new Map(); // chave minúscula → forma normalizada
+  const add = name => {
+    if (!name || name.length < 2) return;
+    const norm = normalizeName(name);
+    map.set(norm.toLowerCase(), norm);
+  };
   (S.months || []).forEach(m => (m.banks || []).forEach(b => (b.entries || []).forEach(e => {
-    if (e.person && e.person.length > 1) set.add(e.person);
-    if (e.owner && e.owner !== 'mine' && e.owner !== 'other' && e.owner.length > 1) set.add(e.owner);
+    add(e.person);
+    if (e.owner !== 'mine' && e.owner !== 'other') add(e.owner);
   })));
-  Object.values(S.pixEntries || {}).forEach(arr => arr.forEach(p => { if (p.to && p.to.length > 1) set.add(p.to); }));
-  (S.receivableMarks || []).forEach(r => { if (r.person) set.add(r.person); });
-  return [...set].sort((a, b) => a.localeCompare(b, 'pt'));
+  Object.values(S.pixEntries || {}).forEach(arr => arr.forEach(p => add(p.to)));
+  (S.receivableMarks || []).forEach(r => add(r.person));
+  return [...map.values()].sort((a, b) => a.localeCompare(b, 'pt'));
 }
 
 // Categorias já usadas no app
@@ -892,6 +897,13 @@ function _aiSetDate(i, val) {
   S.aiParsed[i].date = m ? `${m[3]}-${m[2]}-${m[1]}` : null;
 }
 
+// Normaliza nome da pessoa ao sair do campo (primeira letra de cada palavra maiúscula)
+function _aiNormalizePerson(i, el) {
+  const norm = normalizeName(el.value);
+  el.value = norm;
+  S.aiParsed[i].owner = norm;
+}
+
 // Atualiza tipo de um item sem re-renderizar a lista inteira
 function _aiSetType(i, type) {
   S.aiParsed[i].entryType = type;
@@ -964,9 +976,10 @@ function renderAIEntries() {
         </div>
         <div id="aiPersonRow_${i}" style="display:${isMine ? 'none' : 'flex'};align-items:center;gap:6px;margin-top:5px">
           <span style="font-size:11px;color:var(--text3);white-space:nowrap">De quem:</span>
-          <input type="text" list="aiPersonList" placeholder="nome da pessoa" value="${personVal.replace(/"/g,'&quot;')}"
+          <input type="text" list="aiPersonList" placeholder="nome da pessoa" value="${normalizeName(personVal).replace(/"/g,'&quot;')}"
             style="font-size:11px;padding:3px 8px;border:1px solid var(--border2);border-radius:4px;background:var(--bg3);color:var(--text);flex:1;min-width:0"
-            oninput="S.aiParsed[${i}].owner = this.value">
+            oninput="S.aiParsed[${i}].owner = this.value"
+            onblur="_aiNormalizePerson(${i}, this)">
         </div>
       </div>
       <input type="number" value="${e.amount.toFixed(2)}" step="0.01" min="0"
@@ -1010,8 +1023,9 @@ async function importAIEntries() {
       // owner deve ser 'mine' | 'other' (nunca null), person é o nome quando 'other'
       const isMine = e.isMine !== false;
       const entryOwner  = isMine ? 'mine' : 'other';
-      const entryPerson = isMine ? null
+      const _rawPerson = isMine ? null
         : (e.owner && e.owner !== 'mine' && e.owner !== 'other' ? e.owner : e.person) || null;
+      const entryPerson = _rawPerson ? normalizeName(_rawPerson) || null : null;
 
       const entryDate = e.date || today();
       const entryCat  = e.category || null;
