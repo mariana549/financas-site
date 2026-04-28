@@ -83,6 +83,10 @@
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Histórico Pessoas
     </div>
     <div class="divider" style="margin:8px 0;"></div>
+    <div class="nav-item" onclick="showView('changelog')" id="nav-changelog" style="position:relative">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Novidades
+      <span id="changelogDot" style="display:none;position:absolute;top:8px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>
+    </div>
     <div class="nav-item" onclick="openBackup()">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Backup
     </div>
@@ -102,6 +106,14 @@
     <div class="topbar-actions" id="tbActions"></div>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Alternar tema">🌙</button>
   </div>
+  <!-- Banner "O que há de novo" — aparece uma vez por versão -->
+  <div id="versionBanner" style="display:none;align-items:center;gap:12px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:13px">
+    <span style="font-size:16px">🎉</span>
+    <span style="flex:1;color:var(--text)">Atualização disponível — veja o que mudou na versão <strong id="bannerVersion"></strong></span>
+    <button onclick="dismissVersionBanner(true)" style="font-size:12px;padding:4px 12px;border-radius:6px;background:var(--accent);color:#fff;border:none;cursor:pointer;white-space:nowrap">Ver novidades</button>
+    <button onclick="dismissVersionBanner(false)" style="font-size:18px;line-height:1;background:none;border:none;color:var(--text3);cursor:pointer;padding:0 4px" title="Fechar">×</button>
+  </div>
+
   <div class="content">
     <div class="view active" id="view-dash"><div id="dashContent"><div class="empty">selecione ou crie um mês<br>para começar</div></div></div>
     <div class="view" id="view-subs"><div id="subsContent"></div></div>
@@ -109,6 +121,7 @@
     <div class="view" id="view-reports"><div id="repContent"></div></div>
     <div class="view" id="view-year"><div id="yearContent"></div></div>
     <div class="view" id="view-history"><div id="historyContent"></div></div>
+    <div class="view" id="view-changelog"><div id="changelogContent" style="padding:16px;max-width:600px;margin:0 auto"></div></div>
   </div>
 </main>
 </div>

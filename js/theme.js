@@ -66,11 +66,12 @@ function applyPrivacy(on) {
 }
 
 const VIEW_LABELS = {
-  subs:    ['Assinaturas',        'por banco · com datas'],
-  banks:   ['Bancos',             'cadastro global · estatísticas por banco'],
-  reports: ['Relatórios',         'selecione um mês'],
-  year:    ['Resumo Anual',       'visão geral do ano'],
-  history: ['Histórico de Pessoas','quem comprou no seu cartão · todos os meses']
+  subs:      ['Assinaturas',          'por banco · com datas'],
+  banks:     ['Bancos',               'cadastro global · estatísticas por banco'],
+  reports:   ['Relatórios',           'selecione um mês'],
+  year:      ['Resumo Anual',         'visão geral do ano'],
+  history:   ['Histórico de Pessoas', 'quem comprou no seu cartão · todos os meses'],
+  changelog: ['Novidades',            'o que mudou em cada versão'],
 };
 
 function showView(v) {
@@ -115,5 +116,12 @@ function showView(v) {
   if (v === 'history') {
     const k = S.months.length + ':' + (S.months[S.months.length - 1]?.key || '');
     if (S._histKey !== k) { S._histKey = k; renderHistory(); }
+  }
+  if (v === 'changelog') {
+    renderChangelog();
+    // Remove o ponto vermelho ao abrir
+    const dot = document.getElementById('changelogDot');
+    if (dot) dot.style.display = 'none';
+    localStorage.setItem('fin_seen_version', APP_VERSION);
   }
 }

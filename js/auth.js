@@ -68,6 +68,15 @@ async function onLoginSuccess() {
   await loadAllFromSupabase();
   renderMonthList();
   renderSubs();
+  checkVersionBanner();
+  // Mostra ponto vermelho no nav se versão nova
+  const seen = localStorage.getItem('fin_seen_version');
+  if (seen !== APP_VERSION) {
+    const dot = document.getElementById('changelogDot');
+    if (dot) dot.style.display = 'block';
+    const banner = document.getElementById('bannerVersion');
+    if (banner) banner.textContent = APP_VERSION;
+  }
 
   if (S.currentMonth) {
     selectMonth(S.currentMonth, false);

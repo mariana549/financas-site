@@ -54,6 +54,7 @@ const JS_FILES = [
   'js/history.js',
   'js/backup.js',
   'js/ai-engine.js',
+  'js/changelog.js',
   'js/modals.js',
   'js/main.js',
 ];
