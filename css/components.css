@@ -898,3 +898,98 @@ html[data-privacy="on"] .detail-amount {
   border-color: rgba(74, 222, 128, .35) !important;
   background: rgba(74, 222, 128, .04);
 }
+/* ── Profile Area ── */
+.user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--mono);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.user-avatar:hover { opacity: .8; }
+
+.profile-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.profile-card-danger {
+  border-color: rgba(255, 107, 107, .25);
+  background: rgba(255, 107, 107, .03);
+}
+.profile-card-head {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  border-bottom: 1px solid var(--border);
+  letter-spacing: .3px;
+}
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+  transition: background .12s;
+}
+.profile-row:last-child { border-bottom: none; }
+.profile-row:hover { background: var(--bg3); }
+.profile-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.profile-row-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+.profile-row-sub {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--mono);
+}
+.profile-toggle {
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text2);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--mono);
+  transition: background .12s;
+}
+.profile-toggle:hover { background: var(--bg); }
+.profile-badge-soon {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: var(--bg3);
+  color: var(--text3);
+  font-family: var(--mono);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
