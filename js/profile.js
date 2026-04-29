@@ -138,6 +138,16 @@ function renderProfile() {
           ${privacyOn ? '🙈 Ativado' : '👁 Desativado'}
         </button>
       </div>
+      <div class="profile-row" style="cursor:default">
+        <div class="profile-row-info">
+          <span class="profile-row-title">Modo PJ</span>
+          <span class="profile-row-sub">Ativa contexto separado para pessoa jurídica</span>
+        </div>
+        <button class="profile-toggle" onclick="_profileTogglePJ()" id="profilePJToggle">
+          ${S.profile?.pjEnabled ? '🏢 Ativado' : '💼 Desativado'}
+        </button>
+      </div>
+      ${S.profile?.pjEnabled ? _profilePJSubContextsHtml() : ''}
       <div class="profile-row" style="cursor:default" id="profilePushRow">
         <div class="profile-row-info">
           <span class="profile-row-title">Notificações push</span>
@@ -204,6 +214,100 @@ function renderProfile() {
     </div>
 
   </div>`;
+}
+
+function _profilePJSubContextsHtml() {
+  const pjRoot = S.contexts.find(c => c.type === 'pj' && !c.parentId);
+  if (!pjRoot) return '';
+  const subs = S.contexts.filter(c => c.parentId === pjRoot.id);
+  return `
+    <div style="padding:12px 16px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:10px">
+        Sub-contextos PJ — separe por empresa, projeto ou cliente
+      </div>
+      <div id="pjSubsList" style="margin-bottom:10px">
+        ${subs.length === 0 ? `<div style="font-size:12px;color:var(--text3);font-style:italic">Nenhum sub-contexto criado.</div>` :
+          subs.map(s => `
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2)">
+              <span style="flex:1;font-size:12px;color:var(--text);font-family:var(--mono)">🏢 ${s.name}</span>
+              <button class="btn btn-ghost btn-sm" onclick="_profileDeleteSubCtx('${s.id}')" style="padding:4px 8px;font-size:11px">✕</button>
+            </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="newSubCtxInput" placeholder="Ex: Freelance, Empresa X..."
+          style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;outline:none;font-family:inherit"
+          maxlength="40" onkeydown="if(event.key==='Enter')_profileAddSubCtx()">
+        <button class="btn btn-primary btn-sm" onclick="_profileAddSubCtx()">+ Adicionar</button>
+      </div>
+    </div>`;
+}
+
+async function _profileTogglePJ() {
+  const btn = document.getElementById('profilePJToggle');
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+  if (S.profile.pjEnabled) {
+    const ok = await dbDisablePJ();
+    if (ok) {
+      S.profile.pjEnabled = false;
+      // Se estava no contexto PJ, volta ao pessoal
+      if (S.activeContext?.type !== 'personal') {
+        const personal = S.contexts.find(c => c.type === 'personal');
+        if (personal) await switchContext(personal.id);
+      }
+      showToast('Modo PJ desativado');
+      renderProfile();
+      renderContextSwitcher();
+    } else {
+      showToast('Erro ao desativar. Tente novamente.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '🏢 Ativado'; }
+    }
+  } else {
+    const ok = await dbEnablePJ();
+    if (ok) {
+      S.profile.pjEnabled = true;
+      // Cria contexto PJ se ainda não existe
+      const pjId = await dbEnsurePJContext();
+      if (pjId && !S.contexts.find(c => c.id === pjId)) {
+        S.contexts = await dbLoadContexts();
+      }
+      showToast('Modo PJ ativado! Use o seletor na barra lateral para alternar.');
+      renderProfile();
+      renderContextSwitcher();
+    } else {
+      showToast('Erro ao ativar. Tente novamente.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '💼 Desativado'; }
+    }
+  }
+}
+
+async function _profileAddSubCtx() {
+  const input = document.getElementById('newSubCtxInput');
+  const name = (input?.value || '').trim();
+  if (!name) return;
+  const pjRoot = S.contexts.find(c => c.type === 'pj' && !c.parentId);
+  if (!pjRoot) return;
+  const newCtx = await dbSaveContext({ name, type: 'pj', parentId: pjRoot.id });
+  if (newCtx) {
+    S.contexts.push(newCtx);
+    showToast(`Sub-contexto "${name}" criado`);
+    renderProfile();
+    renderContextSwitcher();
+  } else {
+    showToast('Erro ao criar sub-contexto.', 'error');
+  }
+}
+
+async function _profileDeleteSubCtx(id) {
+  if (!confirm('Remover este sub-contexto? Os dados dele ainda ficam no banco.')) return;
+  await dbDeleteContext(id);
+  S.contexts = S.contexts.filter(c => c.id !== id);
+  if (S.activeContext?.id === id) {
+    const personal = S.contexts.find(c => c.type === 'personal');
+    if (personal) await switchContext(personal.id);
+  }
+  showToast('Sub-contexto removido');
+  renderProfile();
+  renderContextSwitcher();
 }
 
 async function _profileSaveNickname() {
@@ -317,6 +421,7 @@ async function _profileDeleteAccount() {
 
   closeModal('mDeleteAccount');
   currentUser = null;
+  localStorage.removeItem('fin_active_ctx');
   S = { ...defaultState() };
   const devNavEl = document.getElementById('nav-dev');
   if (devNavEl) devNavEl.style.display = 'none';

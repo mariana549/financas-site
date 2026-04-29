@@ -14,7 +14,8 @@ async function dbSaveRecMark(mark) {
     description: mark.desc,
     bank_name: mark.bankName || null,
     received: mark.received,
-    received_at: mark.receivedAt || null
+    received_at: mark.receivedAt || null,
+    context_id: S.activeContext?.id || null
   }, { onConflict: 'id' });
   if (error) throw error;
 }

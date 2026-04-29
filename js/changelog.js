@@ -3,7 +3,7 @@
 // Adicionar nova entrada aqui antes de cada deploy.
 // ══════════════════════════════════════════════════
 
-const APP_VERSION = '1.1.3';
+const APP_VERSION = '1.3.0';
 
 // Chave pública VAPID para notificações push.
 // Gere em: https://vapidkeys.com/ ou rode: npx web-push generate-vapid-keys

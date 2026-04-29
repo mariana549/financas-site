@@ -11,7 +11,8 @@ async function dbSaveSub(sub) {
     owner: sub.owner || 'mine',
     split_people: sub.splitPeople ? JSON.stringify(sub.splitPeople) : null,
     split_values: sub.splitValues ? JSON.stringify(sub.splitValues) : null,
-    price_history: sub.priceHistory ? JSON.stringify(sub.priceHistory) : '[]'
+    price_history: sub.priceHistory ? JSON.stringify(sub.priceHistory) : '[]',
+    context_id: S.activeContext?.id || null
   }, { onConflict: 'id' });
 }
 

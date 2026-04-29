@@ -257,6 +257,7 @@ async function onLoginSuccess() {
     S.changelogEntries = await dbLoadChangelogEntries();
   }
 
+  renderContextSwitcher();
   renderMonthList();
   renderSubs();
   checkVersionBanner();
@@ -287,6 +288,7 @@ async function confirmLogout() {
   closeModal('mLogout');
   await sb.auth.signOut();
   currentUser = null;
+  localStorage.removeItem('fin_active_ctx');
   S = { ...defaultState() };
   const devNavEl = document.getElementById('nav-dev');
   if (devNavEl) devNavEl.style.display = 'none';

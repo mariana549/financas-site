@@ -10,7 +10,8 @@ async function dbSaveEntry(monthKey, bankName, entry) {
     owner: entry.owner || 'mine', person: entry.person || null, category: entry.category || null,
     note: entry.note || null, type: entry.type || 'normal',
     install_current: entry.installCurrent || null, install_total: entry.installTotal || null,
-    group_id: entry.groupId || null, auto_injected: entry.autoInj || false
+    group_id: entry.groupId || null, auto_injected: entry.autoInj || false,
+    context_id: S.activeContext?.id || null
   }, { onConflict: 'id' });
   if (error) console.error('[dbSaveEntry] Supabase error:', error);
 }
