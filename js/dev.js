@@ -3,7 +3,7 @@
 // Visível apenas para usuários em dev_users
 // ══════════════════════════════════════════════════
 
-let _devTab = 'changelog'; // 'changelog' | 'health' | 'users' | 'devs'
+let _devTab = 'changelog'; // 'changelog' | 'health' | 'users' | 'debug' | 'devs'
 
 function renderDev() {
   const el = document.getElementById('devContent');
@@ -11,6 +11,7 @@ function renderDev() {
   if (_devTab === 'changelog') _renderDevChangelog(el);
   else if (_devTab === 'health') _renderDevHealth(el);
   else if (_devTab === 'users') _renderDevUsersManagement(el);
+  else if (_devTab === 'debug') _renderDevDebug(el);
   else if (_devTab === 'devs') _renderDevUsers(el);
 }
 
@@ -19,6 +20,7 @@ function _devTabBar() {
     { id: 'changelog', label: '📋 Novidades' },
     { id: 'health',    label: '📊 Saúde' },
     { id: 'users',     label: '👤 Usuários' },
+    { id: 'debug',     label: '🔧 Debug' },
     { id: 'devs',      label: '👥 Devs' },
   ];
   return `
@@ -593,6 +595,120 @@ async function _devClearErrors() {
   if (error) { showToast('Erro ao limpar.', 'error'); return; }
   showToast('Erros limpos');
   _renderDevHealth(document.getElementById('devContent'));
+}
+
+// ── ABA: DEBUG ─────────────────────────────────────
+function _renderDevDebug(el) {
+  // Contagem de rows por tabela do usuário atual
+  const counts = [
+    { label: 'Meses',        val: S.months.length },
+    { label: 'Lançamentos',  val: S.months.reduce((a, m) => a + m.banks.reduce((b, bk) => b + bk.entries.length, 0), 0) },
+    { label: 'PIX',          val: Object.values(S.pixEntries).flat().length },
+    { label: 'Contas Fixas', val: Object.values(S.recurrents).flat().length },
+    { label: 'Receitas',     val: Object.values(S.incomes).flat().length },
+    { label: 'Assinaturas',  val: S.subscriptions.length },
+    { label: 'Parcelas',     val: S.installments.length },
+    { label: 'Bancos',       val: S.globalBanks.length },
+  ];
+
+  const countsHtml = counts.map(c => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 14px;border-bottom:1px solid var(--border)">
+      <span style="font-size:13px;color:var(--text2)">${c.label}</span>
+      <span style="font-size:13px;font-family:var(--mono);color:var(--accent);font-weight:600">${c.val}</span>
+    </div>`).join('');
+
+  // Snapshot colapsável do estado S por seção
+  const sections = ['months','subscriptions','installments','globalBanks','pixEntries','recurrents','incomes','profile'];
+  const snapshotHtml = sections.map(key => {
+    const val = S[key];
+    const json = JSON.stringify(val, null, 2);
+    const preview = json.length > 200 ? json.slice(0, 200) + '...' : json;
+    return `
+    <details style="border-bottom:1px solid var(--border)">
+      <summary style="padding:9px 14px;cursor:pointer;font-size:12px;font-family:var(--mono);color:var(--text2);list-style:none;display:flex;justify-content:space-between;align-items:center">
+        <span>S.${key}</span>
+        <span style="color:var(--text3);font-size:11px">${Array.isArray(val) ? val.length + ' itens' : typeof val === 'object' ? Object.keys(val||{}).length + ' chaves' : ''}</span>
+      </summary>
+      <pre style="margin:0;padding:10px 14px;font-size:11px;color:var(--text3);white-space:pre-wrap;word-break:break-all;background:var(--bg3);max-height:300px;overflow-y:auto;line-height:1.5">${preview}</pre>
+    </details>`;
+  }).join('');
+
+  el.innerHTML = `
+    ${_devTabBar()}
+
+    <!-- Contagens -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text)">📊 Dados do usuário atual</div>
+      ${countsHtml}
+    </div>
+
+    <!-- Ações -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px">🛠 Ações</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="flex:1">
+            <div style="font-size:13px;color:var(--text)">Recarregar dados</div>
+            <div style="font-size:11px;color:var(--text3)">Busca tudo do Supabase sem reload da página</div>
+          </div>
+          <button onclick="_devReloadData()"
+            style="padding:7px 16px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:12px;white-space:nowrap">↻ Recarregar</button>
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:10px;display:flex;align-items:center;gap:12px">
+          <div style="flex:1">
+            <div style="font-size:13px;color:var(--text)">Limpar cache do Service Worker</div>
+            <div style="font-size:11px;color:var(--text3)">Força atualização em todos os dispositivos</div>
+          </div>
+          <button onclick="_devClearSWCache()"
+            style="padding:7px 16px;border-radius:7px;border:1px solid rgba(255,159,77,.3);background:rgba(255,159,77,.08);color:var(--orange);cursor:pointer;font-size:12px;white-space:nowrap">Limpar SW</button>
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:10px;display:flex;align-items:center;gap:12px">
+          <div style="flex:1">
+            <div style="font-size:13px;color:var(--text)">Ver erros recentes</div>
+            <div style="font-size:11px;color:var(--text3)">Últimos erros capturados desta conta</div>
+          </div>
+          <button onclick="_devTab='health';renderDev()"
+            style="padding:7px 16px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:12px;white-space:nowrap">Abrir Saúde</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Snapshot do estado S -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">🗂 Estado global (S)</div>
+        <button onclick="_devCopyState()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer">Copiar JSON</button>
+      </div>
+      ${snapshotHtml}
+    </div>`;
+}
+
+async function _devReloadData() {
+  setSyncing(true);
+  await loadAllFromSupabase();
+  setSyncing(false);
+  renderDev();
+  showToast('✓ Dados recarregados');
+}
+
+async function _devClearSWCache() {
+  if (!confirm('Limpar todos os caches do Service Worker?')) return;
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+    showToast('Cache limpo. Recarregando...');
+    setTimeout(() => window.location.reload(true), 800);
+  } else {
+    showToast('Service Worker não disponível.', 'error');
+  }
+}
+
+function _devCopyState() {
+  const snap = {};
+  ['months','subscriptions','installments','globalBanks','pixEntries','recurrents','incomes','profile'].forEach(k => { snap[k] = S[k]; });
+  navigator.clipboard?.writeText(JSON.stringify(snap, null, 2))
+    .then(() => showToast('✓ Estado copiado para o clipboard'))
+    .catch(() => showToast('Erro ao copiar.', 'error'));
 }
 
 // ── ABA: GESTÃO DE USUÁRIOS ────────────────────────
