@@ -9,6 +9,7 @@ async function dbSaveIncome(monthKey, inc) {
     description: inc.desc, amount: inc.amount, entry_date: inc.date || null,
     income_type: inc.incType || null, from_source: inc.from || null,
     owner: inc.owner || 'mine', person: inc.person || null,
+    client_id: inc.clientId || null,
     context_id: S.activeContext?.id || null
   }, { onConflict: 'id' });
 }

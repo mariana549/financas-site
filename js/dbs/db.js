@@ -109,7 +109,7 @@ async function loadAllFromSupabase() {
       incomes[i.month_key].push({
         id: i.id, desc: i.description, amount: parseFloat(i.amount),
         date: i.entry_date, incType: i.income_type, from: i.from_source,
-        owner: i.owner, person: i.person
+        owner: i.owner, person: i.person, clientId: i.client_id || null
       });
     });
 
@@ -179,6 +179,19 @@ async function loadAllFromSupabase() {
     S.devUsers     = devUsers;
     S.changelogEntries = changelogEntries;
 
+    // ── PJ: carrega clientes e impostos se contexto for PJ ──
+    if (S.activeContext?.type !== 'personal') {
+      S.pjClients = await dbLoadClients();
+      S.pjTaxes   = await dbLoadTaxes();
+    } else {
+      S.pjClients = [];
+      S.pjTaxes   = [];
+    }
+
+    // ── Mostra/oculta nav PJ ──
+    const pjNav = document.getElementById('pjNav');
+    if (pjNav) pjNav.style.display = S.activeContext?.type !== 'personal' ? '' : 'none';
+
     // ── Seeding: migra bancos existentes para banks_global na primeira vez ──
     if (S.globalBanks.length === 0 && months.length > 0 && !gbRes?.error) {
       const seen = new Set();
@@ -216,7 +229,7 @@ async function switchContext(ctxId) {
   S.months = []; S.currentMonth = null; S.currentBank = null;
   S.pixEntries = {}; S.recurrents = {}; S.incomes = {};
   S.subscriptions = []; S.installments = []; S.globalBanks = [];
-  S.receivableMarks = [];
+  S.receivableMarks = []; S.pjClients = []; S.pjTaxes = [];
   renderContextSwitcher();
   await loadAllFromSupabase();
   renderMonthList();

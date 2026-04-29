@@ -41,6 +41,8 @@ const JS_FILES = [
   'js/dbs/db-dev.js',
   'js/dbs/db-profile.js',
   'js/dbs/db-contexts.js',
+  'js/dbs/db-clients.js',
+  'js/dbs/db-taxes.js',
   'js/dbs/db.js',
   'js/auth.js',
   'js/months.js',
@@ -60,6 +62,9 @@ const JS_FILES = [
   'js/changelog.js',
   'js/dev.js',
   'js/profile.js',
+  'js/clients.js',
+  'js/taxes.js',
+  'js/pj-reports.js',
   'js/modals.js',
   'js/main.js',
 ];

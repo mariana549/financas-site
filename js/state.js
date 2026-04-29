@@ -9,6 +9,7 @@ function defaultState() {
     globalBanks: [], receivableMarks: [],
     devUsers: [], changelogEntries: [], announcements: [], isDev: false,
     contexts: [], activeContext: null,
+    pjClients: [], pjTaxes: [],
     profile: { nickname: '', pjEnabled: false },
     currentView: 'dash', entryOwner: 'mine', entryType: 'normal',
     incomeOwner: 'mine', incomeType: 'Salário', pickedColor: 'azure',

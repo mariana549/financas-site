@@ -38,6 +38,8 @@ function openModal(id) {
   const el = document.getElementById(id);
   if (el) el.classList.add('open');
   if (id === 'mBank') buildColorGrid();
+  if (id === 'mClient') _clientModalOpen();
+  if (id === 'mTax')    _taxModalOpen();
   if (id === 'mMonth') {
     const now = new Date();
     const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];

@@ -482,5 +482,86 @@ function injectModals() {
   </div>
   <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mPrivacyPolicy')">Fechar</button></div>
 </div></div>
+
+<!-- Modal: Novo/Editar Cliente PJ -->
+<div class="modal-overlay" id="mClient"><div class="modal modal-sm">
+  <div class="modal-title" id="mClientTitle">Novo cliente <button class="modal-close" onclick="closeModal('mClient')">×</button></div>
+  <input type="hidden" id="clientId">
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+    <div>
+      <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Nome *</label>
+      <input type="text" id="clientName" placeholder="Nome do cliente ou empresa"
+        style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:inherit">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div>
+        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">E-mail</label>
+        <input type="email" id="clientEmail" placeholder="email@exemplo.com"
+          style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:inherit">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Telefone</label>
+        <input type="tel" id="clientPhone" placeholder="(11) 99999-9999"
+          style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:inherit">
+      </div>
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">CNPJ / CPF</label>
+      <input type="text" id="clientCNPJ" placeholder="00.000.000/0001-00"
+        style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:inherit">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Observações</label>
+      <textarea id="clientNotes" rows="2" placeholder="Notas sobre o cliente..."
+        style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:inherit;resize:vertical"></textarea>
+    </div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mClient')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="_clientSave()" id="clientSaveBtn">Salvar</button>
+  </div>
+</div></div>
+
+<!-- Modal: Lançar Imposto PJ -->
+<div class="modal-overlay" id="mTax"><div class="modal modal-sm">
+  <div class="modal-title" id="mTaxTitle">Lançar imposto <button class="modal-close" onclick="closeModal('mTax')">×</button></div>
+  <input type="hidden" id="taxId">
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div>
+        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Tipo *</label>
+        <select id="taxType" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:inherit">
+          <option>DAS</option><option>IRPF</option><option>INSS</option><option>ISS</option><option>Outro</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Valor *</label>
+        <input type="number" id="taxAmount" placeholder="0,00" step="0.01" min="0"
+          style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:inherit">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div>
+        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Vencimento</label>
+        <input type="date" id="taxDueDate"
+          style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:inherit">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Mês referência</label>
+        <input type="month" id="taxRefMonth"
+          style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:inherit">
+      </div>
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Observações</label>
+      <input type="text" id="taxNotes" placeholder="Ex: CNPJ 00.000.000/0001-00"
+        style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:inherit">
+    </div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mTax')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="_taxSave()" id="taxSaveBtn">Salvar</button>
+  </div>
+</div></div>
   `);
 }

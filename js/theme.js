@@ -163,6 +163,9 @@ const VIEW_LABELS = {
   changelog: ['Novidades',            'o que mudou em cada versão'],
   dev:       ['Dev Panel',            'changelog · usuários dev'],
   profile:   ['Meu Perfil',           'conta · configurações · dados'],
+  clients:   ['Clientes PJ',          'faturamento e contatos por cliente'],
+  taxes:     ['Impostos PJ',          'DAS · IRPF · INSS · estimativas'],
+  pjreports: ['Relatório PJ',         'faturamento · custos · impostos · líquido'],
 };
 
 function showView(v) {
@@ -217,4 +220,7 @@ function showView(v) {
   }
   if (v === 'dev') renderDev();
   if (v === 'profile') renderProfile();
+  if (v === 'clients') renderClientsView();
+  if (v === 'taxes') renderTaxesView();
+  if (v === 'pjreports') renderPJReports();
 }
