@@ -249,6 +249,7 @@ async function onLoginSuccess() {
   renderMonthList();
   renderSubs();
   checkVersionBanner();
+  renderAnnouncementBanner();
   // Mostra ponto vermelho no nav se versão nova
   const seen = localStorage.getItem('fin_seen_version');
   if (seen !== APP_VERSION) {
