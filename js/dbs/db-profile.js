@@ -11,12 +11,35 @@ async function dbLoadProfile() {
 
 async function dbSaveNickname(nickname) {
   if (!currentUser) return false;
-  const { error } = await sb.from('user_profiles').upsert(
-    { user_id: currentUser.id, nickname: nickname.trim(), updated_at: new Date().toISOString() },
-    { onConflict: 'user_id' }
-  );
+  const val = nickname.trim();
+  // Verifica se já existe um perfil
+  const { data: existing } = await sb.from('user_profiles').select('user_id').eq('user_id', currentUser.id).maybeSingle();
+  let error;
+  if (existing) {
+    ({ error } = await sb.from('user_profiles')
+      .update({ nickname: val, updated_at: new Date().toISOString() })
+      .eq('user_id', currentUser.id));
+  } else {
+    ({ error } = await sb.from('user_profiles')
+      .insert({ user_id: currentUser.id, nickname: val, updated_at: new Date().toISOString() }));
+  }
   if (error) { console.error('[dbSaveNickname]', error); return false; }
   return true;
+}
+
+async function dbSavePushSubscription(subscription) {
+  if (!currentUser) return false;
+  const { error } = await sb.from('push_subscriptions').upsert(
+    { user_id: currentUser.id, subscription, updated_at: new Date().toISOString() },
+    { onConflict: 'user_id' }
+  );
+  if (error) { console.error('[dbSavePushSubscription]', error); return false; }
+  return true;
+}
+
+async function dbRemovePushSubscription() {
+  if (!currentUser) return;
+  await sb.from('push_subscriptions').delete().eq('user_id', currentUser.id);
 }
 
 async function dbLogError(message, stack, url) {

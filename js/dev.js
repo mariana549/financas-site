@@ -3,7 +3,7 @@
 // Visível apenas para usuários em dev_users
 // ══════════════════════════════════════════════════
 
-let _devTab = 'changelog'; // 'changelog' | 'health' | 'users' | 'debug' | 'devs'
+let _devTab = 'changelog'; // 'changelog' | 'health' | 'users' | 'debug' | 'push' | 'devs'
 
 function renderDev() {
   const el = document.getElementById('devContent');
@@ -12,6 +12,7 @@ function renderDev() {
   else if (_devTab === 'health') _renderDevHealth(el);
   else if (_devTab === 'users') _renderDevUsersManagement(el);
   else if (_devTab === 'debug') _renderDevDebug(el);
+  else if (_devTab === 'push') _renderDevPush(el);
   else if (_devTab === 'devs') _renderDevUsers(el);
 }
 
@@ -21,17 +22,20 @@ function _devTabBar() {
     { id: 'health',    label: '📊 Saúde' },
     { id: 'users',     label: '👤 Usuários' },
     { id: 'debug',     label: '🔧 Debug' },
+    { id: 'push',      label: '🔔 Push' },
     { id: 'devs',      label: '👥 Devs' },
   ];
   return `
-  <div style="display:flex;gap:4px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px">
-    ${tabs.map(t => `
-    <button onclick="_devSwitchTab('${t.id}')"
-      style="flex:1;padding:7px 8px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:500;transition:background .15s,color .15s;
-        background:${_devTab===t.id ? 'var(--accent)' : 'transparent'};
-        color:${_devTab===t.id ? '#fff' : 'var(--text2)'}">
-      ${t.label}
-    </button>`).join('')}
+  <div style="overflow-x:auto;margin-bottom:20px;-webkit-overflow-scrolling:touch">
+    <div style="display:flex;gap:4px;min-width:max-content;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px">
+      ${tabs.map(t => `
+      <button onclick="_devSwitchTab('${t.id}')"
+        style="padding:7px 12px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap;transition:background .15s,color .15s;
+          background:${_devTab===t.id ? 'var(--accent)' : 'transparent'};
+          color:${_devTab===t.id ? '#fff' : 'var(--text2)'}">
+        ${t.label}
+      </button>`).join('')}
+    </div>
   </div>`;
 }
 
@@ -794,6 +798,89 @@ async function _devToggleUserDisabled(userId, disabled) {
   if (!ok) { showToast('Erro ao atualizar usuário.', 'error'); return; }
   showToast(disabled ? 'Usuário desativado' : 'Usuário reativado');
   _renderDevUsersManagement(document.getElementById('devContent'));
+}
+
+// ── ABA: PUSH ──────────────────────────────────────
+function _renderDevPush(el) {
+  const vapidOk = !!(typeof VAPID_PUBLIC_KEY !== 'undefined' && VAPID_PUBLIC_KEY);
+  el.innerHTML = `
+    ${_devTabBar()}
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">⚙️ Status</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">
+          <span style="color:var(--text2)">VAPID configurado</span>
+          <span style="font-family:var(--mono);font-size:12px;padding:2px 10px;border-radius:20px;
+            background:${vapidOk ? 'rgba(77,255,145,.1)' : 'rgba(255,77,77,.1)'};
+            color:${vapidOk ? 'var(--green)' : 'var(--red)'};
+            border:1px solid ${vapidOk ? 'rgba(77,255,145,.25)' : 'rgba(255,77,77,.25)'}">
+            ${vapidOk ? '✓ sim' : '✗ não'}
+          </span>
+        </div>
+        ${!vapidOk ? `<div style="font-size:11px;color:var(--text3);line-height:1.5">
+          Para ativar: gere as VAPID keys (<span style="font-family:var(--mono)">npx web-push generate-vapid-keys</span>), adicione
+          <span style="font-family:var(--mono)">VAPID_PUBLIC_KEY</span>, <span style="font-family:var(--mono)">VAPID_PRIVATE_KEY</span> e
+          <span style="font-family:var(--mono)">VAPID_MAILTO</span> nas secrets do Supabase, e cole a chave pública em
+          <span style="font-family:var(--mono)">js/changelog.js → VAPID_PUBLIC_KEY</span>.
+        </div>` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">
+          <span style="color:var(--text2)">Assinaturas ativas</span>
+          <span id="devPushSubCount" style="font-family:var(--mono);font-size:12px;color:var(--accent)">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enviar notificação -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px">📤 Enviar para todos</div>
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Título</label>
+        <input id="devPushTitle" type="text" placeholder="ex: Nova atualização disponível"
+          style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px">
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">Mensagem</label>
+        <textarea id="devPushBody" rows="3" placeholder="Texto da notificação..."
+          style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;resize:vertical;line-height:1.5"></textarea>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div id="devPushResult" style="font-size:12px;color:var(--text3)"></div>
+        <button onclick="_devSendPush()"
+          style="padding:8px 18px;border-radius:7px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:500">
+          Enviar para todos
+        </button>
+      </div>
+    </div>`;
+
+  // Carrega contagem de assinaturas
+  dbGetPushSubscriptionCount().then(n => {
+    const el = document.getElementById('devPushSubCount');
+    if (el) el.textContent = n + (n === 1 ? ' dispositivo' : ' dispositivos');
+  });
+}
+
+async function _devSendPush() {
+  const title = (document.getElementById('devPushTitle')?.value || '').trim();
+  const body  = (document.getElementById('devPushBody')?.value || '').trim();
+  if (!title || !body) { showToast('Preencha título e mensagem.', 'error'); return; }
+
+  const btn = document.querySelector('#devContent button[onclick="_devSendPush()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+
+  setSyncing(true);
+  const result = await dbSendPushToAll(title, body);
+  setSyncing(false);
+
+  if (btn) { btn.disabled = false; btn.textContent = 'Enviar para todos'; }
+
+  const el = document.getElementById('devPushResult');
+  if (result) {
+    showToast(`✓ Enviado para ${result.sent} de ${result.total} dispositivos`);
+    if (el) el.textContent = `✓ ${result.sent}/${result.total} enviados${result.failed ? ` · ${result.failed} falhas` : ''}`;
+  } else {
+    showToast('Erro ao enviar notificações.', 'error');
+    if (el) el.textContent = 'Erro ao enviar.';
+  }
 }
 
 // ── ABA: DEVS ──────────────────────────────────────

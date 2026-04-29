@@ -121,3 +121,18 @@ async function dbDeleteAnnouncement(id) {
   const { error } = await sb.from('announcements').delete().eq('id', id);
   if (error) console.error('[dbDeleteAnnouncement]', error);
 }
+
+// ── Push Notifications ─────────────────────────────
+async function dbSendPushToAll(title, body) {
+  if (!currentUser) return null;
+  const { data, error } = await sb.functions.invoke('send-push', { body: { title, body } });
+  if (error) { console.error('[dbSendPushToAll]', error); return null; }
+  return data;
+}
+
+async function dbGetPushSubscriptionCount() {
+  if (!currentUser) return 0;
+  const { count, error } = await sb.from('push_subscriptions').select('*', { count: 'exact', head: true });
+  if (error) { console.error('[dbGetPushSubscriptionCount]', error); return 0; }
+  return count || 0;
+}

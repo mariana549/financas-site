@@ -1,4 +1,4 @@
-const CACHE_NAME = 'financas-v48';
+const CACHE_NAME = 'financas-v49';
 const ASSETS = [
   './',
   './index.html',
@@ -20,6 +20,27 @@ self.addEventListener('activate', e => {
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('push', e => {
+  const data = e.data?.json() || {};
+  e.waitUntil(
+    self.registration.showNotification(data.title || 'Finanças', {
+      body: data.body || '',
+      icon: './assets/icon-192.png',
+      badge: './assets/icon-192.png',
+    })
+  );
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) { if (c.focus) return c.focus(); }
+      return clients.openWindow('./');
+    })
   );
 });
 

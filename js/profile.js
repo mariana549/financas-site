@@ -138,12 +138,14 @@ function renderProfile() {
           ${privacyOn ? '🙈 Ativado' : '👁 Desativado'}
         </button>
       </div>
-      <div class="profile-row" style="cursor:default;opacity:.45;pointer-events:none">
+      <div class="profile-row" style="cursor:default" id="profilePushRow">
         <div class="profile-row-info">
-          <span class="profile-row-title">Notificações</span>
-          <span class="profile-row-sub">Alertas de vencimentos e parcelas</span>
+          <span class="profile-row-title">Notificações push</span>
+          <span class="profile-row-sub" id="profilePushSub">Alertas mesmo com o app fechado</span>
         </div>
-        <span class="profile-badge-soon">em breve</span>
+        <button class="profile-toggle" id="profilePushToggle" onclick="_profileTogglePush()">
+          ${localStorage.getItem('fin_push_enabled') === '1' ? '🔔 Ativado' : '🔕 Desativado'}
+        </button>
       </div>
       <div class="profile-row" style="cursor:default;opacity:.45;pointer-events:none">
         <div class="profile-row-info">
@@ -266,6 +268,26 @@ function _profileExportData() {
   a.click();
   URL.revokeObjectURL(url);
   showToast('✓ Dados exportados');
+}
+
+async function _profileTogglePush() {
+  const btn = document.getElementById('profilePushToggle');
+  const sub = document.getElementById('profilePushSub');
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+  const enabled = localStorage.getItem('fin_push_enabled') === '1';
+  let ok;
+  if (enabled) {
+    ok = await _disablePushNotifications();
+  } else {
+    ok = await _initPushNotifications();
+  }
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = localStorage.getItem('fin_push_enabled') === '1' ? '🔔 Ativado' : '🔕 Desativado';
+  }
+  if (sub && ok && !enabled && !VAPID_PUBLIC_KEY) {
+    sub.textContent = 'VAPID não configurado — configure nas secrets do Supabase';
+  }
 }
 
 async function _profileDeleteAccount() {
