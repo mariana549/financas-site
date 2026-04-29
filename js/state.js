@@ -8,6 +8,7 @@ function defaultState() {
     subscriptions: [], pixEntries: {}, recurrents: {}, incomes: {}, installments: [],
     globalBanks: [], receivableMarks: [],
     devUsers: [], changelogEntries: [], isDev: false,
+    profile: { nickname: '' },
     currentView: 'dash', entryOwner: 'mine', entryType: 'normal',
     incomeOwner: 'mine', incomeType: 'Salário', pickedColor: 'azure',
     theme: 'dark', aiParsed: [], aiFileData: null, aiFileType: null,
