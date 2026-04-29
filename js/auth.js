@@ -228,6 +228,7 @@ async function onLoginSuccess() {
   showAuthPanel('main'); // reseta para painel principal para próxima vez
   const emailEl = document.getElementById('userEmail');
   if (emailEl) emailEl.textContent = currentUser.email;
+  _profileUpdateSidebarAvatar();
 
   showSplash();
 

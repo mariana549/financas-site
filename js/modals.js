@@ -452,5 +452,35 @@ function injectModals() {
   <div id="meusGastosContent"></div>
   <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mMeusGastos')">Fechar</button></div>
 </div></div>
+
+<!-- Excluir Conta -->
+<div class="modal-overlay" id="mDeleteAccount"><div class="modal modal-sm">
+  <div class="modal-title" style="color:var(--red)">⚠️ Excluir conta <button class="modal-close" onclick="closeModal('mDeleteAccount')">×</button></div>
+  <div style="background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);border-radius:8px;padding:12px;font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">
+    Esta ação é <strong>permanente e irreversível</strong>. Todos os seus dados (meses, lançamentos, assinaturas, parcelas) serão excluídos e não poderão ser recuperados.
+  </div>
+  <div class="fg">
+    <label style="color:var(--red)">Digite seu e-mail para confirmar</label>
+    <input type="email" id="deleteAccountInput" placeholder="seu@email.com" autocomplete="off">
+  </div>
+  <div class="modal-actions">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mDeleteAccount')">Cancelar</button>
+    <button class="btn btn-danger btn-sm" onclick="_profileDeleteAccount()" id="deleteAccountBtn">Excluir permanentemente</button>
+  </div>
+</div></div>
+
+<!-- Política de Privacidade -->
+<div class="modal-overlay" id="mPrivacyPolicy"><div class="modal">
+  <div class="modal-title">🔒 Política de Privacidade <button class="modal-close" onclick="closeModal('mPrivacyPolicy')">×</button></div>
+  <div style="font-size:13px;color:var(--text2);line-height:1.7;max-height:60vh;overflow-y:auto;padding-right:4px">
+    <p><strong>Coleta de dados</strong><br>Coletamos apenas os dados que você insere no aplicativo (e-mail, lançamentos financeiros, assinaturas, parcelas) e seu endereço de e-mail para autenticação.</p>
+    <p><strong>Uso dos dados</strong><br>Seus dados são utilizados exclusivamente para fornecer as funcionalidades do aplicativo. Não compartilhamos, vendemos ou transferimos seus dados a terceiros.</p>
+    <p><strong>Armazenamento</strong><br>Os dados são armazenados de forma segura no Supabase (PostgreSQL), com criptografia em trânsito (HTTPS/TLS) e isolamento por usuário via Row Level Security (RLS).</p>
+    <p><strong>Seus direitos (LGPD)</strong><br>Conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018), você tem direito a: acessar seus dados, exportar seus dados (JSON completo disponível em "Meus Dados") e excluir sua conta e todos os dados associados a qualquer momento.</p>
+    <p><strong>Retenção</strong><br>Seus dados são mantidos enquanto sua conta estiver ativa. Ao excluir sua conta, todos os dados são removidos permanentemente dos nossos servidores.</p>
+    <p><strong>Contato</strong><br>Para dúvidas sobre privacidade ou para exercer seus direitos, entre em contato através do suporte do aplicativo.</p>
+  </div>
+  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mPrivacyPolicy')">Fechar</button></div>
+</div></div>
   `);
 }

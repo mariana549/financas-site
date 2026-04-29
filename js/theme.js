@@ -73,6 +73,7 @@ const VIEW_LABELS = {
   history:   ['Histórico de Pessoas', 'quem comprou no seu cartão · todos os meses'],
   changelog: ['Novidades',            'o que mudou em cada versão'],
   dev:       ['Dev Panel',            'changelog · usuários dev'],
+  profile:   ['Meu Perfil',           'conta · configurações · dados'],
 };
 
 function showView(v) {
@@ -126,4 +127,5 @@ function showView(v) {
     localStorage.setItem('fin_seen_version', APP_VERSION);
   }
   if (v === 'dev') renderDev();
+  if (v === 'profile') renderProfile();
 }
