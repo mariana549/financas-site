@@ -8,7 +8,7 @@ async function loadAllFromSupabase() {
   setSyncing(true);
   try {
     const uid = currentUser.id;
-    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes, rmRes, dvRes, clRes, prRes] = await Promise.all([
+    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes, rmRes, dvRes, clRes, prRes, anRes] = await Promise.all([
       sb.from('months').select('*').eq('user_id', uid).order('created_at'),
       sb.from('banks').select('*').eq('user_id', uid),
       sb.from('transacoes').select('*').eq('user_id', uid),
@@ -22,6 +22,7 @@ async function loadAllFromSupabase() {
       sb.from('dev_users').select('*').order('added_at'),
       sb.from('changelog_entries').select('*').order('position', { ascending: false }).order('created_at', { ascending: false }),
       sb.from('user_profiles').select('*').eq('user_id', uid).maybeSingle(),
+      sb.from('announcements').select('*').order('created_at', { ascending: false }),
     ]);
 
     // ── Months + Banks (por mês) + Entries ──
@@ -126,7 +127,8 @@ async function loadAllFromSupabase() {
       title: r.title, summary: r.summary, items: r.items, position: r.position
     }));
 
-    S.profile      = { nickname: prRes?.data?.nickname || '' };
+    S.profile        = { nickname: prRes?.data?.nickname || '' };
+    S.announcements  = (anRes?.data || []).map(r => ({ id: r.id, message: r.message, active: r.active, createdAt: r.created_at }));
     S.months       = months;
     sortMonths();
     S.pixEntries   = pixEntries;

@@ -65,6 +65,31 @@ function applyPrivacy(on) {
   if (btn) btn.textContent = on ? '🙈' : '👁';
 }
 
+function renderAnnouncementBanner() {
+  const el = document.getElementById('announcementBanner');
+  if (!el) return;
+  const active = S.announcements.filter(a => a.active);
+  if (!active.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const dismissed = JSON.parse(localStorage.getItem('fin_ann_dismissed') || '[]');
+  const visible = active.filter(a => !dismissed.includes(a.id));
+  if (!visible.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const a = visible[0]; // mostra só o mais recente
+  el.style.display = 'flex';
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 18px;width:100%;background:linear-gradient(90deg,rgba(255,159,77,.09),transparent);border-bottom:1px solid rgba(255,159,77,.25);font-size:13px;box-sizing:border-box">
+      <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,159,77,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px">📣</div>
+      <div style="flex:1;min-width:0;color:var(--text)">${a.message}</div>
+      <button onclick="_dismissAnnouncement('${a.id}')" style="font-size:20px;line-height:1;background:none;border:none;color:var(--text3);cursor:pointer;padding:0 4px;flex-shrink:0" title="Fechar">×</button>
+    </div>`;
+}
+
+function _dismissAnnouncement(id) {
+  const dismissed = JSON.parse(localStorage.getItem('fin_ann_dismissed') || '[]');
+  if (!dismissed.includes(id)) dismissed.push(id);
+  localStorage.setItem('fin_ann_dismissed', JSON.stringify(dismissed));
+  renderAnnouncementBanner();
+}
+
 const VIEW_LABELS = {
   subs:      ['Assinaturas',          'por banco · com datas'],
   banks:     ['Bancos',               'cadastro global · estatísticas por banco'],

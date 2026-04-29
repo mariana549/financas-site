@@ -8,7 +8,8 @@ let _devTab = 'changelog'; // 'changelog' | 'devs'
 function renderDev() {
   const el = document.getElementById('devContent');
   if (!el || !S.isDev) return;
-  _devTab === 'changelog' ? _renderDevChangelog(el) : _renderDevUsers(el);
+  if (_devTab === 'changelog') _renderDevChangelog(el);
+  else if (_devTab === 'devs') _renderDevUsers(el);
 }
 
 function _devTabBar() {
@@ -48,35 +49,17 @@ function _devAddDraft() {
   _devSaveDrafts(drafts);
   textEl.value = '';
   _devRenderDraftsList();
-  _devRenderFormSuggestions();
 }
 
 function _devDeleteDraft(id) {
   _devSaveDrafts(_devGetDrafts().filter(d => d.id !== id));
   _devRenderDraftsList();
-  _devRenderFormSuggestions();
 }
 
 function _devClearAllDrafts() {
   if (!confirm('Apagar todos os rascunhos?')) return;
   _devSaveDrafts([]);
   _devRenderDraftsList();
-  _devRenderFormSuggestions();
-}
-
-// Insere um rascunho no textarea da entrada e o remove da lista
-function _devUseDraft(id) {
-  const drafts = _devGetDrafts();
-  const draft = drafts.find(d => d.id === id);
-  if (!draft) return;
-  const ta = document.getElementById('devEntryItems');
-  if (ta) {
-    const cur = ta.value.trimEnd();
-    ta.value = cur ? cur + '\n' + draft.type + ': ' + draft.text : draft.type + ': ' + draft.text;
-  }
-  _devSaveDrafts(drafts.filter(d => d.id !== id));
-  _devRenderDraftsList();
-  _devRenderFormSuggestions();
 }
 
 // Cor e label por tipo
@@ -89,7 +72,7 @@ function _draftBadge(type) {
   return map[type] || map.feat;
 }
 
-// Re-renderiza só a lista de rascunhos (sem recriar o tab inteiro)
+// Re-renderiza só a lista de rascunhos
 function _devRenderDraftsList() {
   const el = document.getElementById('devDraftsList');
   if (!el) return;
@@ -110,35 +93,11 @@ function _devRenderDraftsList() {
   }).join('');
 }
 
-// Re-renderiza sugestões dentro do formulário de entrada
-function _devRenderFormSuggestions() {
-  const el = document.getElementById('devFormSuggestions');
-  if (!el) return;
-  const drafts = _devGetDrafts();
-  if (!drafts.length) {
-    el.innerHTML = `<div style="font-size:11px;color:var(--text3);font-style:italic">Nenhum rascunho salvo. Adicione rascunhos acima para usá-los aqui.</div>`;
-    return;
-  }
-  el.innerHTML = `
-    <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Clique para inserir no campo de itens:</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">
-      ${drafts.map(d => {
-        const b = _draftBadge(d.type);
-        return `
-        <button onclick="_devUseDraft('${d.id}')"
-          title="Inserir e remover do rascunho"
-          style="display:flex;align-items:center;gap:6px;padding:5px 10px 5px 8px;border-radius:20px;border:1px solid ${b.border};background:${b.bg};cursor:pointer;max-width:260px;text-align:left">
-          <span style="font-size:10px;font-family:var(--mono);color:${b.color};white-space:nowrap">${b.label}</span>
-          <span style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.text}</span>
-        </button>`;
-      }).join('')}
-    </div>`;
-}
-
 // ── ABA: CHANGELOG ─────────────────────────────────
 function _renderDevChangelog(el) {
   const entries = S.changelogEntries;
   const drafts  = _devGetDrafts();
+  const announcements = S.announcements || [];
 
   const rows = entries.length
     ? entries.map(e => {
@@ -169,7 +128,7 @@ function _renderDevChangelog(el) {
       }).join('')
     : `<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px">Nenhuma entrada ainda.<br>Crie a primeira clicando em "+ Nova entrada".</div>`;
 
-  // Lista inicial de rascunhos
+  // Lista de rascunhos
   const draftsHtml = drafts.length
     ? drafts.map(d => {
         const b = _draftBadge(d.type);
@@ -183,6 +142,24 @@ function _renderDevChangelog(el) {
       }).join('')
     : `<div style="font-size:12px;color:var(--text3);text-align:center;padding:10px 0">Nenhum rascunho ainda.</div>`;
 
+  // Anúncios ativos
+  const annRows = announcements.length
+    ? announcements.map(a => `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;color:var(--text);line-height:1.5">${a.message}</div>
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">${new Date(a.createdAt).toLocaleDateString('pt-BR')}</div>
+        </div>
+        <button onclick="_devToggleAnnouncement('${a.id}', ${!a.active})"
+          style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid ${a.active ? 'rgba(77,255,145,.3)' : 'var(--border2)'};background:${a.active ? 'rgba(77,255,145,.1)' : 'var(--bg3)'};color:${a.active ? 'var(--green)' : 'var(--text3)'};cursor:pointer;white-space:nowrap;flex-shrink:0">
+          ${a.active ? '● Ativo' : '○ Inativo'}
+        </button>
+        <button onclick="_devDeleteAnnouncement('${a.id}')"
+          style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,77,77,.3);background:rgba(255,77,77,.08);color:var(--red);cursor:pointer;flex-shrink:0">Excluir</button>
+      </div>`)
+      .join('')
+    : `<div style="font-size:12px;color:var(--text3);padding:10px 0 4px">Nenhum anúncio ainda.</div>`;
+
   el.innerHTML = `
     ${_devTabBar()}
 
@@ -191,7 +168,7 @@ function _renderDevChangelog(el) {
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <div>
           <div style="font-size:13px;font-weight:600;color:var(--text)">💡 Rascunhos</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">Anote mudanças conforme você desenvolve. Elas viram sugestões na hora de criar uma entrada.</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">Anote mudanças conforme você desenvolve. Na hora de criar uma entrada, você escolhe quais incluir.</div>
         </div>
         ${drafts.length ? `<button onclick="_devClearAllDrafts()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid rgba(255,77,77,.3);background:rgba(255,77,77,.06);color:var(--red);cursor:pointer;flex-shrink:0">Limpar tudo</button>` : ''}
       </div>
@@ -211,7 +188,13 @@ function _renderDevChangelog(el) {
       <div id="devDraftsList">${draftsHtml}</div>
     </div>
 
-    <!-- Entradas -->
+    <!-- Anúncios ativos -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:20px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">📣 Anúncios / Notificações</div>
+      <div id="devAnnouncementsList">${annRows}</div>
+    </div>
+
+    <!-- Entradas do changelog -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <div>
         <div style="font-size:15px;font-weight:600;color:var(--text)">Entradas do changelog</div>
@@ -224,9 +207,7 @@ function _renderDevChangelog(el) {
     ${rows}`;
 }
 
-function _devNewEntry() {
-  _devShowForm(null);
-}
+function _devNewEntry() { _devShowForm(null); }
 function _devEditEntry(id) {
   const entry = S.changelogEntries.find(e => e.id === id);
   if (entry) _devShowForm(entry);
@@ -240,6 +221,35 @@ function _devShowForm(entry) {
   const itemsText = (entry?.items || []).map(it => `${it.type}: ${it.text}`).join('\n');
   const maxPos = S.changelogEntries.length
     ? Math.max(...S.changelogEntries.map(e => e.position || 0)) : 0;
+  const drafts = _devGetDrafts();
+
+  // HTML dos rascunhos com checkbox
+  const draftsCheckboxHtml = drafts.length
+    ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:11px;color:var(--text2);font-weight:600">Selecione os rascunhos a incluir:</span>
+        <div style="display:flex;gap:6px">
+          <button onclick="_devSelectAllDrafts(true)" style="font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer">Todos</button>
+          <button onclick="_devSelectAllDrafts(false)" style="font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer">Nenhum</button>
+        </div>
+      </div>
+      <div id="devDraftCheckboxes" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto">
+        ${drafts.map(d => {
+          const b = _draftBadge(d.type);
+          return `
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--border);cursor:pointer">
+            <input type="checkbox" class="dev-draft-cb" data-id="${d.id}" data-type="${d.type}" data-text="${d.text.replace(/"/g,'&quot;')}" checked
+              style="width:14px;height:14px;accent-color:var(--accent);flex-shrink:0;cursor:pointer">
+            <span style="font-size:10px;font-family:var(--mono);padding:1px 7px;border-radius:20px;background:${b.bg};color:${b.color};border:1px solid ${b.border};white-space:nowrap;flex-shrink:0">${b.label}</span>
+            <span style="font-size:12px;color:var(--text);line-height:1.4;flex:1">${d.text}</span>
+          </label>`;
+        }).join('')}
+      </div>
+      <button onclick="_devAddCheckedDraftsToItems()"
+        style="margin-top:10px;width:100%;padding:7px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:12px;font-weight:500">
+        ↓ Adicionar selecionados ao campo de itens
+      </button>`
+    : `<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px 0">Nenhum rascunho para incluir. Anote rascunhos acima.</div>`;
 
   el.innerHTML = `
   <div style="background:var(--bg2);border:1px solid var(--accent);border-radius:10px;padding:16px;margin-bottom:16px">
@@ -268,26 +278,68 @@ function _devShowForm(entry) {
       <input id="devEntrySummary" type="text" value="${(entry?.summary || '').replace(/"/g,'&quot;')}" placeholder="Uma frase descrevendo o grupo"
         style="width:100%;box-sizing:border-box;padding:7px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px">
     </div>
+
+    <!-- Rascunhos com checkboxes -->
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px">💡 Rascunhos disponíveis</div>
+      ${draftsCheckboxHtml}
+    </div>
+
     <div style="margin-bottom:10px">
       <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:4px">
-        Itens <span style="color:var(--text3);font-style:normal">— uma por linha: <span style="font-family:var(--mono)">feat: texto</span> / <span style="font-family:var(--mono)">fix: texto</span> / <span style="font-family:var(--mono)">improve: texto</span></span>
+        Itens — uma por linha: <span style="font-family:var(--mono)">feat: texto</span> / <span style="font-family:var(--mono)">fix: texto</span> / <span style="font-family:var(--mono)">improve: texto</span>
       </label>
       <textarea id="devEntryItems" rows="6" placeholder="feat: Nova funcionalidade X&#10;fix: Corrigido bug Y&#10;improve: Melhoria em Z"
         style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;font-family:var(--mono);resize:vertical;line-height:1.6">${itemsText}</textarea>
     </div>
-    <!-- Sugestões de rascunhos -->
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px">💡 Sugestões dos rascunhos</div>
-      <div id="devFormSuggestions"></div>
+
+    <!-- Toggle notificação -->
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin-bottom:14px">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500;color:var(--text)">📣 Notificar usuários</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Exibe um banner para todos os usuários no próximo acesso</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="devEntryNotify" ${!entry ? 'checked' : ''}
+          style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer">
+        <span id="devEntryNotifyLabel" style="font-size:12px;font-family:var(--mono);color:var(--text3)">${!entry ? 'Sim' : 'Não'}</span>
+      </label>
     </div>
+
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button onclick="_devCancelForm()" style="padding:7px 16px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:13px">Cancelar</button>
       <button onclick="_devSaveForm()" style="padding:7px 18px;border-radius:6px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:500">Salvar entrada</button>
     </div>
   </div>`;
 
-  _devRenderFormSuggestions();
+  // Atualiza label do toggle ao mudar
+  const notifyCb = document.getElementById('devEntryNotify');
+  const notifyLabel = document.getElementById('devEntryNotifyLabel');
+  if (notifyCb && notifyLabel) {
+    notifyCb.addEventListener('change', () => {
+      notifyLabel.textContent = notifyCb.checked ? 'Sim' : 'Não';
+    });
+  }
+
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function _devSelectAllDrafts(checked) {
+  document.querySelectorAll('.dev-draft-cb').forEach(cb => cb.checked = checked);
+}
+
+function _devAddCheckedDraftsToItems() {
+  const checkboxes = document.querySelectorAll('.dev-draft-cb:checked');
+  if (!checkboxes.length) { showToast('Nenhum rascunho selecionado.', 'error'); return; }
+  const ta = document.getElementById('devEntryItems');
+  if (!ta) return;
+  const lines = [];
+  checkboxes.forEach(cb => {
+    lines.push(`${cb.dataset.type}: ${cb.dataset.text}`);
+  });
+  const cur = ta.value.trimEnd();
+  ta.value = cur ? cur + '\n' + lines.join('\n') : lines.join('\n');
+  showToast(`${lines.length} item(s) adicionado(s)`);
 }
 
 function _devCancelForm() {
@@ -303,6 +355,7 @@ async function _devSaveForm() {
   const title   = document.getElementById('devEntryTitle').value.trim();
   const summary = document.getElementById('devEntrySummary').value.trim();
   const rawItems = document.getElementById('devEntryItems').value;
+  const notify  = document.getElementById('devEntryNotify')?.checked ?? false;
 
   if (!version || !date || !title || !summary) { showToast('Preencha versão, data, título e resumo.', 'error'); return; }
 
@@ -315,7 +368,20 @@ async function _devSaveForm() {
   });
 
   setSyncing(true);
+
+  // Salva o changelog entry
   const saved = await dbSaveChangelogEntry({ id, version, date, title, summary, items, position: pos });
+
+  // Salva anúncio se notificação ativada (apenas para entradas novas ou se marcou)
+  if (notify && saved) {
+    const msg = `🚀 Nova atualização v${version}: ${title}. Veja o que há de novo em "Novidades"!`;
+    const ann = await dbSaveAnnouncement(msg);
+    if (ann) {
+      S.announcements.unshift(ann);
+      renderAnnouncementBanner();
+    }
+  }
+
   setSyncing(false);
 
   if (!saved) { showToast('Erro ao salvar.', 'error'); return; }
@@ -328,9 +394,15 @@ async function _devSaveForm() {
     S.changelogEntries.sort((a, b) => (b.position || 0) - (a.position || 0));
   }
 
+  // Remove rascunhos usados (os que estavam marcados)
+  const usedIds = Array.from(document.querySelectorAll('.dev-draft-cb:checked')).map(cb => cb.dataset.id);
+  if (usedIds.length) {
+    _devSaveDrafts(_devGetDrafts().filter(d => !usedIds.includes(d.id)));
+  }
+
   _devCancelForm();
   renderDev();
-  showToast('✓ Entrada salva');
+  showToast(notify ? '✓ Entrada salva + notificação enviada' : '✓ Entrada salva');
 }
 
 async function _devDeleteEntry(id) {
@@ -341,6 +413,53 @@ async function _devDeleteEntry(id) {
   S.changelogEntries = S.changelogEntries.filter(e => e.id !== id);
   renderDev();
   showToast('Entrada excluída');
+}
+
+// ── Anúncios ───────────────────────────────────────
+async function _devToggleAnnouncement(id, active) {
+  setSyncing(true);
+  const ok = await dbToggleAnnouncement(id, active);
+  setSyncing(false);
+  if (!ok) { showToast('Erro ao atualizar anúncio.', 'error'); return; }
+  const ann = S.announcements.find(a => a.id === id);
+  if (ann) ann.active = active;
+  renderAnnouncementBanner();
+  _renderAnnouncementsSection();
+  showToast(active ? 'Anúncio ativado' : 'Anúncio desativado');
+}
+
+async function _devDeleteAnnouncement(id) {
+  if (!confirm('Excluir este anúncio?')) return;
+  setSyncing(true);
+  await dbDeleteAnnouncement(id);
+  setSyncing(false);
+  S.announcements = S.announcements.filter(a => a.id !== id);
+  renderAnnouncementBanner();
+  _renderAnnouncementsSection();
+  showToast('Anúncio excluído');
+}
+
+function _renderAnnouncementsSection() {
+  const el = document.getElementById('devAnnouncementsList');
+  if (!el) return;
+  const announcements = S.announcements || [];
+  if (!announcements.length) {
+    el.innerHTML = `<div style="font-size:12px;color:var(--text3);padding:10px 0 4px">Nenhum anúncio ainda.</div>`;
+    return;
+  }
+  el.innerHTML = announcements.map(a => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;color:var(--text);line-height:1.5">${a.message}</div>
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">${new Date(a.createdAt).toLocaleDateString('pt-BR')}</div>
+      </div>
+      <button onclick="_devToggleAnnouncement('${a.id}', ${!a.active})"
+        style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid ${a.active ? 'rgba(77,255,145,.3)' : 'var(--border2)'};background:${a.active ? 'rgba(77,255,145,.1)' : 'var(--bg3)'};color:${a.active ? 'var(--green)' : 'var(--text3)'};cursor:pointer;white-space:nowrap;flex-shrink:0">
+        ${a.active ? '● Ativo' : '○ Inativo'}
+      </button>
+      <button onclick="_devDeleteAnnouncement('${a.id}')"
+        style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,77,77,.3);background:rgba(255,77,77,.08);color:var(--red);cursor:pointer;flex-shrink:0">Excluir</button>
+    </div>`).join('');
 }
 
 // ── ABA: DEVS ──────────────────────────────────────

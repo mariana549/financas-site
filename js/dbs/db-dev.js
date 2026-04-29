@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════
-// DB-DEV.JS — Dev users + Changelog entries
+// DB-DEV.JS — Dev users + Changelog entries + Announcements
 // ══════════════════════════════════════════════════
 
 // ── Dev Users ──────────────────────────────────────
@@ -67,7 +67,34 @@ async function dbSeedChangelog(entries) {
   const total = entries.length;
   for (let i = 0; i < total; i++) {
     const entry = entries[i];
-    // position: newest (index 0) gets highest number so it shows first (DESC order)
     await dbSaveChangelogEntry({ ...entry, position: total - i });
   }
+}
+
+// ── Announcements ──────────────────────────────────
+async function dbLoadAnnouncements() {
+  if (!currentUser) return [];
+  const { data, error } = await sb.from('announcements').select('*').order('created_at', { ascending: false });
+  if (error) { console.error('[dbLoadAnnouncements]', error); return []; }
+  return (data || []).map(r => ({ id: r.id, message: r.message, active: r.active, createdAt: r.created_at }));
+}
+
+async function dbSaveAnnouncement(message) {
+  if (!currentUser) return null;
+  const { data, error } = await sb.from('announcements').insert({ message, active: true }).select().single();
+  if (error) { console.error('[dbSaveAnnouncement]', error); return null; }
+  return { id: data.id, message: data.message, active: data.active, createdAt: data.created_at };
+}
+
+async function dbToggleAnnouncement(id, active) {
+  if (!currentUser) return false;
+  const { error } = await sb.from('announcements').update({ active }).eq('id', id);
+  if (error) { console.error('[dbToggleAnnouncement]', error); return false; }
+  return true;
+}
+
+async function dbDeleteAnnouncement(id) {
+  if (!currentUser) return;
+  const { error } = await sb.from('announcements').delete().eq('id', id);
+  if (error) console.error('[dbDeleteAnnouncement]', error);
 }
