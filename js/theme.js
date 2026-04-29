@@ -137,7 +137,7 @@ function renderContextSwitcher() {
     html += `<button onclick="switchContext('${pjRoot?.id}')"
       style="flex:1;padding:5px 8px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--mono);
       background:${isPJ ? 'var(--bg)' : 'transparent'};color:${isPJ ? 'var(--accent)' : 'var(--text3)'};
-      box-shadow:${isPJ ? '0 1px 3px rgba(0,0,0,.25)' : 'none'};transition:all .15s">🏢 PJ</button>`;
+      box-shadow:${isPJ ? '0 1px 3px rgba(0,0,0,.25)' : 'none'};transition:all .15s">🏢 PJ${isPJ ? '<span style="font-size:8px;padding:1px 5px;border-radius:10px;background:var(--accent);color:#0a0a0a;margin-left:4px;font-weight:700;vertical-align:middle">ativo</span>' : ''}</button>`;
   } else {
     // PJ com sub-contextos — exibe dropdown
     const pjLabel = isPJ && active?.id !== pjRoot?.id ? ctxLabel(active) : 'PJ';
