@@ -8,7 +8,7 @@ const APP_VERSION = '1.1.3';
 // Chave pública VAPID para notificações push.
 // Gere em: https://vapidkeys.com/ ou rode: npx web-push generate-vapid-keys
 // Depois adicione VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY e VAPID_MAILTO nos secrets do Supabase.
-const VAPID_PUBLIC_KEY = ''; // <- cole aqui a chave pública após gerar
+const VAPID_PUBLIC_KEY = 'BDiUaS0Fg_u2-MpjNuhK3fZ9WMngSQ1IxhsDXk1FKDnQIacME4CyNSK4n_g_6L8J6ZEkw3dKz2osFKvHnOXbshM';
 
 // Cada entrada representa um lote de melhorias visível ao usuário.
 // types disponíveis: 'feat' | 'fix' | 'improve'
