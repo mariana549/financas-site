@@ -132,7 +132,7 @@ async function dbSendPushToAll(title, body) {
 
 async function dbGetPushSubscriptionCount() {
   if (!currentUser) return 0;
-  const { count, error } = await sb.from('push_subscriptions').select('*', { count: 'exact', head: true });
+  const { data, error } = await sb.rpc('get_push_subscription_count');
   if (error) { console.error('[dbGetPushSubscriptionCount]', error); return 0; }
-  return count || 0;
+  return Number(data) || 0;
 }
