@@ -70,6 +70,73 @@ if (localStorage.getItem('fin_sb_hidden') === '1') document.body.classList.add('
 // ── Inicializar color grid ──
 buildColorGrid();
 
+// ── Captura de erros globais → error_logs ──
+window.onerror = function(msg, src, line, col, err) {
+  dbLogError(msg, err?.stack || `${src}:${line}:${col}`, src);
+};
+window.addEventListener('unhandledrejection', e => {
+  const msg = e.reason?.message || String(e.reason) || 'Unhandled rejection';
+  dbLogError(msg, e.reason?.stack || null, window.location.href);
+});
+
+// ── Push notifications ──────────────────────────────
+function _urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = window.atob(base64);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+async function _initPushNotifications() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    showToast('Notificações push não suportadas neste dispositivo.', 'error');
+    return false;
+  }
+  if (!VAPID_PUBLIC_KEY) {
+    showToast('VAPID não configurado ainda. Contate o desenvolvedor.', 'error');
+    return false;
+  }
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    showToast('Permissão de notificação negada.', 'error');
+    return false;
+  }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: _urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+    const ok = await dbSavePushSubscription(sub.toJSON());
+    if (ok) {
+      localStorage.setItem('fin_push_enabled', '1');
+      showToast('✓ Notificações ativadas');
+      return true;
+    }
+  } catch (e) {
+    console.error('[push subscribe]', e);
+    showToast('Erro ao ativar notificações.', 'error');
+  }
+  return false;
+}
+
+async function _disablePushNotifications() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) await sub.unsubscribe();
+    await dbRemovePushSubscription();
+    localStorage.removeItem('fin_push_enabled');
+    showToast('Notificações desativadas');
+    return true;
+  } catch (e) {
+    console.error('[push unsubscribe]', e);
+    return false;
+  }
+}
+
 // ── Registrar Service Worker ──
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

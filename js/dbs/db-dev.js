@@ -71,6 +71,29 @@ async function dbSeedChangelog(entries) {
   }
 }
 
+// ── User Management ────────────────────────────────
+async function dbGetAllUsers() {
+  if (!currentUser) return null;
+  const { data, error } = await sb.rpc('get_all_users');
+  if (error) { console.error('[dbGetAllUsers]', error); return null; }
+  return data;
+}
+
+async function dbSetUserDisabled(userId, disabled) {
+  if (!currentUser) return false;
+  const { error } = await sb.rpc('set_user_disabled', { p_user_id: userId, p_disabled: disabled });
+  if (error) { console.error('[dbSetUserDisabled]', error); return false; }
+  return true;
+}
+
+// ── Health Stats ──────────────────────────────────
+async function dbGetHealthStats() {
+  if (!currentUser) return null;
+  const { data, error } = await sb.rpc('get_health_stats');
+  if (error) { console.error('[dbGetHealthStats]', error); return null; }
+  return data;
+}
+
 // ── Announcements ──────────────────────────────────
 async function dbLoadAnnouncements() {
   if (!currentUser) return [];
@@ -97,4 +120,19 @@ async function dbDeleteAnnouncement(id) {
   if (!currentUser) return;
   const { error } = await sb.from('announcements').delete().eq('id', id);
   if (error) console.error('[dbDeleteAnnouncement]', error);
+}
+
+// ── Push Notifications ─────────────────────────────
+async function dbSendPushToAll(title, body) {
+  if (!currentUser) return null;
+  const { data, error } = await sb.functions.invoke('send-push', { body: { title, body } });
+  if (error) { console.error('[dbSendPushToAll]', error); return null; }
+  return data;
+}
+
+async function dbGetPushSubscriptionCount() {
+  if (!currentUser) return 0;
+  const { data, error } = await sb.rpc('get_push_subscription_count');
+  if (error) { console.error('[dbGetPushSubscriptionCount]', error); return 0; }
+  return Number(data) || 0;
 }

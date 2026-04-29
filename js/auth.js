@@ -237,6 +237,17 @@ async function onLoginSuccess() {
 
   await loadAllFromSupabase();
 
+  // ── Verifica se conta foi desativada ──
+  if (S.profile?.disabled) {
+    await sb.auth.signOut();
+    currentUser = null;
+    document.getElementById('authScreen').style.display = 'flex';
+    const msg = document.getElementById('authMsg');
+    if (msg) { msg.textContent = 'Sua conta foi desativada. Entre em contato com o suporte.'; msg.style.color = 'var(--red)'; }
+    hideSplash();
+    return;
+  }
+
   // ── Dev Panel ──
   S.isDev = S.devUsers.some(d => d.email === currentUser.email);
   const devNav = document.getElementById('nav-dev');
