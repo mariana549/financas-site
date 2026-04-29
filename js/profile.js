@@ -2,34 +2,44 @@
 // PROFILE.JS — Área do usuário
 // ══════════════════════════════════════════════════
 
-function _profileInitials(email) {
-  if (!email) return '?';
-  const name = email.split('@')[0];
-  const parts = name.split(/[._\-+]/);
+function _profileDisplayName() {
+  return S.profile?.nickname || currentUser?.email || '';
+}
+
+function _profileInitials(str) {
+  if (!str) return '?';
+  const name = str.includes('@') ? str.split('@')[0] : str;
+  const parts = name.trim().split(/[\s._\-+]+/).filter(Boolean);
   if (parts.length >= 2 && parts[1].length > 0)
     return (parts[0][0] + parts[1][0]).toUpperCase();
   return name.slice(0, 2).toUpperCase();
 }
 
-function _profileColor(email) {
+function _profileColor(str) {
   const palette = ['#4d9fff','#f06595','#51cf66','#ffd43b','#cc5de8','#ff6b6b','#74c0fc','#ff922b','#20c997'];
-  const hash = (email || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const hash = (str || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
   return palette[hash % palette.length];
 }
 
-function _profileAvatarHtml(email, size, fontSize) {
+function _profileAvatarHtml(size, fontSize) {
+  const display = _profileDisplayName();
   const s = size || 48; const f = fontSize || 15;
-  return `<div style="width:${s}px;height:${s}px;border-radius:50%;background:${_profileColor(email)};
+  return `<div style="width:${s}px;height:${s}px;border-radius:50%;background:${_profileColor(display)};
     display:flex;align-items:center;justify-content:center;font-size:${f}px;font-weight:700;
-    color:#fff;flex-shrink:0;font-family:var(--mono);letter-spacing:1px">${_profileInitials(email)}</div>`;
+    color:#fff;flex-shrink:0;font-family:var(--mono);letter-spacing:1px">${_profileInitials(display)}</div>`;
 }
 
 // Atualiza o avatar pequeno na sidebar
 function _profileUpdateSidebarAvatar() {
   const el = document.getElementById('userAvatar');
   if (!el || !currentUser?.email) return;
-  el.textContent = _profileInitials(currentUser.email);
-  el.style.background = _profileColor(currentUser.email);
+  const display = _profileDisplayName();
+  el.textContent = _profileInitials(display);
+  el.style.background = _profileColor(display);
+
+  // Atualiza o texto exibido na sidebar (apelido ou email)
+  const emailEl = document.getElementById('userEmail');
+  if (emailEl) emailEl.textContent = S.profile?.nickname || currentUser.email;
 }
 
 function renderProfile() {
@@ -37,6 +47,7 @@ function renderProfile() {
   if (!el || !currentUser) return;
 
   const email = currentUser.email || '';
+  const nickname = S.profile?.nickname || '';
   const since = currentUser.created_at
     ? new Date(currentUser.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
     : '—';
@@ -52,13 +63,37 @@ function renderProfile() {
 
     <!-- Avatar + Info -->
     <div style="display:flex;align-items:center;gap:16px;padding:20px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;margin-bottom:16px">
-      ${_profileAvatarHtml(email, 64, 22)}
+      ${_profileAvatarHtml(64, 22)}
       <div style="min-width:0;flex:1">
-        <div style="font-size:14px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${email}</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nickname || email}</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nickname ? email : ''}</div>
         <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px">Membro desde ${since}</div>
         <div style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;background:rgba(77,255,145,.1);border:1px solid rgba(77,255,145,.2);border-radius:20px;padding:2px 10px">
           <div style="width:5px;height:5px;border-radius:50%;background:var(--green)"></div>
           <span style="font-size:10px;color:var(--green);font-family:var(--mono)">conta ativa</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nome / Apelido -->
+    <div class="profile-card" style="margin-bottom:12px">
+      <div class="profile-card-head">👤 Nome de exibição</div>
+      <div style="padding:14px 16px">
+        <div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:10px">
+          Como você quer ser chamado no app. Aparece na sidebar e no avatar.
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input
+            type="text"
+            id="profileNicknameInput"
+            style="flex:1;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:inherit"
+            placeholder="Seu nome ou apelido"
+            maxlength="40"
+            value="${nickname.replace(/"/g, '&quot;')}"
+            onkeydown="if(event.key==='Enter')_profileSaveNickname()"
+          >
+          <button class="btn btn-primary btn-sm" onclick="_profileSaveNickname()" id="profileNicknameBtn">Salvar</button>
+          ${nickname ? `<button class="btn btn-ghost btn-sm" onclick="_profileClearNickname()" title="Remover apelido" style="padding:6px 10px">✕</button>` : ''}
         </div>
       </div>
     </div>
@@ -169,6 +204,38 @@ function renderProfile() {
   </div>`;
 }
 
+async function _profileSaveNickname() {
+  const input = document.getElementById('profileNicknameInput');
+  const btn   = document.getElementById('profileNicknameBtn');
+  if (!input) return;
+  const val = input.value.trim();
+  btn.textContent = '...';
+  btn.disabled = true;
+  const ok = await dbSaveNickname(val);
+  if (ok) {
+    S.profile.nickname = val;
+    _profileUpdateSidebarAvatar();
+    showToast(val ? `Apelido salvo: ${val}` : 'Nome de exibição removido');
+    renderProfile();
+  } else {
+    showToast('Erro ao salvar. Tente novamente.', 'error');
+    btn.textContent = 'Salvar';
+    btn.disabled = false;
+  }
+}
+
+async function _profileClearNickname() {
+  const ok = await dbSaveNickname('');
+  if (ok) {
+    S.profile.nickname = '';
+    _profileUpdateSidebarAvatar();
+    showToast('Nome de exibição removido');
+    renderProfile();
+  } else {
+    showToast('Erro ao remover. Tente novamente.', 'error');
+  }
+}
+
 async function _profileSignOutAll() {
   if (!confirm('Encerrar sessão em todos os dispositivos?')) return;
   setSyncing(true);
@@ -182,6 +249,7 @@ function _profileExportData() {
     exportedAt: new Date().toISOString(),
     appVersion: APP_VERSION,
     email: currentUser?.email,
+    nickname: S.profile?.nickname || null,
     months: S.months,
     pixEntries: S.pixEntries,
     recurrents: S.recurrents,
