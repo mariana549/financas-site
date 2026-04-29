@@ -90,6 +90,70 @@ function _dismissAnnouncement(id) {
   renderAnnouncementBanner();
 }
 
+function renderContextSwitcher() {
+  const el = document.getElementById('contextSwitcher');
+  if (!el) return;
+  if (!S.profile?.pjEnabled || S.contexts.length <= 1) { el.style.display = 'none'; return; }
+
+  const active = S.activeContext;
+  // Contextos raiz: pessoal + pj raiz
+  const roots = S.contexts.filter(c => !c.parentId);
+  // Sub-contextos PJ (filhos do PJ raiz)
+  const pjRoot = roots.find(c => c.type === 'pj');
+  const pjSubs = pjRoot ? S.contexts.filter(c => c.parentId === pjRoot.id) : [];
+  // Lista de opções: pessoal + pj raiz + seus filhos
+  const personal = roots.find(c => c.type === 'personal');
+
+  const ctxIcon  = c => c.type === 'personal' ? '🏠' : '🏢';
+  const ctxLabel = c => c.name;
+
+  const isPersonal = active?.type === 'personal';
+  const isPJ       = active?.type === 'pj' || (active && pjRoot && (active.id === pjRoot.id || active.parentId === pjRoot.id));
+
+  let html = `<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border)">
+    <div style="display:flex;gap:4px;flex:1;background:var(--bg3);border-radius:8px;padding:3px">`;
+
+  // Botão Pessoal
+  html += `<button onclick="switchContext('${personal?.id}')"
+    style="flex:1;padding:5px 8px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--mono);
+    background:${isPersonal ? 'var(--bg)' : 'transparent'};color:${isPersonal ? 'var(--text)' : 'var(--text3)'};
+    box-shadow:${isPersonal ? '0 1px 3px rgba(0,0,0,.25)' : 'none'};transition:all .15s">🏠 Pessoal</button>`;
+
+  // Botão PJ (ou sub-contexto ativo)
+  if (pjSubs.length === 0) {
+    html += `<button onclick="switchContext('${pjRoot?.id}')"
+      style="flex:1;padding:5px 8px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--mono);
+      background:${isPJ ? 'var(--bg)' : 'transparent'};color:${isPJ ? 'var(--accent)' : 'var(--text3)'};
+      box-shadow:${isPJ ? '0 1px 3px rgba(0,0,0,.25)' : 'none'};transition:all .15s">🏢 PJ</button>`;
+  } else {
+    // PJ com sub-contextos — exibe dropdown
+    const pjLabel = isPJ && active?.id !== pjRoot?.id ? ctxLabel(active) : 'PJ';
+    html += `<div style="flex:1;position:relative">
+      <button onclick="_toggleCtxDropdown(event)"
+        style="width:100%;padding:5px 8px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--mono);
+        background:${isPJ ? 'var(--bg)' : 'transparent'};color:${isPJ ? 'var(--accent)' : 'var(--text3)'};
+        box-shadow:${isPJ ? '0 1px 3px rgba(0,0,0,.25)' : 'none'};transition:all .15s">🏢 ${pjLabel} ▾</button>
+      <div id="ctxDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;z-index:200;overflow:hidden">
+        <button onclick="switchContext('${pjRoot?.id}')" style="display:block;width:100%;padding:8px 12px;text-align:left;background:none;border:none;cursor:pointer;font-size:12px;color:var(--text);font-family:var(--mono)">🏢 PJ (geral)</button>
+        ${pjSubs.map(sub => `<button onclick="switchContext('${sub.id}')" style="display:block;width:100%;padding:8px 12px;text-align:left;background:none;border:none;cursor:pointer;font-size:12px;color:var(--text);font-family:var(--mono)">↳ ${sub.name}</button>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  html += `</div></div>`;
+  el.innerHTML = html;
+  el.style.display = '';
+}
+
+function _toggleCtxDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('ctxDropdown');
+  if (!dd) return;
+  const isOpen = dd.style.display !== 'none';
+  dd.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) setTimeout(() => document.addEventListener('click', () => { dd.style.display = 'none'; }, { once: true }), 0);
+}
+
 const VIEW_LABELS = {
   subs:      ['Assinaturas',          'por banco · com datas'],
   banks:     ['Bancos',               'cadastro global · estatísticas por banco'],

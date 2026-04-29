@@ -8,7 +8,8 @@ async function dbSaveIncome(monthKey, inc) {
     id: String(inc.id), user_id: currentUser.id, month_key: monthKey,
     description: inc.desc, amount: inc.amount, entry_date: inc.date || null,
     income_type: inc.incType || null, from_source: inc.from || null,
-    owner: inc.owner || 'mine', person: inc.person || null
+    owner: inc.owner || 'mine', person: inc.person || null,
+    context_id: S.activeContext?.id || null
   }, { onConflict: 'id' });
 }
 

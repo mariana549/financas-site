@@ -8,20 +8,58 @@ async function loadAllFromSupabase() {
   setSyncing(true);
   try {
     const uid = currentUser.id;
-    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes, rmRes, dvRes, clRes, prRes, anRes] = await Promise.all([
-      sb.from('months').select('*').eq('user_id', uid).order('created_at'),
-      sb.from('banks').select('*').eq('user_id', uid),
-      sb.from('transacoes').select('*').eq('user_id', uid),
-      sb.from('pix_entries').select('*').eq('user_id', uid),
-      sb.from('recurrents').select('*').eq('user_id', uid),
-      sb.from('incomes').select('*').eq('user_id', uid),
-      sb.from('subscriptions').select('*').eq('user_id', uid),
-      sb.from('installments').select('*').eq('user_id', uid),
-      sb.from('banks_global').select('*').eq('user_id', uid).order('created_at'),
-      sb.from('receivable_marks').select('*').eq('user_id', uid),
+
+    // ── Fase 1: perfil + contextos (necessário antes dos dados) ──
+    const [ctxIdRes, ctxRes, prRes] = await Promise.all([
+      sb.rpc('ensure_personal_context', { p_user_id: uid }),
+      sb.from('contexts').select('*').eq('user_id', uid).order('created_at'),
+      sb.from('user_profiles').select('*').eq('user_id', uid).maybeSingle(),
+    ]);
+
+    const contexts = (ctxRes.data || []).map(r => ({
+      id: r.id, name: r.name, type: r.type, parentId: r.parent_id, color: r.color
+    }));
+    S.contexts = contexts;
+    S.profile = {
+      nickname: prRes?.data?.nickname || '',
+      disabled: prRes?.data?.disabled || false,
+      pjEnabled: prRes?.data?.pj_enabled || false
+    };
+
+    // Determina contexto ativo: respeita preferência salva ou usa pessoal
+    if (!S.activeContext) {
+      const savedCtxId = localStorage.getItem('fin_active_ctx');
+      const savedCtx   = savedCtxId ? contexts.find(c => c.id === savedCtxId) : null;
+      const personalId = ctxIdRes.data;
+      const personalCtx = savedCtx ||
+        contexts.find(c => c.type === 'personal') ||
+        (personalId ? contexts.find(c => c.id === personalId) : null) ||
+        contexts[0] || null;
+      S.activeContext = personalCtx;
+    }
+
+    if (!S.activeContext) {
+      console.warn('[loadAll] Nenhum contexto disponível');
+      setSyncing(false);
+      return;
+    }
+
+    const cid = S.activeContext.id;
+
+    // ── Fase 2: dados filtrados pelo contexto ativo ──
+    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes, rmRes, dvRes, clRes, anRes] = await Promise.all([
+      sb.from('months').select('*').eq('user_id', uid).eq('context_id', cid).order('created_at'),
+      sb.from('banks').select('*').eq('user_id', uid).eq('context_id', cid),
+      sb.from('transacoes').select('*').eq('user_id', uid).eq('context_id', cid),
+      sb.from('pix_entries').select('*').eq('user_id', uid).eq('context_id', cid),
+      sb.from('recurrents').select('*').eq('user_id', uid).eq('context_id', cid),
+      sb.from('incomes').select('*').eq('user_id', uid).eq('context_id', cid),
+      sb.from('subscriptions').select('*').eq('user_id', uid).eq('context_id', cid),
+      sb.from('installments').select('*').eq('user_id', uid).eq('context_id', cid),
+      sb.from('banks_global').select('*').eq('user_id', uid).eq('context_id', cid).order('created_at'),
+      sb.from('receivable_marks').select('*').eq('user_id', uid).eq('context_id', cid),
       sb.from('dev_users').select('*').order('added_at'),
       sb.from('changelog_entries').select('*').order('position', { ascending: false }).order('created_at', { ascending: false }),
-      sb.from('user_profiles').select('*').eq('user_id', uid).maybeSingle(),
       sb.from('announcements').select('*').order('created_at', { ascending: false }),
     ]);
 
@@ -127,7 +165,7 @@ async function loadAllFromSupabase() {
       title: r.title, summary: r.summary, items: r.items, position: r.position
     }));
 
-    S.profile        = { nickname: prRes?.data?.nickname || '', disabled: prRes?.data?.disabled || false };
+    // profile já foi carregado na Fase 1; apenas atualiza anúncios
     S.announcements  = (anRes?.data || []).map(r => ({ id: r.id, message: r.message, active: r.active, createdAt: r.created_at }));
     S.months       = months;
     sortMonths();
@@ -166,4 +204,22 @@ async function loadAllFromSupabase() {
     console.error('Erro ao carregar dados:', e);
   }
   setSyncing(false);
+}
+
+// Troca o contexto ativo e recarrega todos os dados
+async function switchContext(ctxId) {
+  const ctx = S.contexts.find(c => c.id === ctxId);
+  if (!ctx || S.activeContext?.id === ctxId) return;
+  S.activeContext = ctx;
+  localStorage.setItem('fin_active_ctx', ctxId);
+  // Limpa dados do contexto anterior
+  S.months = []; S.currentMonth = null; S.currentBank = null;
+  S.pixEntries = {}; S.recurrents = {}; S.incomes = {};
+  S.subscriptions = []; S.installments = []; S.globalBanks = [];
+  S.receivableMarks = [];
+  renderContextSwitcher();
+  await loadAllFromSupabase();
+  renderMonthList();
+  renderSubs();
+  _renderDashImpl();
 }

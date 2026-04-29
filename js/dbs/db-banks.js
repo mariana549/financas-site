@@ -5,7 +5,8 @@
 async function dbSaveGlobalBank(gb) {
   if (!currentUser) return;
   await sb.from('banks_global').upsert(
-    { id: gb.id, user_id: currentUser.id, name: gb.name, color: gb.color },
+    { id: gb.id, user_id: currentUser.id, name: gb.name, color: gb.color,
+      context_id: S.activeContext?.id || null },
     { onConflict: 'id' }
   );
 }

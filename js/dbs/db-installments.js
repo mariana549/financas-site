@@ -10,7 +10,8 @@ async function dbSaveInstallment(inst) {
     part_num: inst.partNum, bank_name: inst.bankName, owner: inst.owner,
     person: inst.person || null, category: inst.cat || null,
     month_offset: inst.offset, start_month_key: inst.startKey,
-    entry_date: inst.date || null, done: inst.done || false
+    entry_date: inst.date || null, done: inst.done || false,
+    context_id: S.activeContext?.id || null
   }, { onConflict: 'id' });
 }
 
