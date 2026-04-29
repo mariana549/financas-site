@@ -138,14 +138,12 @@ function renderProfile() {
           ${privacyOn ? '🙈 Ativado' : '👁 Desativado'}
         </button>
       </div>
-      <div class="profile-row" style="cursor:default" id="profilePushRow">
+      <div class="profile-row" style="cursor:default;opacity:.45;pointer-events:none">
         <div class="profile-row-info">
-          <span class="profile-row-title">Notificações push</span>
-          <span class="profile-row-sub" id="profilePushSub">Alertas mesmo com o app fechado</span>
+          <span class="profile-row-title">Notificações</span>
+          <span class="profile-row-sub">Alertas de vencimentos e parcelas</span>
         </div>
-        <button class="profile-toggle" id="profilePushToggle" onclick="_profileTogglePush()">
-          ${localStorage.getItem('fin_push_enabled') === '1' ? '🔔 Ativado' : '🔕 Desativado'}
-        </button>
+        <span class="profile-badge-soon">em breve</span>
       </div>
       <div class="profile-row" style="cursor:default;opacity:.45;pointer-events:none">
         <div class="profile-row-info">
