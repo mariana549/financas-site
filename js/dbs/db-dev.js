@@ -126,7 +126,15 @@ async function dbDeleteAnnouncement(id) {
 async function dbSendPushToAll(title, body) {
   if (!currentUser) return null;
   const { data, error } = await sb.functions.invoke('send-push', { body: { title, body } });
-  if (error) { console.error('[dbSendPushToAll]', error); return null; }
+  if (error) {
+    console.error('[dbSendPushToAll] error:', error);
+    // Tenta mostrar o body da resposta de erro
+    if (error.context) {
+      try { const msg = await error.context.json(); console.error('[dbSendPushToAll] detalhe:', msg); } catch {}
+    }
+    return null;
+  }
+  if (data?.error) { console.error('[dbSendPushToAll] função retornou erro:', data); return null; }
   return data;
 }
 
