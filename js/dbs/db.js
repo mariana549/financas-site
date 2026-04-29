@@ -188,9 +188,10 @@ async function loadAllFromSupabase() {
       S.pjTaxes   = [];
     }
 
-    // ── Mostra/oculta nav PJ ──
+    // ── Mostra/oculta nav PJ + aplica identidade visual do contexto ──
     const pjNav = document.getElementById('pjNav');
     if (pjNav) pjNav.style.display = S.activeContext?.type !== 'personal' ? '' : 'none';
+    applyContext(S.activeContext);
 
     // ── Seeding: migra bancos existentes para banks_global na primeira vez ──
     if (S.globalBanks.length === 0 && months.length > 0 && !gbRes?.error) {
@@ -225,6 +226,7 @@ async function switchContext(ctxId) {
   if (!ctx || S.activeContext?.id === ctxId) return;
   S.activeContext = ctx;
   localStorage.setItem('fin_active_ctx', ctxId);
+  applyContext(ctx);
   // Limpa dados do contexto anterior
   S.months = []; S.currentMonth = null; S.currentBank = null;
   S.pixEntries = {}; S.recurrents = {}; S.incomes = {};

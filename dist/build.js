@@ -20,6 +20,8 @@ const CSS_FILES = [
   'css/reports.css',
   'css/ai.css',
   'css/responsive.css',
+  'css/pj/pj-variables.css',
+  'css/pj/pj-layout.css',
 ];
 
 // Ordem crítica — cada arquivo pode chamar funções dos anteriores

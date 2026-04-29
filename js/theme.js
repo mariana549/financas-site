@@ -65,6 +65,19 @@ function applyPrivacy(on) {
   if (btn) btn.textContent = on ? '🙈' : '👁';
 }
 
+function applyContext(ctx) {
+  const type = ctx?.type || 'personal';
+  document.documentElement.setAttribute('data-context', type);
+
+  // Oculta via JS nav itens exclusivos do modo pessoal (sem CSS overhead)
+  const navHistory = document.getElementById('nav-history');
+  if (navHistory) navHistory.style.display = type === 'pj' ? 'none' : '';
+
+  // Texto do logo reflete o contexto ativo
+  const logoSub = document.querySelector('.logo-sub');
+  if (logoSub) logoSub.textContent = type === 'pj' ? 'gestão empresarial' : 'organizador pessoal';
+}
+
 function renderAnnouncementBanner() {
   const el = document.getElementById('announcementBanner');
   if (!el) return;

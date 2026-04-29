@@ -1,0 +1,35 @@
+/* ══════════════════════════════════════════════════
+   PJ — Paleta de cores
+   Sobrescreve os tokens globais de css/variables.css.
+   Seletores combinados: tema + contexto no <html>.
+   ══════════════════════════════════════════════════ */
+
+/* ── PJ · Dark ─────────────────────────────────── */
+[data-theme="dark"][data-context="pj"] {
+  --bg:      #080c10;
+  --bg2:     #0e1420;
+  --bg3:     #141c2c;
+  --bg4:     #1c2538;
+  --border:  #1e2d45;
+  --border2: #2a3f5f;
+  --text:    #e8edf2;
+  --text2:   #7a9bb5;
+  --text3:   #3d5a78;
+  --accent:  #d4af37;
+  --accent2: #b8962a;
+}
+
+/* ── PJ · Light ─────────────────────────────────── */
+[data-theme="light"][data-context="pj"] {
+  --bg:      #eef1f6;
+  --bg2:     #ffffff;
+  --bg3:     #e4e9f0;
+  --bg4:     #d8dfe8;
+  --border:  #c8d3de;
+  --border2: #b5c3d2;
+  --text:    #0f1a2a;
+  --text2:   #4a6278;
+  --text3:   #8099b0;
+  --accent:  #b8962a;
+  --accent2: #9a7d22;
+}

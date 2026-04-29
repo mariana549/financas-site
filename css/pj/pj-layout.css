@@ -1,0 +1,16 @@
+/* ══════════════════════════════════════════════════
+   PJ — Ajustes de layout e identidade visual
+   Depende de [data-context="pj"] no <html>,
+   aplicado por applyContext() em theme.js.
+   As cores já vêm de pj-variables.css via var().
+   ══════════════════════════════════════════════════ */
+
+/* Friso dourado no topo da topbar */
+[data-context="pj"] .topbar {
+  border-top: 2px solid var(--accent);
+}
+
+/* Sidebar: borda direita levemente mais marcada */
+[data-context="pj"] .sidebar {
+  border-right-color: var(--border2);
+}
