@@ -3,24 +3,30 @@
 // Visível apenas para usuários em dev_users
 // ══════════════════════════════════════════════════
 
-let _devTab = 'changelog'; // 'changelog' | 'devs'
+let _devTab = 'changelog'; // 'changelog' | 'health' | 'devs'
 
 function renderDev() {
   const el = document.getElementById('devContent');
   if (!el || !S.isDev) return;
   if (_devTab === 'changelog') _renderDevChangelog(el);
+  else if (_devTab === 'health') _renderDevHealth(el);
   else if (_devTab === 'devs') _renderDevUsers(el);
 }
 
 function _devTabBar() {
+  const tabs = [
+    { id: 'changelog', label: '📋 Novidades' },
+    { id: 'health',    label: '📊 Saúde' },
+    { id: 'devs',      label: '👥 Devs' },
+  ];
   return `
   <div style="display:flex;gap:4px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px">
-    ${['changelog','devs'].map(t => `
-    <button onclick="_devSwitchTab('${t}')"
-      style="flex:1;padding:7px 12px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s,color .15s;
-        background:${_devTab===t ? 'var(--accent)' : 'transparent'};
-        color:${_devTab===t ? '#fff' : 'var(--text2)'}">
-      ${t === 'changelog' ? '📋 Novidades' : '👥 Devs'}
+    ${tabs.map(t => `
+    <button onclick="_devSwitchTab('${t.id}')"
+      style="flex:1;padding:7px 8px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:500;transition:background .15s,color .15s;
+        background:${_devTab===t.id ? 'var(--accent)' : 'transparent'};
+        color:${_devTab===t.id ? '#fff' : 'var(--text2)'}">
+      ${t.label}
     </button>`).join('')}
   </div>`;
 }
@@ -460,6 +466,131 @@ function _renderAnnouncementsSection() {
       <button onclick="_devDeleteAnnouncement('${a.id}')"
         style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,77,77,.3);background:rgba(255,77,77,.08);color:var(--red);cursor:pointer;flex-shrink:0">Excluir</button>
     </div>`).join('');
+}
+
+// ── ABA: SAÚDE ─────────────────────────────────────
+function _renderDevHealth(el) {
+  el.innerHTML = `
+    ${_devTabBar()}
+    <div style="text-align:center;padding:40px 0;color:var(--text3);font-size:13px">
+      <div style="font-size:24px;margin-bottom:8px">📊</div>
+      Carregando dados de saúde...
+    </div>`;
+  _devLoadHealth(el);
+}
+
+async function _devLoadHealth(el) {
+  const stats = await dbGetHealthStats();
+  if (!stats) {
+    el.innerHTML = `${_devTabBar()}<div style="text-align:center;padding:40px;color:var(--red)">Erro ao carregar dados de saúde.</div>`;
+    return;
+  }
+
+  const { total_users, users_with_data, recent_errors, user_activity } = stats;
+  const activeRate = total_users > 0 ? Math.round((users_with_data / total_users) * 100) : 0;
+
+  // Cards de métricas
+  const metricsHtml = `
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+    ${[
+      { label: 'Usuários totais',   value: total_users,    icon: '👥', color: 'var(--accent)' },
+      { label: 'Com dados reais',   value: users_with_data, icon: '📦', color: 'var(--green)' },
+      { label: 'Taxa de ativação',  value: activeRate + '%', icon: '📈', color: 'var(--orange)' },
+    ].map(c => `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:20px;margin-bottom:6px">${c.icon}</div>
+      <div style="font-size:22px;font-weight:700;color:${c.color};font-family:var(--mono)">${c.value}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">${c.label}</div>
+    </div>`).join('')}
+  </div>`;
+
+  // Tabela de atividade de usuários
+  const actRows = (user_activity || []).map(u => {
+    const lastSeen = u.last_sign_in_at
+      ? new Date(u.last_sign_in_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })
+      : 'Nunca';
+    const since = new Date(u.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+    const hasData = u.months_count > 0;
+    return `
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:8px 10px;font-size:12px;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</td>
+      <td style="padding:8px 10px;font-size:11px;color:var(--text3);font-family:var(--mono);white-space:nowrap">${since}</td>
+      <td style="padding:8px 10px;font-size:11px;color:var(--text2);font-family:var(--mono);white-space:nowrap">${lastSeen}</td>
+      <td style="padding:8px 10px;text-align:center">
+        <span style="font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:20px;
+          background:${hasData ? 'rgba(77,255,145,.1)' : 'var(--bg3)'};
+          color:${hasData ? 'var(--green)' : 'var(--text3)'};
+          border:1px solid ${hasData ? 'rgba(77,255,145,.25)' : 'var(--border)'}">
+          ${hasData ? u.months_count + ' meses · ' + u.entries_count + ' lançam.' : 'sem dados'}
+        </span>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const activityHtml = `
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:13px;font-weight:600;color:var(--text)">👤 Atividade de usuários</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${(user_activity||[]).length} usuários</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);background:var(--bg3)">
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:500;text-align:left">E-mail</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:500;text-align:left;white-space:nowrap">Cadastro</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:500;text-align:left;white-space:nowrap">Último acesso</th>
+            <th style="padding:8px 10px;font-size:11px;color:var(--text3);font-weight:500;text-align:center">Dados</th>
+          </tr>
+        </thead>
+        <tbody>${actRows || '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text3)">Nenhum usuário</td></tr>'}</tbody>
+      </table>
+    </div>
+  </div>`;
+
+  // Erros recentes
+  const errRows = (recent_errors || []).length
+    ? (recent_errors || []).map(e => {
+        const when = new Date(e.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+        return `
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-size:10px;color:var(--text3);font-family:var(--mono);flex-shrink:0">${when}</span>
+            <span style="font-size:11px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.email || 'anon'}</span>
+          </div>
+          <div style="font-size:12px;color:var(--red);margin-bottom:${e.stack ? '4px' : '0'}">${e.message || '—'}</div>
+          ${e.stack ? `<details><summary style="font-size:10px;color:var(--text3);cursor:pointer">Stack trace</summary><pre style="font-size:10px;color:var(--text3);white-space:pre-wrap;margin:4px 0 0;line-height:1.5">${e.stack.slice(0,600)}</pre></details>` : ''}
+        </div>`;
+      }).join('')
+    : `<div style="padding:24px;text-align:center;color:var(--text3);font-size:12px">Nenhum erro registrado. Ótimo sinal!</div>`;
+
+  const errorsHtml = `
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:13px;font-weight:600;color:var(--text)">🐛 Erros recentes</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${(recent_errors||[]).length} registros</span>
+        ${(recent_errors||[]).length ? `<button onclick="_devClearErrors()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid rgba(255,77,77,.3);background:rgba(255,77,77,.06);color:var(--red);cursor:pointer">Limpar</button>` : ''}
+      </div>
+    </div>
+    ${errRows}
+  </div>`;
+
+  el.innerHTML = `${_devTabBar()}${metricsHtml}${activityHtml}${errorsHtml}
+  <div style="text-align:center;margin-bottom:20px">
+    <button onclick="_renderDevHealth(document.getElementById('devContent'))"
+      style="font-size:12px;padding:7px 18px;border-radius:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer">↻ Atualizar</button>
+  </div>`;
+}
+
+async function _devClearErrors() {
+  if (!confirm('Limpar todos os erros do banco?')) return;
+  setSyncing(true);
+  const { error } = await sb.from('error_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  setSyncing(false);
+  if (error) { showToast('Erro ao limpar.', 'error'); return; }
+  showToast('Erros limpos');
+  _renderDevHealth(document.getElementById('devContent'));
 }
 
 // ── ABA: DEVS ──────────────────────────────────────

@@ -19,6 +19,17 @@ async function dbSaveNickname(nickname) {
   return true;
 }
 
+async function dbLogError(message, stack, url) {
+  if (!currentUser) return;
+  // fire-and-forget — não bloqueia o app
+  sb.from('error_logs').insert({
+    user_id: currentUser.id,
+    message: String(message).slice(0, 500),
+    stack: stack ? String(stack).slice(0, 2000) : null,
+    url: url || window.location.href
+  }).then(({ error }) => { if (error) console.warn('[dbLogError]', error); });
+}
+
 async function dbDeleteAccount() {
   if (!currentUser) return false;
   const { error } = await sb.rpc('delete_my_account');

@@ -70,6 +70,15 @@ if (localStorage.getItem('fin_sb_hidden') === '1') document.body.classList.add('
 // ── Inicializar color grid ──
 buildColorGrid();
 
+// ── Captura de erros globais → error_logs ──
+window.onerror = function(msg, src, line, col, err) {
+  dbLogError(msg, err?.stack || `${src}:${line}:${col}`, src);
+};
+window.addEventListener('unhandledrejection', e => {
+  const msg = e.reason?.message || String(e.reason) || 'Unhandled rejection';
+  dbLogError(msg, e.reason?.stack || null, window.location.href);
+});
+
 // ── Registrar Service Worker ──
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

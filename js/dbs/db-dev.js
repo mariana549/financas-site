@@ -71,6 +71,14 @@ async function dbSeedChangelog(entries) {
   }
 }
 
+// ── Health Stats ──────────────────────────────────
+async function dbGetHealthStats() {
+  if (!currentUser) return null;
+  const { data, error } = await sb.rpc('get_health_stats');
+  if (error) { console.error('[dbGetHealthStats]', error); return null; }
+  return data;
+}
+
 // ── Announcements ──────────────────────────────────
 async function dbLoadAnnouncements() {
   if (!currentUser) return [];
