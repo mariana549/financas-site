@@ -3,13 +3,14 @@
 // Visível apenas para usuários em dev_users
 // ══════════════════════════════════════════════════
 
-let _devTab = 'changelog'; // 'changelog' | 'health' | 'devs'
+let _devTab = 'changelog'; // 'changelog' | 'health' | 'users' | 'devs'
 
 function renderDev() {
   const el = document.getElementById('devContent');
   if (!el || !S.isDev) return;
   if (_devTab === 'changelog') _renderDevChangelog(el);
   else if (_devTab === 'health') _renderDevHealth(el);
+  else if (_devTab === 'users') _renderDevUsersManagement(el);
   else if (_devTab === 'devs') _renderDevUsers(el);
 }
 
@@ -17,6 +18,7 @@ function _devTabBar() {
   const tabs = [
     { id: 'changelog', label: '📋 Novidades' },
     { id: 'health',    label: '📊 Saúde' },
+    { id: 'users',     label: '👤 Usuários' },
     { id: 'devs',      label: '👥 Devs' },
   ];
   return `
@@ -591,6 +593,91 @@ async function _devClearErrors() {
   if (error) { showToast('Erro ao limpar.', 'error'); return; }
   showToast('Erros limpos');
   _renderDevHealth(document.getElementById('devContent'));
+}
+
+// ── ABA: GESTÃO DE USUÁRIOS ────────────────────────
+function _renderDevUsersManagement(el) {
+  el.innerHTML = `
+    ${_devTabBar()}
+    <div style="text-align:center;padding:40px 0;color:var(--text3);font-size:13px">
+      <div style="font-size:24px;margin-bottom:8px">👤</div>
+      Carregando usuários...
+    </div>`;
+  _devLoadUsersManagement(el);
+}
+
+async function _devLoadUsersManagement(el) {
+  const users = await dbGetAllUsers();
+  if (!users) {
+    el.innerHTML = `${_devTabBar()}<div style="text-align:center;padding:40px;color:var(--red)">Erro ao carregar usuários.</div>`;
+    return;
+  }
+
+  // Ordena por volume de dados (entries_count desc) para o ranking
+  const ranked = [...users].sort((a, b) => (b.entries_count + b.months_count * 10) - (a.entries_count + a.months_count * 10));
+
+  const rows = users.map(u => {
+    const isMe = u.email === currentUser?.email;
+    const lastSeen = u.last_sign_in_at
+      ? new Date(u.last_sign_in_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })
+      : 'Nunca';
+    const rank = ranked.findIndex(r => r.id === u.id) + 1;
+    const hasData = u.months_count > 0;
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+    return `
+    <div style="background:var(--bg2);border:1px solid ${u.disabled ? 'rgba(255,77,77,.3)' : 'var(--border)'};border-radius:10px;padding:14px 16px;margin-bottom:10px;${u.disabled ? 'opacity:.6' : ''}">
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div style="font-size:18px;flex-shrink:0;padding-top:2px">${medal}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email}</span>
+            ${u.nickname ? `<span style="font-size:11px;color:var(--accent);font-family:var(--mono)">${u.nickname}</span>` : ''}
+            ${isMe ? `<span style="font-size:10px;background:rgba(77,159,255,.15);color:var(--accent);border:1px solid rgba(77,159,255,.3);border-radius:20px;padding:1px 8px;font-family:var(--mono)">você</span>` : ''}
+            ${u.disabled ? `<span style="font-size:10px;background:rgba(255,77,77,.1);color:var(--red);border:1px solid rgba(255,77,77,.3);border-radius:20px;padding:1px 8px;font-family:var(--mono)">desativado</span>` : ''}
+          </div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap">
+            <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">cadastro: ${new Date(u.created_at).toLocaleDateString('pt-BR')}</span>
+            <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">acesso: ${lastSeen}</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+            ${hasData ? `
+              <span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(77,255,145,.08);color:var(--green);border:1px solid rgba(77,255,145,.2);font-family:var(--mono)">${u.months_count} meses</span>
+              <span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(77,159,255,.08);color:var(--accent);border:1px solid rgba(77,159,255,.2);font-family:var(--mono)">${u.entries_count} lançam.</span>
+              <span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,159,77,.08);color:var(--orange);border:1px solid rgba(255,159,77,.2);font-family:var(--mono)">${u.subs_count} assin.</span>
+            ` : `<span style="font-size:10px;color:var(--text3);font-family:var(--mono)">sem dados ainda</span>`}
+          </div>
+        </div>
+        ${!isMe ? `
+        <button onclick="_devToggleUserDisabled('${u.id}', ${!u.disabled})"
+          style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid ${u.disabled ? 'rgba(77,255,145,.3)' : 'rgba(255,77,77,.3)'};background:${u.disabled ? 'rgba(77,255,145,.08)' : 'rgba(255,77,77,.08)'};color:${u.disabled ? 'var(--green)' : 'var(--red)'};cursor:pointer;white-space:nowrap;flex-shrink:0">
+          ${u.disabled ? '✓ Reativar' : '⊘ Desativar'}
+        </button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    ${_devTabBar()}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:15px;font-weight:600;color:var(--text)">${users.length} usuários cadastrados</div>
+        <div style="font-size:12px;color:var(--text3)">${users.filter(u => u.months_count > 0).length} com dados · ${users.filter(u => u.disabled).length} desativados</div>
+      </div>
+      <button onclick="_renderDevUsersManagement(document.getElementById('devContent'))"
+        style="font-size:12px;padding:6px 14px;border-radius:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer">↻ Atualizar</button>
+    </div>
+    ${rows}`;
+}
+
+async function _devToggleUserDisabled(userId, disabled) {
+  const action = disabled ? 'desativar' : 'reativar';
+  if (!confirm(`Confirma ${action} este usuário?`)) return;
+  setSyncing(true);
+  const ok = await dbSetUserDisabled(userId, disabled);
+  setSyncing(false);
+  if (!ok) { showToast('Erro ao atualizar usuário.', 'error'); return; }
+  showToast(disabled ? 'Usuário desativado' : 'Usuário reativado');
+  _renderDevUsersManagement(document.getElementById('devContent'));
 }
 
 // ── ABA: DEVS ──────────────────────────────────────

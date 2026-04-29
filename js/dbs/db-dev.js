@@ -71,6 +71,21 @@ async function dbSeedChangelog(entries) {
   }
 }
 
+// ── User Management ────────────────────────────────
+async function dbGetAllUsers() {
+  if (!currentUser) return null;
+  const { data, error } = await sb.rpc('get_all_users');
+  if (error) { console.error('[dbGetAllUsers]', error); return null; }
+  return data;
+}
+
+async function dbSetUserDisabled(userId, disabled) {
+  if (!currentUser) return false;
+  const { error } = await sb.rpc('set_user_disabled', { p_user_id: userId, p_disabled: disabled });
+  if (error) { console.error('[dbSetUserDisabled]', error); return false; }
+  return true;
+}
+
 // ── Health Stats ──────────────────────────────────
 async function dbGetHealthStats() {
   if (!currentUser) return null;

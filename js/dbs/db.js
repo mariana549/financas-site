@@ -127,7 +127,7 @@ async function loadAllFromSupabase() {
       title: r.title, summary: r.summary, items: r.items, position: r.position
     }));
 
-    S.profile        = { nickname: prRes?.data?.nickname || '' };
+    S.profile        = { nickname: prRes?.data?.nickname || '', disabled: prRes?.data?.disabled || false };
     S.announcements  = (anRes?.data || []).map(r => ({ id: r.id, message: r.message, active: r.active, createdAt: r.created_at }));
     S.months       = months;
     sortMonths();
