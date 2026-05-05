@@ -101,17 +101,7 @@ function injectModals() {
     <div id="splitHint" style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;margin-bottom:12px;line-height:1.9">—</div>
   </div>
   <div class="fg"><label>Categoria</label>
-    <div class="chips" id="catChips">
-      <div class="chip" onclick="pickCat(this)">Mercado</div>
-      <div class="chip" onclick="pickCat(this)">Moto</div>
-      <div class="chip" onclick="pickCat(this)">Notebook</div>
-      <div class="chip" onclick="pickCat(this)">Saúde</div>
-      <div class="chip" onclick="pickCat(this)">Lazer</div>
-      <div class="chip" onclick="pickCat(this)">Transporte</div>
-      <div class="chip" onclick="pickCat(this)">Alimentação</div>
-      <div class="chip" onclick="pickCat(this)">Compras Online</div>
-      <div class="chip" onclick="pickCat(this)">Outros</div>
-    </div>
+    <div class="chips" id="catChips"></div>
     <input type="text" id="eCat" placeholder="ou digite..." style="margin-top:7px"
       oninput="document.querySelectorAll('#catChips .chip').forEach(c=>c.classList.remove('sel'))">
   </div>
@@ -194,7 +184,11 @@ function injectModals() {
   <div class="fg"><label>Banco de origem <span class="tip" data-tip="De qual cartão ou conta&#10;o Pix foi enviado.">?</span></label><select id="pxBank"></select></div>
   <div class="fg"><label>Motivo (opcional)</label><input type="text" id="pxObs" placeholder="rachar conta, presente..."></div>
   <input type="hidden" id="editPixId">
-  <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('mPix')">Cancelar</button><button class="btn btn-primary btn-sm" onclick="savePix()">Salvar</button></div>
+  <div class="modal-actions">
+    <button id="pixDeleteBtn" class="btn btn-danger btn-sm" style="display:none" onclick="deletePixCurrent()">Excluir</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mPix')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="savePix()">Salvar</button>
+  </div>
 </div></div>
 
 <!-- Sub -->

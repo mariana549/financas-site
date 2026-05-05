@@ -162,8 +162,37 @@
     display: none;
   }
 
+  /* Esconde coluna "De quem / Tipo" no mobile */
+  table th:nth-child(2),
+  table td:nth-child(2) {
+    display: none;
+  }
+
+  /* Sem scroll horizontal na tabela */
   .tbl-block {
-    overflow-x: auto;
+    overflow-x: hidden;
+  }
+
+  /* Garante que a tabela caiba em 100% sem estourar */
+  .tbl-block table {
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  /* Descrição: trunca com reticências se for longa */
+  .tbl-block table td:nth-child(1),
+  .tbl-block table th:nth-child(1) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Valor: não quebra e alinha à direita */
+  .tbl-block table td:last-child,
+  .tbl-block table th:last-child {
+    white-space: nowrap;
+    text-align: right;
+    width: 90px;
   }
 
   .foot-row {

@@ -77,7 +77,8 @@ async function loadAllFromSupabase() {
               date: t.entry_date, owner: t.owner, person: t.person,
               category: t.category, note: t.note, type: t.type || 'normal',
               installCurrent: t.install_current, installTotal: t.install_total,
-              groupId: t.group_id, autoInj: t.auto_injected
+              groupId: t.group_id, autoInj: t.auto_injected,
+              splitRatio: t.split_ratio ? parseFloat(t.split_ratio) : null
             }))
         }))
     }));

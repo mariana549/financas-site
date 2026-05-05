@@ -298,6 +298,37 @@ function renderEntradasSection(incL, incMyT, incOthT, incPplMap) {
   return html;
 }
 
+function _mgToggle(key) {
+  if (!S._meusGastosOpen) S._meusGastosOpen = {};
+  S._meusGastosOpen[key] = !S._meusGastosOpen[key];
+  const body = document.getElementById('mg-body-' + key);
+  const icon = document.getElementById('mg-icon-' + key);
+  if (body) body.style.display = S._meusGastosOpen[key] ? '' : 'none';
+  if (icon) icon.textContent = S._meusGastosOpen[key] ? '▾' : '▸';
+}
+
+function _mgSection(key, label, color, total, rows) {
+  if (!rows) return '';
+  if (!S._meusGastosOpen) S._meusGastosOpen = {};
+  const open = S._meusGastosOpen[key] !== false; // aberto por padrão
+  S._meusGastosOpen[key] = open;
+  return `
+    <div style="margin-bottom:8px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <div onclick="_mgToggle('${key}')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer;background:var(--bg3);user-select:none">
+        <span style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">${label}</span>
+        <span style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:${color}">R$ ${fmt(total)}</span>
+          <span id="mg-icon-${key}" style="color:var(--text3);font-size:12px">${open ? '▾' : '▸'}</span>
+        </span>
+      </div>
+      <div id="mg-body-${key}" style="${open ? '' : 'display:none'}">
+        <div class="tbl-block" style="margin:0">
+          <table style="width:100%"><tbody>${rows}</tbody></table>
+        </div>
+      </div>
+    </div>`;
+}
+
 function showMeusGastosReport() {
   const m = getMonth();
   if (!m) return;
@@ -314,65 +345,80 @@ function showMeusGastosReport() {
   const splitAmt = splitEntries.reduce((s, e) => s + e.amount * (e.splitRatio ?? 0.5), 0);
   const pixTotal = pixL.reduce((s, p) => s + p.amount, 0);
   const recTotal = recL.reduce((s, r) => s + r.amount, 0);
-  const mySubs = (S.subscriptions || []).filter(s => !s.endDate && s.cycle === 'mensal' && (s.owner || 'mine') !== 'other');
+  const mySubs = (S.subscriptions || []).filter(s => isSubActiveInMonth(s, S.currentMonth) && (s.owner || 'mine') !== 'other');
   const mySubTotal = mySubs.reduce((s, sub) => s + calcMySubPart(sub), 0);
   const grandTotal = myEntriesAmt + splitAmt + pixTotal + recTotal + mySubTotal;
 
-  const mkEntryRow = (e) => {
-    const myAmt = e.owner === 'split' ? e.amount * (e.splitRatio ?? 0.5) : e.amount;
-    const icon = getCategoryIcon(e.desc, e.category);
-    const typeBadge = e.type === 'installment'
-      ? `<span class="bm bm-inst">${e.installCurrent ?? '?'}/${e.installTotal ?? '?'}</span>`
-      : e.type === 'debit' ? `<span class="bm bm-debit">déb</span>`
-      : e.type === 'cash' ? `<span class="bm bm-cash">din</span>` : '';
-    const splitBadge = e.owner === 'split' ? `<span class="bm bm-split">÷</span>` : '';
-    return `<tr><td>${icon ? icon + ' ' : ''}${e.desc} ${typeBadge}${splitBadge}</td>
-      <td style="color:var(--text2);font-size:12px">${e.bankName}</td>
-      <td style="text-align:right"><span class="amt">R$ ${fmt(myAmt)}</span></td></tr>`;
-  };
+  // ── Lançamentos: por banco ──
+  const byBank = {};
+  [...myEntries, ...splitEntries].forEach(e => {
+    if (!byBank[e.bankName]) byBank[e.bankName] = [];
+    byBank[e.bankName].push(e);
+  });
 
-  const entryRows = [...myEntries, ...splitEntries]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .map(mkEntryRow).join('');
+  const entryRows = Object.entries(byBank).map(([bName, entries]) => {
+    const bankTotal = entries.reduce((s, e) => s + (e.owner === 'split' ? e.amount * (e.splitRatio ?? 0.5) : e.amount), 0);
+    const rows = [...entries]
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .map(e => {
+        const myAmt = e.owner === 'split' ? e.amount * (e.splitRatio ?? 0.5) : e.amount;
+        const icon = getCategoryIcon(e.desc, e.category);
+        const typeBadge = e.type === 'installment'
+          ? `<span class="bm bm-inst">${e.installCurrent ?? '?'}/${e.installTotal ?? '?'}</span>`
+          : e.type === 'debit' ? `<span class="bm bm-debit">déb</span>`
+          : e.type === 'cash' ? `<span class="bm bm-cash">din</span>` : '';
+        const splitBadge = e.owner === 'split' ? `<span class="bm bm-split">÷</span>` : '';
+        return `<tr>
+          <td style="padding:8px 14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0;width:99%">${icon ? icon + ' ' : ''}${e.desc} ${typeBadge}${splitBadge}</td>
+          <td style="padding:8px 14px;white-space:nowrap;text-align:right"><span class="amt">R$ ${fmt(myAmt)}</span></td>
+        </tr>`;
+      }).join('');
+    return `<tr><td colspan="2" style="padding:6px 14px 2px;font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;background:var(--bg4)">
+      ${bName} <span style="float:right;color:var(--accent)">R$ ${fmt(bankTotal)}</span></td></tr>${rows}`;
+  }).join('');
 
   const pixRows = [...pixL]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .map(p => `<tr><td>${p.to}${p.obs ? ` <span style="color:var(--text3);font-size:11px">· ${p.obs}</span>` : ''}</td>
-      <td style="color:var(--text2);font-size:12px">pix</td>
-      <td style="text-align:right"><span class="amt">R$ ${fmt(p.amount)}</span></td></tr>`).join('');
+    .map(p => `<tr>
+      <td style="padding:8px 14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0;width:99%">${p.to}${p.obs ? ` <span style="color:var(--text3);font-size:11px">· ${p.obs}</span>` : ''}</td>
+      <td style="padding:8px 14px;white-space:nowrap;text-align:right"><span class="amt">R$ ${fmt(p.amount)}</span></td>
+    </tr>`).join('');
 
-  const recRows = recL.map(r => `<tr>
-    <td>${r.desc}${r.day ? ` <span style="color:var(--text3);font-size:11px">· dia ${r.day}</span>` : ''}</td>
-    <td style="color:var(--text2);font-size:12px">fixo</td>
-    <td style="text-align:right"><span class="amt">R$ ${fmt(r.amount)}</span></td></tr>`).join('');
+  const recRows = recL
+    .map(r => `<tr>
+      <td style="padding:8px 14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0;width:99%">${r.desc}${r.day ? ` <span style="color:var(--text3);font-size:11px">· dia ${r.day}</span>` : ''}</td>
+      <td style="padding:8px 14px;white-space:nowrap;text-align:right"><span class="amt">R$ ${fmt(r.amount)}</span></td>
+    </tr>`).join('');
 
   const subRows = mySubs.map(s => {
     const myPart = calcMySubPart(s);
-    const splitBadge = s.owner === 'split' || s.owner === 'other' ? `<span class="bm bm-split">÷</span>` : '';
-    return `<tr><td>${s.name} ${splitBadge}</td>
-      <td style="color:var(--text2);font-size:12px">assinatura</td>
-      <td style="text-align:right"><span class="amt">R$ ${fmt(myPart)}</span></td></tr>`;
+    const splitBadge = s.owner === 'split' ? `<span class="bm bm-split">÷</span>` : '';
+    return `<tr>
+      <td style="padding:8px 14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0;width:99%">${s.name} ${splitBadge}</td>
+      <td style="padding:8px 14px;white-space:nowrap;text-align:right"><span class="amt">R$ ${fmt(myPart)}</span></td>
+    </tr>`;
   }).join('');
 
-  const mkSection = (label, rows) => rows ? `
-    <tr><td colspan="3" style="padding:10px 0 4px;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600">${label}</td></tr>
-    ${rows}` : '';
-
-  const allRows = mkSection('Lançamentos', entryRows)
-    + mkSection('Pix', pixRows)
-    + mkSection('Contas Fixas', recRows)
-    + mkSection('Assinaturas', subRows);
-
   document.getElementById('meusGastosContent').innerHTML = `
-    <div class="summary-grid" style="margin-bottom:20px">
-      ${myEntriesAmt + splitAmt > 0 ? `<div class="card"><div class="card-lbl">Lançamentos</div><div class="card-val a">R$ ${fmt(myEntriesAmt + splitAmt)}</div></div>` : ''}
-      ${pixTotal > 0 ? `<div class="card"><div class="card-lbl">Pix</div><div class="card-val a">R$ ${fmt(pixTotal)}</div></div>` : ''}
-      ${recTotal > 0 ? `<div class="card"><div class="card-lbl">Contas Fixas</div><div class="card-val a">R$ ${fmt(recTotal)}</div></div>` : ''}
-      ${mySubTotal > 0 ? `<div class="card"><div class="card-lbl">Assinaturas</div><div class="card-val a">R$ ${fmt(mySubTotal)}</div></div>` : ''}
-      <div class="card"><div class="card-lbl">Total Meus</div><div class="card-val a" style="font-size:18px">R$ ${fmt(grandTotal)}</div></div>
+    <!-- Total em destaque -->
+    <div style="text-align:center;padding:20px 0 24px;margin-bottom:20px;border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">Total dos meus gastos</div>
+      <div style="font-size:32px;font-weight:800;color:var(--accent);font-family:var(--mono)">R$ ${fmt(grandTotal)}</div>
+      <div style="display:flex;justify-content:center;gap:16px;margin-top:14px;flex-wrap:wrap">
+        ${myEntriesAmt + splitAmt > 0 ? `<div style="text-align:center"><div style="font-size:10px;color:var(--text3)">Lançamentos</div><div style="font-size:13px;font-weight:700;color:var(--text);font-family:var(--mono)">R$ ${fmt(myEntriesAmt + splitAmt)}</div></div>` : ''}
+        ${pixTotal > 0 ? `<div style="text-align:center"><div style="font-size:10px;color:var(--text3)">Pix</div><div style="font-size:13px;font-weight:700;color:var(--text);font-family:var(--mono)">R$ ${fmt(pixTotal)}</div></div>` : ''}
+        ${recTotal > 0 ? `<div style="text-align:center"><div style="font-size:10px;color:var(--text3)">Contas Fixas</div><div style="font-size:13px;font-weight:700;color:var(--text);font-family:var(--mono)">R$ ${fmt(recTotal)}</div></div>` : ''}
+        ${mySubTotal > 0 ? `<div style="text-align:center"><div style="font-size:10px;color:var(--text3)">Assinaturas</div><div style="font-size:13px;font-weight:700;color:var(--text);font-family:var(--mono)">R$ ${fmt(mySubTotal)}</div></div>` : ''}
+      </div>
     </div>
-    ${allRows ? `<div class="tbl-block"><table><thead><tr><th>Descrição</th><th>Onde</th><th style="text-align:right">Meu valor</th></tr></thead><tbody>${allRows}</tbody></table></div>`
-      : '<div class="empty">Nenhum gasto registrado</div>'}`;
+
+    <!-- Seções colapsáveis -->
+    ${grandTotal === 0 ? '<div class="empty">Nenhum gasto registrado</div>' : ''}
+    ${_mgSection('lancamentos', 'Lançamentos', 'var(--accent)', myEntriesAmt + splitAmt, entryRows)}
+    ${_mgSection('pix', 'Pix Enviados', 'var(--green)', pixTotal, pixRows)}
+    ${_mgSection('fixas', 'Contas Fixas', 'var(--orange)', recTotal, recRows)}
+    ${_mgSection('subs', 'Assinaturas', 'var(--purple)', mySubTotal, subRows)}
+  `;
 
   openModal('mMeusGastos');
 }
