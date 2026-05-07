@@ -211,6 +211,24 @@
     <div class="view" id="view-clients"><div id="clientsContent"></div></div>
     <div class="view" id="view-taxes"><div id="taxesContent"></div></div>
     <div class="view" id="view-pjreports"><div id="pjreportsContent"></div></div>
+
+    <!-- ── Footer institucional ── -->
+    <footer class="app-footer">
+      <div class="app-footer-logo">Finanças</div>
+      <div class="app-footer-tagline">Organizador pessoal de finanças</div>
+      <div class="app-footer-divider"></div>
+      <nav class="app-footer-links">
+        <span onclick="openModal('mPrivacyPolicy')">Privacidade</span>
+        <span class="app-footer-dot">·</span>
+        <span onclick="showView('changelog')">Novidades</span>
+        <span class="app-footer-dot">·</span>
+        <span onclick="showView('profile')">Meu Perfil</span>
+        <span class="app-footer-dot">·</span>
+        <span onclick="openBackup()">Backup</span>
+      </nav>
+      <div class="app-footer-copy">© 2026 Finanças · Dados protegidos conforme a LGPD</div>
+      <div class="app-footer-version" id="footerVersion"></div>
+    </footer>
   </div>
 </main>
 </div>

@@ -1187,6 +1187,81 @@ body.sb-desktop-hidden .sb-topbar-toggle .sb-icon-show { display: flex; }
   border: 1px solid #ff8c0030;
 }
 
+/* ── FOOTER INSTITUCIONAL ── */
+.app-footer {
+  text-align: center;
+  padding: 32px 24px 48px;
+  margin-top: 40px;
+  border-top: 1px solid var(--border);
+}
+
+.app-footer-logo {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  font-family: var(--mono);
+  letter-spacing: 1.5px;
+  margin-bottom: 4px;
+}
+
+.app-footer-tagline {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--mono);
+  margin-bottom: 0;
+}
+
+.app-footer-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px auto;
+  max-width: 200px;
+}
+
+.app-footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.app-footer-links span {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--mono);
+  cursor: pointer;
+  transition: color .15s;
+}
+
+.app-footer-links span:hover {
+  color: var(--accent);
+}
+
+.app-footer-dot {
+  cursor: default !important;
+  opacity: .4;
+}
+
+.app-footer-dot:hover {
+  color: var(--text3) !important;
+}
+
+.app-footer-copy {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: var(--mono);
+  margin-bottom: 3px;
+}
+
+.app-footer-version {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: var(--mono);
+  opacity: .6;
+}
+
 .amt {
   font-family: var(--mono);
   font-size: 13px;
@@ -3138,9 +3213,7 @@ textarea {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
-    padding: 16px 12px;
-    height: auto;
+    padding: 16px 12px 80px;
   }
 
   .sb-overlay.open {
@@ -3207,19 +3280,18 @@ textarea {
     grid-template-columns: 1fr;
   }
 
-  table th:nth-child(n+4),
-  table td:nth-child(n+4) {
-    display: none;
-  }
-
   /* ── Layout empilhado para linhas de lançamento no mobile ── */
   .tbl-block {
     overflow-x: hidden;
   }
 
   .tbl-block table {
+    display: block;
     width: 100%;
-    border-collapse: collapse;
+  }
+
+  .tbl-block tbody {
+    display: block;
   }
 
   /* Oculta cabeçalho — layout empilhado dispensa labels */
@@ -3227,50 +3299,51 @@ textarea {
     display: none;
   }
 
-  /* Cada linha vira um grid 2 colunas × 2 linhas */
+  /* Linha vira bloco com padding direito para o valor */
   .entry-row {
-    display: grid !important;
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
-    column-gap: 8px;
-    row-gap: 3px;
-    padding: 9px 12px;
+    display: block !important;
+    position: relative;
+    padding: 10px 90px 10px 12px;
     border-bottom: 1px solid var(--border);
+    box-sizing: border-box;
+    width: 100%;
   }
 
   .entry-row td {
     display: block !important;
     border: none !important;
     padding: 0 !important;
+    width: auto !important;
   }
 
-  /* Col 1: Descrição — linha 1 */
+  /* Descrição — linha 1 */
   .entry-row td:nth-child(1) {
-    grid-column: 1;
-    grid-row: 1;
     font-size: 13px;
+    color: var(--text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    margin-bottom: 4px;
   }
 
-  /* Col 2: Badge (De quem / Tipo) — linha 2 */
+  /* Badge (De quem / Tipo) — linha 2 */
   .entry-row td:nth-child(2) {
-    grid-column: 1;
-    grid-row: 2;
     font-size: 11px;
-    opacity: .85;
+    opacity: .9;
+    min-height: 18px;
   }
 
-  /* Col 3: Valor — abrange linhas 1-2, alinhado à direita */
+  /* Valor — absoluto, centralizado verticalmente à direita */
   .entry-row td:nth-child(3) {
-    grid-column: 2;
-    grid-row: 1 / 3;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
     text-align: right;
     font-size: 13px;
     font-weight: 600;
     white-space: nowrap;
-    align-self: center;
+    width: 80px !important;
   }
 
   .foot-row {
@@ -3365,10 +3438,11 @@ textarea {
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .content {
-    padding-bottom: calc(28px + env(safe-area-inset-bottom));
+  @media (max-width: 768px) {
+    .content {
+      padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    }
   }
-
 }
 
 /* ── css/pj/pj-variables.css ── */
