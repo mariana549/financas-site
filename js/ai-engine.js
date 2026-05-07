@@ -620,7 +620,7 @@ function _sectionToEntries(key, merged) {
     installment: false, installCurrent: null, installTotal: null, entryType: 'boleto'
   }));
   if (key === 'pixIn') return merged.pixIn.map(it => ({
-    desc: `Pix recebido${it.nome ? ' — ' + it.nome : ''}`, amount: it.valor, date: _fmtDate(it.data),
+    desc: it.nome || 'Pix recebido', amount: it.valor, date: _fmtDate(it.data),
     category: null, owner: 'other', person: it.nome || null,
     installment: false, installCurrent: null, installTotal: null, entryType: 'pixin'
   }));
@@ -738,13 +738,13 @@ function _parsePixInText(text) {
     const mD = line.match(/^(\d{2}\/\d{2}\/\d{4})\s+-\s+R\$\s*([\d\.]+,\d{2})\s+-\s+(.+)$/);
     if (mD) {
       const a = _parseValor(mD[2]); const name = mD[3].trim();
-      if (a > 0) entries.push({ desc: `Pix recebido — ${name}`, amount: a, date: _fmtDate(mD[1]), owner: 'other', person: name, installment: false, installCurrent: null, installTotal: null, entryType: 'pixin' });
+      if (a > 0) entries.push({ desc: name, amount: a, date: _fmtDate(mD[1]), owner: 'other', person: name, installment: false, installCurrent: null, installTotal: null, entryType: 'pixin' });
       continue;
     }
     const m = line.match(/^R\$\s*([\d\.]+,\d{2})\s+-\s+(.+)$/);
     if (m) {
       const a = _parseValor(m[1]); const name = m[2].trim();
-      if (a > 0) entries.push({ desc: `Pix recebido — ${name}`, amount: a, date: null, owner: 'other', person: name, installment: false, installCurrent: null, installTotal: null, entryType: 'pixin' });
+      if (a > 0) entries.push({ desc: name, amount: a, date: null, owner: 'other', person: name, installment: false, installCurrent: null, installTotal: null, entryType: 'pixin' });
     }
   }
   return entries;

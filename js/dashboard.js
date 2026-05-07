@@ -167,9 +167,21 @@ function renderBankSection(m, bk) {
 
   if (bk) {
     const sorted = [...bk.entries].filter(e => e.type !== 'boleto').sort((a, b_) => new Date(b_.date) - new Date(a.date));
-    const bMine = sorted.filter(e => e.owner === 'mine').reduce((s, e) => s + e.amount, 0);
-    const bOth  = sorted.filter(e => e.owner === 'other').reduce((s, e) => s + e.amount, 0);
-    const rows = sorted.length ? sorted.map(e => {
+
+    // Assinaturas mensais vinculadas a este banco no mês corrente
+    const bankSubs = (S.subscriptions || []).filter(s =>
+      s.bank === bk.name && s.cycle === 'mensal' && isSubActiveInMonth(s, S.currentMonth)
+    );
+
+    // Totais corretos: inclui parte de cada dono em entradas divididas + assinaturas
+    const bMine = sorted.filter(e => e.owner === 'mine').reduce((s, e) => s + e.amount, 0)
+      + sorted.filter(e => e.owner === 'split').reduce((s, e) => s + e.amount * (e.splitRatio ?? 0.5), 0)
+      + bankSubs.reduce((s, sub) => s + calcMySubPart(sub), 0);
+    const bOth = sorted.filter(e => e.owner === 'other').reduce((s, e) => s + e.amount, 0)
+      + sorted.filter(e => e.owner === 'split').reduce((s, e) => s + e.amount * (1 - (e.splitRatio ?? 0.5)), 0)
+      + bankSubs.filter(s => (s.owner || 'mine') !== 'mine').reduce((s, sub) => s + (sub.amount - calcMySubPart(sub)), 0);
+
+    const entryRows = sorted.map(e => {
       const ib = e.type === 'installment'
         ? `<span class="bm bm-inst">${e.installCurrent ?? '?'}/${e.installTotal ?? '?'}</span>`
         : e.type === 'pix' ? `<span class="bm bm-pix">pix</span>`
@@ -191,7 +203,28 @@ function renderBankSection(m, bk) {
         <td>${wb}</td>
         <td><span class="amt" style="color:${amtColor}">R$ ${fmt(e.amount)}</span></td>
       </tr>`;
-    }).join('') : `<tr><td colspan="3"><div class="empty" style="padding:20px">nenhum lançamento</div></td></tr>`;
+    }).join('');
+
+    const subRows = bankSubs.map(sub => {
+      const owner = sub.owner || 'mine';
+      const splitN = (sub.splitPeople?.length ?? 0) + 1;
+      const wb = owner === 'split'
+        ? `<span class="bm bm-split">÷${splitN}</span>`
+        : owner === 'other'
+          ? `<span class="bm bm-other">${(sub.splitPeople || ['?'])[0]}</span>`
+          : `<span class="bm bm-mine">eu</span>`;
+      const amtColor = owner === 'other' ? 'var(--blue)' : owner === 'split' ? 'var(--purple)' : 'var(--text)';
+      return `<tr class="entry-row" onclick="showView('subs')">
+        <td>${sub.name} <span class="bm bm-rec">assinatura</span></td>
+        <td>${wb}</td>
+        <td><span class="amt" style="color:${amtColor}">R$ ${fmt(sub.amount)}</span></td>
+      </tr>`;
+    }).join('');
+
+    const hasRows = sorted.length || bankSubs.length;
+    const rows = hasRows
+      ? entryRows + subRows
+      : `<tr><td colspan="3"><div class="empty" style="padding:20px">nenhum lançamento</div></td></tr>`;
 
     html += `
       <div class="tbl-block">
@@ -203,7 +236,7 @@ function renderBankSection(m, bk) {
           <thead><tr><th>Descrição</th><th>De quem</th><th>Valor</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
-        ${sorted.length ? `
+        ${hasRows ? `
           <div class="foot-row">
             <div class="foot-grp"><span class="foot-lbl">Meus</span><span class="foot-amt" style="color:var(--accent)">R$ ${fmt(bMine)}</span></div>
             <div class="foot-grp"><span class="foot-lbl">Outros</span><span class="foot-amt" style="color:var(--blue)">R$ ${fmt(bOth)}</span></div>
