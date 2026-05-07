@@ -53,7 +53,7 @@ function injectModals() {
       <div class="tgl-o" id="tInstall" onclick="setEType('installment')">Parcelado</div>
       <div class="tgl-o" id="tPix" onclick="setEType('pix')">Pix</div>
       <div class="tgl-o" id="tDebit" onclick="setEType('debit')">Débito</div>
-      <div class="tgl-o" id="tCash" onclick="setEType('cash')">Dinheiro</div>
+      <div class="tgl-o" id="tBoleto" onclick="setEType('boleto')">Boleto</div>
     </div>
   </div>
   <div id="installGroup" style="display:none">
@@ -188,6 +188,25 @@ function injectModals() {
     <button id="pixDeleteBtn" class="btn btn-danger btn-sm" style="display:none" onclick="deletePixCurrent()">Excluir</button>
     <button class="btn btn-ghost btn-sm" onclick="closeModal('mPix')">Cancelar</button>
     <button class="btn btn-primary btn-sm" onclick="savePix()">Salvar</button>
+  </div>
+</div></div>
+
+<!-- Boleto -->
+<div class="modal-overlay" id="mBoleto"><div class="modal modal-sm">
+  <div class="modal-title">Boleto <button class="modal-close" onclick="closeModal('mBoleto')">×</button></div>
+  <div class="fg"><label>Descrição</label><input type="text" id="blDesc" placeholder="Conta de luz, aluguel, condomínio..."></div>
+  <div class="fr">
+    <div class="fg"><label>Valor (R$)</label><input type="number" id="blAmt" step="0.01" placeholder="0,00"></div>
+    <div class="fg"><label>Data</label><input type="date" id="blDate"></div>
+  </div>
+  <div class="fg"><label>Banco</label><select id="blBank"></select></div>
+  <div class="fg"><label>Observação (opcional)</label><input type="text" id="blObs" placeholder="vencimento, referência..."></div>
+  <input type="hidden" id="editBoletoId">
+  <input type="hidden" id="editBoletoBank">
+  <div class="modal-actions">
+    <button id="boletoDeleteBtn" class="btn btn-danger btn-sm" style="display:none" onclick="deleteBoletoCurrent()">Excluir</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mBoleto')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="saveBoleto()">Salvar</button>
   </div>
 </div></div>
 

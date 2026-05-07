@@ -52,6 +52,7 @@ const JS_FILES = [
   'js/entries.js',
   'js/installments.js',
   'js/pix.js',
+  'js/boleto.js',
   'js/recurrents.js',
   'js/income.js',
   'js/subscriptions.js',

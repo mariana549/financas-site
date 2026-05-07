@@ -944,7 +944,19 @@ function renderAIEntries() {
     <datalist id="aiPersonList">${knownPeople.map(p => `<option value="${p.replace(/"/g,'&quot;')}">`).join('')}</datalist>
     <datalist id="aiCatList">${knownCats.map(c => `<option value="${c.replace(/"/g,'&quot;')}">`).join('')}</datalist>`;
 
-  document.getElementById('aiEntryList').innerHTML = datalists + S.aiParsed.map((e, i) => {
+  // Pix recebidos: serão importados automaticamente → mostrar só um banner informativo
+  const pixInAll = S.aiParsed.filter(e => e.entryType === 'pixin');
+  const displayItems = S.aiParsed.filter(e => e.entryType !== 'pixin');
+  const pixInBanner = pixInAll.length
+    ? `<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12px;color:var(--text2)">
+        ↙ <strong style="color:var(--green)">${pixInAll.length} pix recebido${pixInAll.length > 1 ? 's' : ''}</strong>
+        — serão importados automaticamente como entradas (R$ ${fmt(pixInAll.reduce((s,e)=>s+e.amount,0))})
+       </div>`
+    : '';
+
+  // Usa o índice original de S.aiParsed para os IDs dos checkboxes (importAIEntries busca por aic+i)
+  document.getElementById('aiEntryList').innerHTML = datalists + pixInBanner + displayItems.map((e) => {
+    const i = S.aiParsed.indexOf(e);
     const destLabel = _DEST_LABEL[e.entryType] || '→ banco';
     const isMine = e.isMine !== false;
     const typeOpts = [
@@ -998,10 +1010,11 @@ async function importAIEntries() {
   if (!m) { alert('Mês não encontrado.'); return; }
 
   const checked = S.aiParsed.filter((e, i) => document.getElementById('aic' + i)?.checked && e.amount > 0);
-  if (!checked.length) { alert('Nenhum item selecionado.'); return; }
+  // Pix recebidos: sempre importar todos (não aparecem na lista com checkbox)
+  const pixInItems = S.aiParsed.filter(e => e.entryType === 'pixin' && e.amount > 0);
+  if (!checked.length && !pixInItems.length) { alert('Nenhum item selecionado.'); return; }
 
-  const bankItems = checked.filter(e => !['pixin', 'pixout'].includes(e.entryType));
-  const pixInItems  = checked.filter(e => e.entryType === 'pixin');
+  const bankItems   = checked.filter(e => !['pixin', 'pixout'].includes(e.entryType));
   const pixOutItems = checked.filter(e => e.entryType === 'pixout');
 
   setSyncing(true);
@@ -1018,7 +1031,7 @@ async function importAIEntries() {
 
     for (let i = 0; i < bankItems.length; i++) {
       const e = bankItems[i];
-      const entryBaseType = (e.entryType === 'debito' || e.entryType === 'boleto') ? 'debit' : 'normal';
+      const entryBaseType = e.entryType === 'boleto' ? 'boleto' : e.entryType === 'debito' ? 'debit' : 'normal';
 
       // owner deve ser 'mine' | 'other' (nunca null), person é o nome quando 'other'
       const isMine = e.isMine !== false;

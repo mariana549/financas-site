@@ -80,11 +80,12 @@ function openEntryM(editId = null, editBank = null) {
 
 function setEType(t) {
   S.entryType = t;
-  ['tNormal', 'tInstall', 'tPix', 'tDebit', 'tCash'].forEach(id => {
+  ['tNormal', 'tInstall', 'tPix', 'tDebit', 'tBoleto'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
-  const map = { normal: 'tNormal', installment: 'tInstall', pix: 'tPix', debit: 'tDebit', cash: 'tCash' };
+  // cash → boleto (compatibilidade com entradas antigas)
+  const map = { normal: 'tNormal', installment: 'tInstall', pix: 'tPix', debit: 'tDebit', boleto: 'tBoleto', cash: 'tBoleto' };
   const el = document.getElementById(map[t]);
   if (el) el.classList.add('active');
   const installGroup = document.getElementById('installGroup');
@@ -485,10 +486,10 @@ function showEntryDetail(entry, bankName) {
         <div class="detail-item-label">Parcela</div>
         <div class="detail-item-val">${entry.installCurrent}/${entry.installTotal} · R$ ${fmt(entry.amount * entry.installTotal)} total</div>
       </div>` : ''}
-      ${(entry.type === 'pix' || entry.type === 'debit' || entry.type === 'cash') ? `
+      ${(entry.type === 'pix' || entry.type === 'debit' || entry.type === 'cash' || entry.type === 'boleto') ? `
       <div class="detail-item">
         <div class="detail-item-label">Tipo</div>
-        <div class="detail-item-val">${entry.type === 'pix' ? 'Pix' : entry.type === 'debit' ? 'Débito' : 'Dinheiro'}</div>
+        <div class="detail-item-val">${entry.type === 'pix' ? 'Pix' : entry.type === 'debit' ? 'Débito' : entry.type === 'boleto' ? 'Boleto' : 'Dinheiro'}</div>
       </div>` : ''}
     </div>
     ${entry.note ? `<div class="note-box">${entry.note}</div>` : ''}`;

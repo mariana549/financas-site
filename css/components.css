@@ -433,6 +433,12 @@
   border: 1px solid #facc1530;
 }
 
+.bm-boleto {
+  background: #ff8c0015;
+  color: var(--orange);
+  border: 1px solid #ff8c0030;
+}
+
 .amt {
   font-family: var(--mono);
   font-size: 13px;
