@@ -146,9 +146,11 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// ── Detecta atualização do SW e recarrega automaticamente ──
+// ── Detecta atualização do SW — recarrega apenas se updateNotify ativo ──
+window._swUpdated = false;
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    window.location.reload();
+    window._swUpdated = true;
+    if (S.appSettings?.updateNotify) window.location.reload();
   });
 }

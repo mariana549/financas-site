@@ -47,7 +47,7 @@ async function loadAllFromSupabase() {
     const cid = S.activeContext.id;
 
     // ── Fase 2: dados filtrados pelo contexto ativo ──
-    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes, rmRes, dvRes, clRes, anRes] = await Promise.all([
+    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes, rmRes, dvRes, clRes, anRes, asRes] = await Promise.all([
       sb.from('months').select('*').eq('user_id', uid).eq('context_id', cid).order('created_at'),
       sb.from('banks').select('*').eq('user_id', uid).eq('context_id', cid),
       sb.from('transacoes').select('*').eq('user_id', uid).eq('context_id', cid),
@@ -61,6 +61,7 @@ async function loadAllFromSupabase() {
       sb.from('dev_users').select('*').order('added_at'),
       sb.from('changelog_entries').select('*').order('position', { ascending: false }).order('created_at', { ascending: false }),
       sb.from('announcements').select('*').order('created_at', { ascending: false }),
+      sb.from('app_settings').select('*'),
     ]);
 
     // ── Months + Banks (por mês) + Entries ──
@@ -168,6 +169,14 @@ async function loadAllFromSupabase() {
 
     // profile já foi carregado na Fase 1; apenas atualiza anúncios
     S.announcements  = (anRes?.data || []).map(r => ({ id: r.id, message: r.message, active: r.active, createdAt: r.created_at }));
+
+    // ── App Settings ──
+    const settingsMap = {};
+    (asRes?.data || []).forEach(r => { settingsMap[r.key] = r.value; });
+    S.appSettings = {
+      pjAvailable:  settingsMap['pj_available']  === 'true',
+      updateNotify: settingsMap['update_notify'] === 'true',
+    };
     S.months       = months;
     sortMonths();
     S.pixEntries   = pixEntries;

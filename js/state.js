@@ -11,6 +11,7 @@ function defaultState() {
     contexts: [], activeContext: null,
     pjClients: [], pjTaxes: [],
     profile: { nickname: '', pjEnabled: false },
+    appSettings: { pjAvailable: false, updateNotify: false },
     currentView: 'dash', entryOwner: 'mine', entryType: 'normal',
     incomeOwner: 'mine', incomeType: 'Salário', pickedColor: 'azure',
     theme: 'dark', aiParsed: [], aiFileData: null, aiFileType: null,

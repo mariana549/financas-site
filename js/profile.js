@@ -138,6 +138,7 @@ function renderProfile() {
           ${privacyOn ? '🙈 Ativado' : '👁 Desativado'}
         </button>
       </div>
+      ${S.appSettings?.pjAvailable ? `
       <div class="profile-row" style="cursor:default">
         <div class="profile-row-info">
           <span class="profile-row-title">Modo PJ</span>
@@ -147,7 +148,14 @@ function renderProfile() {
           ${S.profile?.pjEnabled ? '🏢 Ativado' : '💼 Desativado'}
         </button>
       </div>
-      ${S.profile?.pjEnabled ? _profilePJSubContextsHtml() : ''}
+      ${S.profile?.pjEnabled ? _profilePJSubContextsHtml() : ''}` : `
+      <div class="profile-row" style="cursor:default;opacity:.5;pointer-events:none">
+        <div class="profile-row-info">
+          <span class="profile-row-title">Modo PJ</span>
+          <span class="profile-row-sub">Ativa contexto separado para pessoa jurídica</span>
+        </div>
+        <span class="profile-badge-soon">em breve</span>
+      </div>`}
       <div class="profile-row" style="cursor:default" id="profilePushRow">
         <div class="profile-row-info">
           <span class="profile-row-title">Notificações push</span>
