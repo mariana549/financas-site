@@ -250,7 +250,7 @@ function renderBankSection(m, bk) {
 function renderPixSection(pixL, pixT) {
   if (!pixL.length) return '';
   const prows = [...pixL].sort((a, b_) => new Date(b_.date) - new Date(a.date)).map(p => `
-    <tr class="entry-row" onclick="openPixM(${p.id})">
+    <tr class="entry-row" data-pix-id="${p.id}" onclick="openPixM(${p.id})">
       <td>${p.to}${p.obs ? ` <span style="color:var(--text3);font-size:11px">· ${p.obs}</span>` : ''}
         ${p.bank ? ` <span class="bm bm-cat">${p.bank}</span>` : ''}</td>
       <td><span class="bm bm-pix">pix</span></td>
@@ -266,7 +266,7 @@ function renderPixSection(pixL, pixT) {
 function renderBoletosSection(boletoL, boletoT) {
   if (!boletoL.length) return '';
   const brows = [...boletoL].sort((a, b_) => new Date(b_.date) - new Date(a.date)).map(bl => `
-    <tr class="entry-row" onclick="openBoletoM('${bl.id}', '${bl.bankName}')">
+    <tr class="entry-row" data-boleto-id="${bl.id}" data-boleto-bank="${bl.bankName}" onclick="openBoletoM('${bl.id}', '${bl.bankName}')">
       <td>${bl.desc}${bl.note ? ` <span style="color:var(--text3);font-size:11px">· ${bl.note}</span>` : ''}
         ${bl.bankName ? ` <span class="bm bm-cat">${bl.bankName}</span>` : ''}</td>
       <td><span class="bm bm-boleto">boleto</span></td>
@@ -282,7 +282,7 @@ function renderBoletosSection(boletoL, boletoT) {
 function renderRecurrentsSection(recL, recT) {
   if (!recL.length) return '';
   const rrows = recL.map(r => `
-    <tr class="entry-row" onclick="openRecM(${r.id})">
+    <tr class="entry-row" data-rec-id="${r.id}" onclick="openRecM(${r.id})">
       <td>${r.desc}${r.day ? ` <span style="color:var(--text3);font-size:11px">· dia ${r.day}</span>` : ''}</td>
       <td><span class="bm bm-rec">fixo</span></td>
       <td><span class="amt" style="color:var(--orange)">R$ ${fmt(r.amount)}</span></td>
@@ -309,7 +309,7 @@ function renderEntradasSection(incL, incMyT, incOthT, incPplMap) {
       : incType === 'Débito' ? `<span class="bm bm-debit">débito</span>`
       : incType === 'Dinheiro' ? `<span class="bm bm-cash">dinheiro</span>`
       : `<span class="bm bm-cat">${incType}</span>`;
-    return `<tr class="entry-row" onclick="openIncomeM('${String(i.id).replace(/'/g,"\\'")}')">
+    return `<tr class="entry-row" data-income-id="${i.id}" onclick="openIncomeM('${String(i.id).replace(/'/g,"\\'")}')">
       <td>${i.desc} ${typeBadge}${i.from ? ` <span style="color:var(--text3);font-size:11px">· ${i.from}</span>` : ''}</td>
       <td>${i.owner === 'other' ? `<span class="bm bm-other">${i.person}</span>` : `<span class="bm bm-mine">meu</span>`}</td>
       <td><span class="amt" style="color:var(--green)">R$ ${fmt(i.amount)}</span></td>
