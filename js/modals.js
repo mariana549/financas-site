@@ -51,9 +51,7 @@ function injectModals() {
     <div class="tgl">
       <div class="tgl-o active" id="tNormal" onclick="setEType('normal')">Normal</div>
       <div class="tgl-o" id="tInstall" onclick="setEType('installment')">Parcelado</div>
-      <div class="tgl-o" id="tPix" onclick="setEType('pix')">Pix</div>
       <div class="tgl-o" id="tDebit" onclick="setEType('debit')">Débito</div>
-      <div class="tgl-o" id="tBoleto" onclick="setEType('boleto')">Boleto</div>
     </div>
   </div>
   <div id="installGroup" style="display:none">
@@ -207,6 +205,25 @@ function injectModals() {
     <button id="boletoDeleteBtn" class="btn btn-danger btn-sm" style="display:none" onclick="deleteBoletoCurrent()">Excluir</button>
     <button class="btn btn-ghost btn-sm" onclick="closeModal('mBoleto')">Cancelar</button>
     <button class="btn btn-primary btn-sm" onclick="saveBoleto()">Salvar</button>
+  </div>
+</div></div>
+
+<!-- Dinheiro -->
+<div class="modal-overlay" id="mDinheiro"><div class="modal modal-sm">
+  <div class="modal-title">💵 Dinheiro <button class="modal-close" onclick="closeModal('mDinheiro')">×</button></div>
+  <div class="fg"><label>Descrição</label><input type="text" id="dnDesc" placeholder="Mercado, restaurante, transporte..."></div>
+  <div class="fr">
+    <div class="fg"><label>Valor (R$)</label><input type="number" id="dnAmt" step="0.01" placeholder="0,00"></div>
+    <div class="fg"><label>Data</label><input type="date" id="dnDate"></div>
+  </div>
+  <div class="fg"><label>Banco (de onde saiu)</label><select id="dnBank"></select></div>
+  <div class="fg"><label>Observação (opcional)</label><input type="text" id="dnObs" placeholder="detalhe, motivo..."></div>
+  <input type="hidden" id="editDinheiroId">
+  <input type="hidden" id="editDinheiroBank">
+  <div class="modal-actions">
+    <button id="dinheiroDeleteBtn" class="btn btn-danger btn-sm" style="display:none" onclick="deleteDinheiroCurrent()">Excluir</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mDinheiro')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="saveDinheiro()">Salvar</button>
   </div>
 </div></div>
 

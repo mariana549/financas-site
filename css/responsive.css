@@ -280,6 +280,12 @@
   .pcard-val {
     font-size: 15px;
   }
+
+  .bm {
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 9px;
+  }   
 }
 
 /* ── Desabilitar backdrop-filter no mobile (muito pesado no Android Chrome) ── */

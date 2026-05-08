@@ -441,7 +441,7 @@
 
 /* ── FOOTER INSTITUCIONAL ── */
 .app-footer {
-  margin-top: auto;    /* gruda no fundo quando conteúdo é curto */
+   margin-top: auto; /*gruda no fundo quando conteúdo é curto */
   flex-shrink: 0;
   border-top: 1px solid var(--border);
   padding: 16px 28px 18px;
@@ -527,8 +527,8 @@
   .app-footer-body {
     flex-direction: row;
     align-items: center;
-    justify-content: flex-start;
-    text-align: left;
+    justify-content: center;
+    text-align: center;
     gap: 0;
     margin-bottom: 8px;
   }
@@ -536,6 +536,7 @@
   .app-footer-brand {
     flex-shrink: 0;
     padding-right: 20px;
+    text-align: right;
   }
 
   /* Desktop: barra vertical */
@@ -548,10 +549,6 @@
   .app-footer-links {
     align-items: flex-start;
     gap: 4px;
-  }
-
-  .app-footer-copy {
-    text-align: left;
   }
 }
 

@@ -166,7 +166,7 @@ function renderBankSection(m, bk) {
   let html = `<div class="sec-title" style="margin-bottom:8px">Bancos</div><div class="bank-tabs">${bkTabs}</div>`;
 
   if (bk) {
-    const sorted = [...bk.entries].filter(e => e.type !== 'boleto').sort((a, b_) => new Date(b_.date) - new Date(a.date));
+    const sorted = [...bk.entries].filter(e => e.type !== 'boleto' && e.type !== 'cash').sort((a, b_) => new Date(b_.date) - new Date(a.date));
 
     // Assinaturas mensais vinculadas a este banco no mês corrente
     const bankSubs = (S.subscriptions || []).filter(s =>
@@ -247,7 +247,7 @@ function renderBankSection(m, bk) {
   return html;
 }
 
-function renderPixSection(pixL, pixT) {
+function renderPixSection(pixL) {
   if (!pixL.length) return '';
   const prows = [...pixL].sort((a, b_) => new Date(b_.date) - new Date(a.date)).map(p => `
     <tr class="entry-row" data-pix-id="${p.id}" onclick="openPixM(${p.id})">
@@ -258,12 +258,11 @@ function renderPixSection(pixL, pixT) {
     </tr>`).join('');
   return `
     <div class="tbl-block">
-      <div class="tbl-head"><span class="tbl-title">Pix Enviados</span><span class="tbl-total" style="color:var(--green)">R$ ${fmt(pixT)}</span></div>
       <table><thead><tr><th>Para</th><th>Tipo</th><th>Valor</th></tr></thead><tbody>${prows}</tbody></table>
     </div>`;
 }
 
-function renderBoletosSection(boletoL, boletoT) {
+function renderBoletosSection(boletoL) {
   if (!boletoL.length) return '';
   const brows = [...boletoL].sort((a, b_) => new Date(b_.date) - new Date(a.date)).map(bl => `
     <tr class="entry-row" data-boleto-id="${bl.id}" data-boleto-bank="${bl.bankName}" onclick="openBoletoM('${bl.id}', '${bl.bankName}')">
@@ -274,12 +273,26 @@ function renderBoletosSection(boletoL, boletoT) {
     </tr>`).join('');
   return `
     <div class="tbl-block">
-      <div class="tbl-head"><span class="tbl-title">Boletos</span><span class="tbl-total" style="color:var(--orange)">R$ ${fmt(boletoT)}</span></div>
       <table><thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th></tr></thead><tbody>${brows}</tbody></table>
     </div>`;
 }
 
-function renderRecurrentsSection(recL, recT) {
+function renderDinheiroSection(dinheiroL) {
+  if (!dinheiroL.length) return '';
+  const drows = [...dinheiroL].sort((a, b_) => new Date(b_.date) - new Date(a.date)).map(dn => `
+    <tr class="entry-row" data-dinheiro-id="${dn.id}" data-dinheiro-bank="${dn.bankName}" onclick="openDinheiroM('${dn.id}', '${dn.bankName}')">
+      <td>${dn.desc}${dn.note ? ` <span style="color:var(--text3);font-size:11px">· ${dn.note}</span>` : ''}
+        ${dn.bankName ? ` <span class="bm bm-cat">${dn.bankName}</span>` : ''}</td>
+      <td><span class="bm bm-cash">dinheiro</span></td>
+      <td><span class="amt">R$ ${fmt(dn.amount)}</span></td>
+    </tr>`).join('');
+  return `
+    <div class="tbl-block">
+      <table><thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th></tr></thead><tbody>${drows}</tbody></table>
+    </div>`;
+}
+
+function renderRecurrentsSection(recL) {
   if (!recL.length) return '';
   const rrows = recL.map(r => `
     <tr class="entry-row" data-rec-id="${r.id}" onclick="openRecM(${r.id})">
@@ -289,8 +302,37 @@ function renderRecurrentsSection(recL, recT) {
     </tr>`).join('');
   return `
     <div class="tbl-block">
-      <div class="tbl-head"><span class="tbl-title">Contas Fixas</span><span class="tbl-total" style="color:var(--orange)">R$ ${fmt(recT)}</span></div>
       <table><thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th></tr></thead><tbody>${rrows}</tbody></table>
+    </div>`;
+}
+
+function _dashToggle(key) {
+  if (!S._dashOpen) S._dashOpen = {};
+  S._dashOpen[key] = (S._dashOpen[key] === false) ? true : false;
+  const body = document.getElementById('dsh-body-' + key);
+  const icon = document.getElementById('dsh-icon-' + key);
+  const open = S._dashOpen[key] !== false;
+  if (body) body.style.display = open ? '' : 'none';
+  if (icon) icon.textContent = open ? '▾' : '▸';
+}
+
+function _dashSection(key, label, color, totalStr, innerHtml) {
+  if (!innerHtml) return '';
+  if (!S._dashOpen) S._dashOpen = {};
+  const open = S._dashOpen[key] !== false;
+  S._dashOpen[key] = open;
+  return `
+    <div style="margin-bottom:12px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <div onclick="_dashToggle('${key}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;background:var(--bg3);user-select:none">
+        <span style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">${label}</span>
+        <span style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:${color}">${totalStr}</span>
+          <span id="dsh-icon-${key}" style="color:var(--text3);font-size:12px">${open ? '▾' : '▸'}</span>
+        </span>
+      </div>
+      <div id="dsh-body-${key}" style="${open ? '' : 'display:none'}">
+        ${innerHtml}
+      </div>
     </div>`;
 }
 
@@ -550,14 +592,16 @@ function _renderDashImpl() {
   const recL = S.recurrents[S.currentMonth] || [];
   const incL = S.incomes[S.currentMonth] || [];
   const boletoL = allE.filter(e => e.type === 'boleto');
+  const dinheiroL = allE.filter(e => e.type === 'cash');
 
   const myT  = allE.filter(e => e.owner === 'mine').reduce((s, e) => s + e.amount, 0)
     + allE.filter(e => e.owner === 'split').reduce((s, e) => s + e.amount * (e.splitRatio ?? 0.5), 0);
   const othT = allE.filter(e => e.owner === 'other').reduce((s, e) => s + e.amount, 0)
     + allE.filter(e => e.owner === 'split').reduce((s, e) => s + e.amount * (1 - (e.splitRatio ?? 0.5)), 0);
-  const pixT    = pixL.reduce((s, p) => s + p.amount, 0);
-  const recT    = recL.reduce((s, r) => s + r.amount, 0);
-  const boletoT = boletoL.reduce((s, e) => s + e.amount, 0);
+  const pixT      = pixL.reduce((s, p) => s + p.amount, 0);
+  const recT      = recL.reduce((s, r) => s + r.amount, 0);
+  const boletoT   = boletoL.reduce((s, e) => s + e.amount, 0);
+  const dinheiroT = dinheiroL.reduce((s, e) => s + e.amount, 0);
 
   // ── Assinaturas: calcular partes e A Receber de terceiros ──
   let mySubM = 0, othSubM = 0;
@@ -630,7 +674,7 @@ function _renderDashImpl() {
 
   // ── Monta seção de gastos ──
   let gastoHTML = '';
-  if (!m.banks.length && !recL.length && !pixL.length && !boletoL.length) {
+  if (!m.banks.length && !recL.length && !pixL.length && !boletoL.length && !dinheiroL.length) {
     gastoHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">
@@ -644,10 +688,12 @@ function _renderDashImpl() {
         <button class="btn btn-primary" onclick="openEntryM()" style="margin-top:18px">+ Adicionar Lançamento</button>
       </div>`;
   } else {
-    gastoHTML += renderBankSection(m, bk);
-    gastoHTML += renderPixSection(pixL, pixT);
-    gastoHTML += renderBoletosSection(boletoL, boletoT);
-    gastoHTML += renderRecurrentsSection(recL, recT);
+    const bankT = myT + othT;
+    gastoHTML += _dashSection('banco', 'Lançamentos', 'var(--accent)', `R$ ${fmt(bankT)}`, renderBankSection(m, bk));
+    gastoHTML += _dashSection('pix', 'Pix', 'var(--green)', `R$ ${fmt(pixT)}`, renderPixSection(pixL));
+    gastoHTML += _dashSection('boleto', 'Boletos', 'var(--orange)', `R$ ${fmt(boletoT)}`, renderBoletosSection(boletoL));
+    gastoHTML += _dashSection('dinheiro', 'Dinheiro', 'var(--text)', `R$ ${fmt(dinheiroT)}`, renderDinheiroSection(dinheiroL));
+    gastoHTML += _dashSection('fixas', 'Contas Fixas', 'var(--orange)', `R$ ${fmt(recT)}`, renderRecurrentsSection(recL));
   }
 
   const goalBar = renderGoalBar(m, metaGasto);
@@ -669,9 +715,9 @@ function _renderDashImpl() {
     <div class="itab-content" id="itabc-gastos">
       <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px">
         <button class="btn btn-primary btn-sm" onclick="openEntryM()">+ Lançamento</button>
-        <button class="btn btn-ghost btn-sm" onclick="openModal('mBank')">+ Banco</button>
         <button class="btn btn-ghost btn-sm" onclick="openPixM()">+ Pix</button>
         <button class="btn btn-ghost btn-sm" onclick="openBoletoM()">+ Boleto</button>
+        <button class="btn btn-ghost btn-sm" onclick="openDinheiroM()">+ Dinheiro</button>
         <button class="btn btn-ghost btn-sm" onclick="openRecM()">+ Conta Fixa</button>
       </div>
       ${gastoHTML}

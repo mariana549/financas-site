@@ -1191,7 +1191,7 @@ body.sb-desktop-hidden .sb-topbar-toggle .sb-icon-show { display: flex; }
 
 /* ── FOOTER INSTITUCIONAL ── */
 .app-footer {
-  margin-top: auto;    /* gruda no fundo quando conteúdo é curto */
+   margin-top: auto; /*gruda no fundo quando conteúdo é curto */
   flex-shrink: 0;
   border-top: 1px solid var(--border);
   padding: 16px 28px 18px;
@@ -1277,8 +1277,8 @@ body.sb-desktop-hidden .sb-topbar-toggle .sb-icon-show { display: flex; }
   .app-footer-body {
     flex-direction: row;
     align-items: center;
-    justify-content: flex-start;
-    text-align: left;
+    justify-content: center;
+    text-align: center;
     gap: 0;
     margin-bottom: 8px;
   }
@@ -1286,6 +1286,7 @@ body.sb-desktop-hidden .sb-topbar-toggle .sb-icon-show { display: flex; }
   .app-footer-brand {
     flex-shrink: 0;
     padding-right: 20px;
+    text-align: right;
   }
 
   /* Desktop: barra vertical */
@@ -1298,10 +1299,6 @@ body.sb-desktop-hidden .sb-topbar-toggle .sb-icon-show { display: flex; }
   .app-footer-links {
     align-items: flex-start;
     gap: 4px;
-  }
-
-  .app-footer-copy {
-    text-align: left;
   }
 }
 
@@ -3448,6 +3445,12 @@ textarea {
   .pcard-val {
     font-size: 15px;
   }
+
+  .bm {
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 9px;
+  }   
 }
 
 /* ── Desabilitar backdrop-filter no mobile (muito pesado no Android Chrome) ── */

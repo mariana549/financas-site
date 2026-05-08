@@ -268,6 +268,13 @@ function initSwipeRows() {
       () => openRecM(row.dataset.recId)
     );
   });
+  // Dinheiro (← excluir, → editar)
+  document.querySelectorAll('#view-dash .entry-row[data-dinheiro-id]').forEach(row => {
+    _bindSwipe(row,
+      () => deleteDinheiro(row.dataset.dinheiroId),
+      () => openDinheiroM(row.dataset.dinheiroId, row.dataset.dinheiroBank)
+    );
+  });
 }
 
 // ── Fechar modal ao clicar fora ──

@@ -80,12 +80,11 @@ function openEntryM(editId = null, editBank = null) {
 
 function setEType(t) {
   S.entryType = t;
-  ['tNormal', 'tInstall', 'tPix', 'tDebit', 'tBoleto'].forEach(id => {
+  ['tNormal', 'tInstall', 'tDebit'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
-  // cash → boleto (compatibilidade com entradas antigas)
-  const map = { normal: 'tNormal', installment: 'tInstall', pix: 'tPix', debit: 'tDebit', boleto: 'tBoleto', cash: 'tBoleto' };
+  const map = { normal: 'tNormal', installment: 'tInstall', debit: 'tDebit' };
   const el = document.getElementById(map[t]);
   if (el) el.classList.add('active');
   const installGroup = document.getElementById('installGroup');
