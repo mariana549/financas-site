@@ -163,7 +163,7 @@ function renderBankSection(m, bk) {
         title="Excluir banco">×</button>
     </div>`).join('') + `<button class="btab" onclick="openModal('mBank')" style="opacity:.5">+</button>`;
 
-  let html = `<div class="sec-title">Bancos</div><div class="bank-tabs">${bkTabs}</div>`;
+  let html = `<div class="bank-tabs">${bkTabs}</div>`;
 
   if (bk) {
     const sorted = [...bk.entries].filter(e => e.type !== 'boleto' && e.type !== 'cash').sort((a, b_) => new Date(b_.date) - new Date(a.date));
