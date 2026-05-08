@@ -301,6 +301,9 @@ function renderRecurrentsSection(recL) {
       <td><span class="amt" style="color:var(--orange)">R$ ${fmt(r.amount)}</span></td>
     </tr>`).join('');
   return `
+    <div style="padding:10px 14px 4px;font-size:11px;color:var(--text3);background:var(--bg4);border-bottom:1px solid var(--border)">
+      ⚠️ Esta seção foi descontinuada — use <strong>Assinaturas</strong> para gastos mensais recorrentes ou <strong>Boleto</strong> para contas avulsas. Os dados abaixo são registros antigos; você pode excluí-los.
+    </div>
     <div class="tbl-block">
       <table><thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th></tr></thead><tbody>${rrows}</tbody></table>
     </div>`;
@@ -718,7 +721,6 @@ function _renderDashImpl() {
         <button class="btn btn-ghost btn-sm" onclick="openPixM()">+ Pix</button>
         <button class="btn btn-ghost btn-sm" onclick="openBoletoM()">+ Boleto</button>
         <button class="btn btn-ghost btn-sm" onclick="openDinheiroM()">+ Dinheiro</button>
-        <button class="btn btn-ghost btn-sm" onclick="openRecM()">+ Conta Fixa</button>
       </div>
       ${gastoHTML}
     </div>

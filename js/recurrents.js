@@ -3,6 +3,10 @@
 // ══════════════════════════════════════════════════
 
 function openRecM(editId = null) {
+  if (!editId) {
+    showToast('Contas Fixas foi descontinuado. Use Assinaturas ou Boleto.', 'info');
+    return;
+  }
   document.getElementById('editRecId').value = '';
   clr('rDesc', 'rAmt', 'rDay', 'rObs');
   const delBtn = document.getElementById('recDeleteBtn');
