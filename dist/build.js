@@ -20,6 +20,8 @@ const CSS_FILES = [
   'css/reports.css',
   'css/ai.css',
   'css/responsive.css',
+  'css/pj/pj-variables.css',
+  'css/pj/pj-layout.css',
 ];
 
 // Ordem crítica — cada arquivo pode chamar funções dos anteriores
@@ -41,6 +43,8 @@ const JS_FILES = [
   'js/dbs/db-dev.js',
   'js/dbs/db-profile.js',
   'js/dbs/db-contexts.js',
+  'js/dbs/db-clients.js',
+  'js/dbs/db-taxes.js',
   'js/dbs/db.js',
   'js/auth.js',
   'js/months.js',
@@ -48,6 +52,8 @@ const JS_FILES = [
   'js/entries.js',
   'js/installments.js',
   'js/pix.js',
+  'js/boleto.js',
+  'js/dinheiro.js',
   'js/recurrents.js',
   'js/income.js',
   'js/subscriptions.js',
@@ -60,6 +66,9 @@ const JS_FILES = [
   'js/changelog.js',
   'js/dev.js',
   'js/profile.js',
+  'js/clients.js',
+  'js/taxes.js',
+  'js/pj-reports.js',
   'js/modals.js',
   'js/main.js',
 ];
