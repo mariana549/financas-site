@@ -214,20 +214,26 @@
 
     <!-- ── Footer institucional ── -->
     <footer class="app-footer">
-      <div class="app-footer-logo">Finanças</div>
-      <div class="app-footer-tagline">Organizador pessoal de finanças</div>
-      <div class="app-footer-divider"></div>
-      <nav class="app-footer-links">
-        <span onclick="openModal('mPrivacyPolicy')">Privacidade</span>
-        <span class="app-footer-dot">·</span>
-        <span onclick="showView('changelog')">Novidades</span>
-        <span class="app-footer-dot">·</span>
-        <span onclick="showView('profile')">Meu Perfil</span>
-        <span class="app-footer-dot">·</span>
-        <span onclick="openBackup()">Backup</span>
-      </nav>
-      <div class="app-footer-copy">© 2026 Finanças · Dados protegidos conforme a LGPD</div>
-      <div class="app-footer-version" id="footerVersion"></div>
+      <div class="app-footer-body">
+        <div class="app-footer-brand">
+          <div class="app-footer-logo">Finanças</div>
+          <div class="app-footer-tagline">Organizador pessoal</div>
+        </div>
+        <div class="app-footer-divider"></div>
+        <nav class="app-footer-links">
+          <div class="app-footer-links-row">
+            <span onclick="openModal('mPrivacyPolicy')">Privacidade</span>
+            <span class="app-footer-dot">·</span>
+            <span onclick="showView('changelog')">Novidades</span>
+          </div>
+          <div class="app-footer-links-row">
+            <span onclick="showView('profile')">Meu Perfil</span>
+            <span class="app-footer-dot">·</span>
+            <span onclick="openBackup()">Backup</span>
+          </div>
+        </nav>
+      </div>
+      <div class="app-footer-copy">© 2026 Finanças · Dados protegidos conforme a LGPD · <span id="footerVersion"></span></div>
     </footer>
   </div>
 </main>

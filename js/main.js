@@ -64,7 +64,7 @@ applyTheme();
 // ── Preenche versão no footer ──
 (function () {
   const el = document.getElementById('footerVersion');
-  if (el && typeof APP_VERSION !== 'undefined') el.textContent = 'versão ' + APP_VERSION;
+  if (el && typeof APP_VERSION !== 'undefined') el.textContent = 'v' + APP_VERSION;
 })();
 
 // ── Aplicar modo privacidade salvo ──

@@ -88,7 +88,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    padding: 16px 12px 80px;
+    padding: 16px 12px 24px;
   }
 
   .sb-overlay.open {
@@ -315,7 +315,7 @@
 
   @media (max-width: 768px) {
     .content {
-      padding-bottom: calc(80px + env(safe-area-inset-bottom));
+      padding-bottom: calc(24px + env(safe-area-inset-bottom));
     }
   }
 }
