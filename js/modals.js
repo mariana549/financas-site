@@ -216,7 +216,6 @@ function injectModals() {
     <div class="fg"><label>Valor (R$)</label><input type="number" id="dnAmt" step="0.01" placeholder="0,00"></div>
     <div class="fg"><label>Data</label><input type="date" id="dnDate"></div>
   </div>
-  <div class="fg"><label>Banco (de onde saiu)</label><select id="dnBank"></select></div>
   <div class="fg"><label>Observação (opcional)</label><input type="text" id="dnObs" placeholder="detalhe, motivo..."></div>
   <input type="hidden" id="editDinheiroId">
   <input type="hidden" id="editDinheiroBank">
