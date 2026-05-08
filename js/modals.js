@@ -199,8 +199,12 @@ function injectModals() {
   </div>
   <div class="fg"><label>Banco</label><select id="blBank"></select></div>
   <div class="fg"><label>Observação (opcional)</label><input type="text" id="blObs" placeholder="vencimento, referência..."></div>
+  <div id="boletoStatusRow" style="display:none;margin-top:4px">
+    <button id="blPaidBtn" class="btn btn-ghost btn-sm" onclick="toggleBlPaid()">Marcar como pago</button>
+  </div>
   <input type="hidden" id="editBoletoId">
   <input type="hidden" id="editBoletoBank">
+  <input type="hidden" id="blPaid" value="0">
   <div class="modal-actions">
     <button id="boletoDeleteBtn" class="btn btn-danger btn-sm" style="display:none" onclick="deleteBoletoCurrent()">Excluir</button>
     <button class="btn btn-ghost btn-sm" onclick="closeModal('mBoleto')">Cancelar</button>

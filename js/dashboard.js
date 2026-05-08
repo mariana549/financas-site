@@ -367,22 +367,28 @@ function renderPixSection(pixL) {
 
 function renderBoletosSection(boletoL) {
   if (!boletoL.length) return '';
+  const _todayBol = today();
   const brows = [...boletoL].sort((a, b_) => new Date(b_.date) - new Date(a.date)).map(bl => {
     const _blOnclick = _selectMode
       ? `onclick="_selToggle('boleto', '${bl.id}', '${bl.bankName}')"`
       : `onclick="openBoletoM('${bl.id}', '${bl.bankName}')"`;
-    const _blCls = _selected.has(`boleto:${bl.id}`) ? ' sel-on' : '';
+    const _blCls = (_selected.has(`boleto:${bl.id}`) ? ' sel-on' : '') + (bl.paid ? ' agenda-paid' : '');
+    const isOverdue = bl.date && bl.date < _todayBol && !bl.paid;
+    const statusCls = bl.paid ? 'bm-boleto-paid' : isOverdue ? 'bm-boleto-overdue' : 'bm-boleto-pending';
+    const statusTxt = bl.paid ? 'pago ✓' : isOverdue ? 'vencido' : 'boleto';
+    const statusClick = _selectMode ? '' : `onclick="event.stopPropagation();toggleBoletoPaid('${bl.id}','${bl.bankName}')"`;
+    const amtColor = bl.paid ? 'var(--text3)' : isOverdue ? 'var(--red)' : 'var(--orange)';
     return `
     <tr class="entry-row${_blCls}" data-boleto-id="${bl.id}" data-boleto-bank="${bl.bankName}" ${_blOnclick}>
       <td>${bl.desc}${bl.note ? ` <span style="color:var(--text3);font-size:11px">· ${bl.note}</span>` : ''}
         ${bl.bankName ? ` <span class="bm bm-cat">${bl.bankName}</span>` : ''}</td>
-      <td><span class="bm bm-boleto">boleto</span></td>
-      <td><span class="amt" style="color:var(--orange)">R$ ${fmt(bl.amount)}</span></td>
+      <td><span class="bm ${statusCls}" ${statusClick} title="Clique para marcar como ${bl.paid ? 'pendente' : 'pago'}">${statusTxt}</span></td>
+      <td><span class="amt" style="color:${amtColor}">R$ ${fmt(bl.amount)}</span></td>
     </tr>`;
   }).join('');
   return `
     <div class="tbl-block">
-      <table><thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th></tr></thead><tbody>${brows}</tbody></table>
+      <table><thead><tr><th>Descrição</th><th>Status</th><th>Valor</th></tr></thead><tbody>${brows}</tbody></table>
     </div>`;
 }
 

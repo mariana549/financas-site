@@ -58,6 +58,7 @@ const JS_FILES = [
   'js/income.js',
   'js/subscriptions.js',
   'js/dashboard.js',
+  'js/agenda.js',
   'js/cobranca.js',
   'js/reports.js',
   'js/history.js',

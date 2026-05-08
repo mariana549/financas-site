@@ -168,6 +168,7 @@ function _toggleCtxDropdown(e) {
 }
 
 const VIEW_LABELS = {
+  agenda:    ['Agenda de Pagamentos', 'boletos · assinaturas · contas a vencer'],
   subs:      ['Assinaturas',          'por banco · com datas'],
   banks:     ['Bancos',               'cadastro global · estatísticas por banco'],
   reports:   ['Relatórios',           'selecione um mês'],
@@ -211,6 +212,7 @@ function showView(v) {
       tbActions.innerHTML = '<button class="btn btn-primary btn-sm" onclick="openGlobalBankM()">+ Adicionar</button>';
   }
 
+  if (v === 'agenda') renderAgenda();
   if (v === 'reports') {
     renderReports();
   }
