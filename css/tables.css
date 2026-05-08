@@ -113,3 +113,82 @@ tr:last-child td {
    font-size: 14px;
    font-weight: 500;
 }
+
+/* ── Seções colapsáveis do dashboard (dash-sec) ── */
+.dash-sec {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: var(--bg2);
+}
+
+.dash-sec-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  cursor: pointer;
+  background: var(--bg3);
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background .1s;
+}
+
+.dash-sec-hd:active { background: var(--bg4); }
+
+.dash-sec-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: var(--mono);
+}
+
+.dash-sec-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-sec-total {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dash-sec-icon {
+  color: var(--text3);
+  font-size: 11px;
+}
+
+/* tbl-block dentro da seção: sem frame próprio, sem margem */
+.dash-sec-body > .tbl-block {
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  margin-bottom: 0;
+  background: var(--bg2);
+}
+
+/* sec-title e bank-tabs dentro da seção: espaçamento adequado */
+.dash-sec-body > .sec-title {
+  display: block;
+  padding: 10px 16px 4px;
+  margin-bottom: 0;
+}
+
+.dash-sec-body > .bank-tabs {
+  margin: 0 14px 10px;
+}
+
+/* Aviso de descontinuação (recurrents) */
+.dash-sec-deprecation {
+  padding: 9px 16px;
+  font-size: 11px;
+  color: var(--text3);
+  background: var(--bg4);
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
