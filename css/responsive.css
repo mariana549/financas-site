@@ -88,9 +88,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
-    padding: 16px 12px;
-    height: auto;
+    padding: 16px 12px 24px;
   }
 
   .sb-overlay.open {
@@ -157,13 +155,70 @@
     grid-template-columns: 1fr;
   }
 
-  table th:nth-child(n+4),
-  table td:nth-child(n+4) {
+  /* ── Layout empilhado para linhas de lançamento no mobile ── */
+  .tbl-block {
+    overflow-x: hidden;
+  }
+
+  .tbl-block table {
+    display: block;
+    width: 100%;
+  }
+
+  .tbl-block tbody {
+    display: block;
+  }
+
+  /* Oculta cabeçalho — layout empilhado dispensa labels */
+  .tbl-block thead {
     display: none;
   }
 
-  .tbl-block {
-    overflow-x: auto;
+  /* Linha vira bloco com padding direito para o valor */
+  .entry-row {
+    display: block !important;
+    position: relative;
+    padding: 10px 90px 10px 12px;
+    border-bottom: 1px solid var(--border);
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .entry-row td {
+    display: block !important;
+    border: none !important;
+    padding: 0 !important;
+    width: auto !important;
+  }
+
+  /* Descrição — linha 1 */
+  .entry-row td:nth-child(1) {
+    font-size: 13px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 4px;
+  }
+
+  /* Badge (De quem / Tipo) — linha 2 */
+  .entry-row td:nth-child(2) {
+    font-size: 11px;
+    opacity: .9;
+    min-height: 18px;
+  }
+
+  /* Valor — absoluto, centralizado verticalmente à direita */
+  .entry-row td:nth-child(3) {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: right;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    width: 80px !important;
   }
 
   .foot-row {
@@ -225,6 +280,12 @@
   .pcard-val {
     font-size: 15px;
   }
+
+  .bm {
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 9px;
+  }   
 }
 
 /* ── Desabilitar backdrop-filter no mobile (muito pesado no Android Chrome) ── */
@@ -258,8 +319,9 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .content {
-    padding-bottom: calc(28px + env(safe-area-inset-bottom));
+  @media (max-width: 768px) {
+    .content {
+      padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    }
   }
-
 }

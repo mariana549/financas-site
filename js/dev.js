@@ -3,7 +3,7 @@
 // Visível apenas para usuários em dev_users
 // ══════════════════════════════════════════════════
 
-let _devTab = 'changelog'; // 'changelog' | 'health' | 'users' | 'debug' | 'push' | 'devs'
+let _devTab = 'changelog'; // 'changelog' | 'health' | 'users' | 'debug' | 'push' | 'devs' | 'app'
 
 function renderDev() {
   const el = document.getElementById('devContent');
@@ -14,6 +14,7 @@ function renderDev() {
   else if (_devTab === 'debug') _renderDevDebug(el);
   else if (_devTab === 'push') _renderDevPush(el);
   else if (_devTab === 'devs') _renderDevUsers(el);
+  else if (_devTab === 'app') _renderDevApp(el);
 }
 
 function _devTabBar() {
@@ -24,6 +25,7 @@ function _devTabBar() {
     { id: 'debug',     label: '🔧 Debug' },
     { id: 'push',      label: '🔔 Push' },
     { id: 'devs',      label: '👥 Devs' },
+    { id: 'app',       label: '⚙️ App' },
   ];
   return `
   <div style="overflow-x:auto;margin-bottom:20px;-webkit-overflow-scrolling:touch">
@@ -964,4 +966,58 @@ async function _devRemoveUser(id, email, isMe) {
     renderDev();
     showToast('Dev removido');
   }
+}
+
+// ── ABA: APP SETTINGS ──────────────────────────────
+async function dbSetAppSetting(key, value) {
+  const { error } = await sb.from('app_settings').upsert({ key, value: String(value) }, { onConflict: 'key' });
+  if (error) { showToast('Erro ao salvar configuração.', 'error'); return false; }
+  return true;
+}
+
+async function _devToggleAppSetting(key) {
+  const current = key === 'pj_available' ? S.appSettings.pjAvailable : S.appSettings.updateNotify;
+  const next = !current;
+  const ok = await dbSetAppSetting(key, next);
+  if (!ok) return;
+  if (key === 'pj_available') S.appSettings.pjAvailable = next;
+  else S.appSettings.updateNotify = next;
+  renderDev();
+  showToast(`✓ ${key === 'pj_available' ? 'PJ' : 'Update notify'}: ${next ? 'ativado' : 'desativado'}`);
+}
+
+function _renderDevApp(el) {
+  const pjOn  = S.appSettings?.pjAvailable  || false;
+  const updOn = S.appSettings?.updateNotify || false;
+
+  const toggle = (active) => active
+    ? `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:rgba(77,255,145,.12);border:1px solid rgba(77,255,145,.25);color:var(--green);font-size:12px;font-family:var(--mono)">● Ativo</span>`
+    : `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:var(--bg3);border:1px solid var(--border2);color:var(--text3);font-size:12px;font-family:var(--mono)">○ Inativo</span>`;
+
+  const row = (label, sub, key, active) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;color:var(--text)">${label}</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">${sub}</div>
+      </div>
+      ${toggle(active)}
+      <button onclick="_devToggleAppSetting('${key}')"
+        style="padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0">
+        ${active ? 'Desativar' : 'Ativar'}
+      </button>
+    </div>`;
+
+  el.innerHTML = `
+    ${_devTabBar()}
+    <div style="margin-bottom:16px">
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:2px">Configurações do App</div>
+      <div style="font-size:12px;color:var(--text3)">Controles globais que afetam todos os usuários</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      ${row('Modo PJ', 'Libera a opção de ativar PJ no perfil de todos os usuários', 'pj_available', pjOn)}
+      ${row('Notificação de atualização', 'Recarrega o app automaticamente quando o SW for atualizado', 'update_notify', updOn)}
+    </div>
+    <div style="margin-top:12px;font-size:11px;color:var(--text3);font-family:var(--mono);text-align:center">
+      Alterações têm efeito imediato para novos logins. Usuários com sessão aberta precisam recarregar.
+    </div>`;
 }

@@ -30,7 +30,7 @@ function openEntryM(editId = null, editBank = null) {
   S.splitMyPct = null;
   setEType('normal');
   setOwner('mine');
-  document.querySelectorAll('#catChips .chip').forEach(c => c.classList.remove('sel'));
+  renderCatChips();
   renderPersonChips();
   updateInstallHint(); // ← hint inicial
 
@@ -47,6 +47,7 @@ function openEntryM(editId = null, editBank = null) {
         : en.amount;
       document.getElementById('eDate').value = en.date || today();
       document.getElementById('eBank').value = editBank;
+      renderCatChips(en.category || '');
       document.getElementById('eCat').value = en.category || '';
       document.getElementById('eNote').value = en.note || '';
       if (en.owner === 'split') {
@@ -79,11 +80,11 @@ function openEntryM(editId = null, editBank = null) {
 
 function setEType(t) {
   S.entryType = t;
-  ['tNormal', 'tInstall', 'tPix', 'tDebit', 'tCash'].forEach(id => {
+  ['tNormal', 'tInstall', 'tDebit'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
-  const map = { normal: 'tNormal', installment: 'tInstall', pix: 'tPix', debit: 'tDebit', cash: 'tCash' };
+  const map = { normal: 'tNormal', installment: 'tInstall', debit: 'tDebit' };
   const el = document.getElementById(map[t]);
   if (el) el.classList.add('active');
   const installGroup = document.getElementById('installGroup');
@@ -234,10 +235,56 @@ function updateSplitHint() {
   hint.innerHTML = `<span style="color:var(--text3)">÷${count} ·</span> ${lines.join(' · ')}`;
 }
 
+// ── Categorias pré-definidas com ícones ──
+const DEFAULT_CATS = [
+  { icon: '🛒', label: 'Mercado' },
+  { icon: '🍽️', label: 'Alimentação' },
+  { icon: '🚗', label: 'Transporte' },
+  { icon: '💊', label: 'Saúde' },
+  { icon: '📱', label: 'Internet/Celular' },
+  { icon: '🏠', label: 'Moradia' },
+  { icon: '📚', label: 'Educação' },
+  { icon: '🎬', label: 'Lazer' },
+  { icon: '👕', label: 'Roupas' },
+  { icon: '⛽', label: 'Combustível' },
+  { icon: '🐾', label: 'Pet' },
+  { icon: '✈️', label: 'Viagem' },
+  { icon: '🎁', label: 'Presentes' },
+  { icon: '💻', label: 'Eletrônicos' },
+  { icon: '📦', label: 'Outros' },
+];
+
+function renderCatChips(selectedCat) {
+  const wrap = document.getElementById('catChips');
+  if (!wrap) return;
+  const custom = JSON.parse(localStorage.getItem('fin_custom_cats') || '[]');
+  const all = [...DEFAULT_CATS, ...custom.map(c => ({ icon: '🏷️', label: c }))];
+  wrap.innerHTML = all.map(c =>
+    `<div class="chip${selectedCat === c.label ? ' sel' : ''}" data-cat="${c.label}" onclick="pickCat(this)">${c.icon} ${c.label}</div>`
+  ).join('') + `<div class="chip chip-add" onclick="_addCustomCat()" style="border-style:dashed;opacity:.7">+ categoria</div>`;
+}
+
 function pickCat(el) {
   document.querySelectorAll('#catChips .chip').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
-  document.getElementById('eCat').value = el.textContent;
+  document.getElementById('eCat').value = el.dataset.cat || el.textContent.trim();
+}
+
+function _addCustomCat() {
+  const name = prompt('Nome da nova categoria:');
+  if (!name || !name.trim()) return;
+  const label = name.trim();
+  const custom = JSON.parse(localStorage.getItem('fin_custom_cats') || '[]');
+  if (!custom.includes(label)) {
+    custom.push(label);
+    localStorage.setItem('fin_custom_cats', JSON.stringify(custom));
+  }
+  renderCatChips(label);
+  document.getElementById('eCat').value = label;
+  // Marca o chip recém-criado como selecionado
+  document.querySelectorAll('#catChips .chip').forEach(c => {
+    if (c.dataset.cat === label) c.classList.add('sel');
+  });
 }
 
 function renderPersonChips() {
@@ -438,10 +485,10 @@ function showEntryDetail(entry, bankName) {
         <div class="detail-item-label">Parcela</div>
         <div class="detail-item-val">${entry.installCurrent}/${entry.installTotal} · R$ ${fmt(entry.amount * entry.installTotal)} total</div>
       </div>` : ''}
-      ${(entry.type === 'pix' || entry.type === 'debit' || entry.type === 'cash') ? `
+      ${(entry.type === 'pix' || entry.type === 'debit' || entry.type === 'cash' || entry.type === 'boleto') ? `
       <div class="detail-item">
         <div class="detail-item-label">Tipo</div>
-        <div class="detail-item-val">${entry.type === 'pix' ? 'Pix' : entry.type === 'debit' ? 'Débito' : 'Dinheiro'}</div>
+        <div class="detail-item-val">${entry.type === 'pix' ? 'Pix' : entry.type === 'debit' ? 'Débito' : entry.type === 'boleto' ? 'Boleto' : 'Dinheiro'}</div>
       </div>` : ''}
     </div>
     ${entry.note ? `<div class="note-box">${entry.note}</div>` : ''}`;

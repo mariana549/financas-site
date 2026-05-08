@@ -38,6 +38,8 @@ function openModal(id) {
   const el = document.getElementById(id);
   if (el) el.classList.add('open');
   if (id === 'mBank') buildColorGrid();
+  if (id === 'mClient') _clientModalOpen();
+  if (id === 'mTax')    _taxModalOpen();
   if (id === 'mMonth') {
     const now = new Date();
     const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -175,69 +177,103 @@ function getCategoryIcon(desc, cat) {
 }
 
 // ── Swipe to delete/edit em linhas de lançamento ──
-function initSwipeRows() {
+function _bindSwipe(row, onLeft, onRight) {
   const THRESHOLD = 75;
-  document.querySelectorAll('#view-dash .entry-row[data-entry-id]').forEach(row => {
-    let startX = 0, startY = 0, dx = 0, moved = false, rafId = null;
-    const cellsArr = Array.from(row.querySelectorAll('td')); // cache — evita requery no touchmove
+  let startX = 0, startY = 0, dx = 0, moved = false, rafId = null;
+  const cellsArr = Array.from(row.querySelectorAll('td'));
+  const setCellsBg = bg => { for (let i = 0; i < cellsArr.length; i++) cellsArr[i].style.background = bg; };
 
-    const setCellsBg = bg => { for (let i = 0; i < cellsArr.length; i++) cellsArr[i].style.background = bg; };
+  row.addEventListener('click', e => {
+    if (moved) { e.stopImmediatePropagation(); moved = false; }
+  }, true);
 
-    row.addEventListener('click', e => {
-      if (moved) { e.stopImmediatePropagation(); moved = false; }
-    }, true);
+  row.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    dx = 0; moved = false;
+    row.style.transition = 'none';
+    row.style.willChange = 'transform';
+  }, { passive: true });
 
-    row.addEventListener('touchstart', e => {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-      dx = 0; moved = false;
-      row.style.transition = 'none';
-      row.style.willChange = 'transform'; // promove para camada própria durante o swipe
-    }, { passive: true });
-
-    row.addEventListener('touchmove', e => {
-      const cx = e.touches[0].clientX;
-      const cy = e.touches[0].clientY;
-      const ddx = cx - startX;
-      const ddy = cy - startY;
-      if (!moved && Math.abs(ddx) < 10) return;
-      if (!moved && Math.abs(ddy) > Math.abs(ddx)) return; // scroll vertical
-      moved = true;
-      dx = ddx;
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        row.style.transform = `translateX(${dx}px)`;
-        const pct = Math.min(Math.abs(dx) / THRESHOLD, 1);
-        setCellsBg(dx < 0
-          ? `rgba(255,77,77,${(pct * 0.22).toFixed(2)})`
-          : `rgba(77,160,255,${(pct * 0.22).toFixed(2)})`);
-      });
-    }, { passive: true });
-
-    row.addEventListener('touchend', () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      row.style.willChange = ''; // libera camada
-      row.style.transition = 'transform .22s ease, background .22s ease';
-      if (dx < -THRESHOLD) {
-        setCellsBg('rgba(255,77,77,0.22)');
-        setTimeout(() => {
-          row.style.transform = '';
-          setCellsBg('');
-          deleteEntry(row.dataset.bank, row.dataset.entryId);
-        }, 220);
-      } else if (dx > THRESHOLD) {
-        setCellsBg('rgba(77,160,255,0.22)');
-        setTimeout(() => {
-          row.style.transform = '';
-          setCellsBg('');
-          openEntryM(row.dataset.entryId, row.dataset.bank);
-        }, 220);
-      } else {
-        row.style.transform = '';
-        setCellsBg('');
-      }
-      dx = 0;
+  row.addEventListener('touchmove', e => {
+    const cx = e.touches[0].clientX;
+    const cy = e.touches[0].clientY;
+    const ddx = cx - startX;
+    const ddy = cy - startY;
+    if (!moved && Math.abs(ddx) < 10) return;
+    if (!moved && Math.abs(ddy) > Math.abs(ddx)) return; // scroll vertical → ignora
+    moved = true;
+    dx = ddx;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      row.style.transform = `translateX(${dx}px)`;
+      const pct = Math.min(Math.abs(dx) / THRESHOLD, 1);
+      setCellsBg(dx < 0
+        ? `rgba(255,77,77,${(pct * 0.22).toFixed(2)})`
+        : `rgba(77,160,255,${(pct * 0.22).toFixed(2)})`);
     });
+  }, { passive: true });
+
+  row.addEventListener('touchend', () => {
+    if (rafId) cancelAnimationFrame(rafId);
+    row.style.willChange = '';
+    row.style.transition = 'transform .22s ease, background .22s ease';
+    if (dx < -THRESHOLD) {
+      setCellsBg('rgba(255,77,77,0.22)');
+      setTimeout(() => { row.style.transform = ''; setCellsBg(''); onLeft(); }, 220);
+    } else if (dx > THRESHOLD) {
+      setCellsBg('rgba(77,160,255,0.22)');
+      setTimeout(() => { row.style.transform = ''; setCellsBg(''); onRight(); }, 220);
+    } else {
+      row.style.transform = '';
+      setCellsBg('');
+    }
+    dx = 0;
+  });
+}
+
+function initSwipeRows() {
+  // Lançamentos do banco (← excluir, → editar)
+  document.querySelectorAll('#view-dash .entry-row[data-entry-id]').forEach(row => {
+    _bindSwipe(row,
+      () => deleteEntry(row.dataset.bank, row.dataset.entryId),
+      () => openEntryM(row.dataset.entryId, row.dataset.bank)
+    );
+  });
+  // Entradas/receitas (← excluir, → editar)
+  document.querySelectorAll('#view-dash .entry-row[data-income-id]').forEach(row => {
+    _bindSwipe(row,
+      () => deleteIncome(row.dataset.incomeId),
+      () => openIncomeM(row.dataset.incomeId)
+    );
+  });
+  // Pix enviados (← excluir, → editar)
+  document.querySelectorAll('#view-dash .entry-row[data-pix-id]').forEach(row => {
+    _bindSwipe(row,
+      () => deletePix(row.dataset.pixId),
+      () => openPixM(row.dataset.pixId)
+    );
+  });
+  // Boletos (← excluir, → editar)
+  document.querySelectorAll('#view-dash .entry-row[data-boleto-id]').forEach(row => {
+    _bindSwipe(row,
+      () => deleteBoleto(row.dataset.boletoId),
+      () => openBoletoM(row.dataset.boletoId, row.dataset.boletoBank)
+    );
+  });
+  // Contas fixas (← excluir, → editar)
+  document.querySelectorAll('#view-dash .entry-row[data-rec-id]').forEach(row => {
+    _bindSwipe(row,
+      () => deleteRec(row.dataset.recId),
+      () => openRecM(row.dataset.recId)
+    );
+  });
+  // Dinheiro (← excluir, → editar)
+  document.querySelectorAll('#view-dash .entry-row[data-dinheiro-id]').forEach(row => {
+    _bindSwipe(row,
+      () => deleteDinheiro(row.dataset.dinheiroId),
+      () => openDinheiroM(row.dataset.dinheiroId, row.dataset.dinheiroBank)
+    );
   });
 }
 

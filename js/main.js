@@ -61,6 +61,12 @@ injectModals();
 // ── Aplicar tema salvo ──
 applyTheme();
 
+// ── Preenche versão no footer ──
+(function () {
+  const el = document.getElementById('footerVersion');
+  if (el && typeof APP_VERSION !== 'undefined') el.textContent = 'v' + APP_VERSION;
+})();
+
 // ── Aplicar modo privacidade salvo ──
 applyPrivacy(localStorage.getItem('fin_privacy') === 'on');
 
@@ -146,9 +152,11 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// ── Detecta atualização do SW e recarrega automaticamente ──
+// ── Detecta atualização do SW — recarrega apenas se updateNotify ativo ──
+window._swUpdated = false;
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    window.location.reload();
+    window._swUpdated = true;
+    if (S.appSettings?.updateNotify) window.location.reload();
   });
 }

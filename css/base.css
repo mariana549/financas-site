@@ -51,6 +51,7 @@ body {
 
 .view.active {
   display: block;
+  flex: 1 0 auto; /* cresce para preencher o espaço restante no .content flex-col */
 }
 
 /* ── Utilitários ── */

@@ -65,6 +65,19 @@ function applyPrivacy(on) {
   if (btn) btn.textContent = on ? '🙈' : '👁';
 }
 
+function applyContext(ctx) {
+  const type = ctx?.type || 'personal';
+  document.documentElement.setAttribute('data-context', type);
+
+  // Oculta via JS nav itens exclusivos do modo pessoal (sem CSS overhead)
+  const navHistory = document.getElementById('nav-history');
+  if (navHistory) navHistory.style.display = type === 'pj' ? 'none' : '';
+
+  // Texto do logo reflete o contexto ativo
+  const logoSub = document.querySelector('.logo-sub');
+  if (logoSub) logoSub.textContent = type === 'pj' ? 'gestão empresarial' : 'organizador pessoal';
+}
+
 function renderAnnouncementBanner() {
   const el = document.getElementById('announcementBanner');
   if (!el) return;
@@ -124,7 +137,7 @@ function renderContextSwitcher() {
     html += `<button onclick="switchContext('${pjRoot?.id}')"
       style="flex:1;padding:5px 8px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--mono);
       background:${isPJ ? 'var(--bg)' : 'transparent'};color:${isPJ ? 'var(--accent)' : 'var(--text3)'};
-      box-shadow:${isPJ ? '0 1px 3px rgba(0,0,0,.25)' : 'none'};transition:all .15s">🏢 PJ</button>`;
+      box-shadow:${isPJ ? '0 1px 3px rgba(0,0,0,.25)' : 'none'};transition:all .15s">🏢 PJ${isPJ ? '<span style="font-size:8px;padding:1px 5px;border-radius:10px;background:var(--accent);color:#0a0a0a;margin-left:4px;font-weight:700;vertical-align:middle">ativo</span>' : ''}</button>`;
   } else {
     // PJ com sub-contextos — exibe dropdown
     const pjLabel = isPJ && active?.id !== pjRoot?.id ? ctxLabel(active) : 'PJ';
@@ -163,6 +176,9 @@ const VIEW_LABELS = {
   changelog: ['Novidades',            'o que mudou em cada versão'],
   dev:       ['Dev Panel',            'changelog · usuários dev'],
   profile:   ['Meu Perfil',           'conta · configurações · dados'],
+  clients:   ['Clientes PJ',          'faturamento e contatos por cliente'],
+  taxes:     ['Impostos PJ',          'DAS · IRPF · INSS · estimativas'],
+  pjreports: ['Relatório PJ',         'faturamento · custos · impostos · líquido'],
 };
 
 function showView(v) {
@@ -217,4 +233,7 @@ function showView(v) {
   }
   if (v === 'dev') renderDev();
   if (v === 'profile') renderProfile();
+  if (v === 'clients') renderClientsView();
+  if (v === 'taxes') renderTaxesView();
+  if (v === 'pjreports') renderPJReports();
 }

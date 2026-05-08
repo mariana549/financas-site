@@ -12,6 +12,9 @@ function openPixM(editId = null) {
   const pxT = today();
   document.getElementById('pxDate').value = (pxT >= pxMin && pxT <= pxMax) ? pxT : pxMin;
 
+  const delBtn = document.getElementById('pixDeleteBtn');
+  if (delBtn) delBtn.style.display = 'none';
+
   if (editId) {
     const px = (S.pixEntries[S.currentMonth] || []).find(p => String(p.id) === String(editId));
     if (px) {
@@ -21,6 +24,7 @@ function openPixM(editId = null) {
       document.getElementById('pxDate').value = px.date || today();
       document.getElementById('pxBank').value = px.bank;
       document.getElementById('pxObs').value = px.obs || '';
+      if (delBtn) delBtn.style.display = '';
     }
   }
   openModal('mPix');
@@ -58,4 +62,11 @@ async function deletePix(id) {
   setSyncing(false);
   renderDash();
   showToast('Pix excluído');
+}
+
+async function deletePixCurrent() {
+  const id = document.getElementById('editPixId').value;
+  if (!id) return;
+  closeModal('mPix');
+  await deletePix(id);
 }

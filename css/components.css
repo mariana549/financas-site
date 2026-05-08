@@ -433,6 +433,125 @@
   border: 1px solid #facc1530;
 }
 
+.bm-boleto {
+  background: #ff8c0015;
+  color: var(--orange);
+  border: 1px solid #ff8c0030;
+}
+
+/* ── FOOTER INSTITUCIONAL ── */
+.app-footer {
+   margin-top: auto; /*gruda no fundo quando conteúdo é curto */
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  padding: 16px 28px 18px;
+}
+
+/* ── Mobile: coluna centralizada ── */
+.app-footer-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.app-footer-logo {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  font-family: var(--mono);
+  letter-spacing: 1.5px;
+}
+
+.app-footer-tagline {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: var(--mono);
+  margin-top: 2px;
+}
+
+/* Mobile: linha horizontal */
+.app-footer-divider {
+  height: 1px;
+  width: 60px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.app-footer-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.app-footer-links-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-footer-links-row span {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--mono);
+  cursor: pointer;
+  transition: color .15s;
+}
+
+.app-footer-links-row span:hover {
+  color: var(--accent);
+}
+
+.app-footer-dot {
+  cursor: default !important;
+  opacity: .35;
+  pointer-events: none;
+}
+
+.app-footer-copy {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: var(--mono);
+  text-align: center;
+}
+
+/* ── Desktop: linha horizontal com divisor vertical ── */
+@media (min-width: 769px) {
+  .app-footer {
+    padding: 14px 28px 16px;
+  }
+
+  .app-footer-body {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0;
+    margin-bottom: 8px;
+  }
+
+  .app-footer-brand {
+    flex-shrink: 0;
+    padding-right: 20px;
+    text-align: right;
+  }
+
+  /* Desktop: barra vertical */
+  .app-footer-divider {
+    height: 34px;
+    width: 1px;
+    margin: 0 20px;
+  }
+
+  .app-footer-links {
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
 .amt {
   font-family: var(--mono);
   font-size: 13px;

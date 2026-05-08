@@ -47,7 +47,7 @@ async function loadAllFromSupabase() {
     const cid = S.activeContext.id;
 
     // ── Fase 2: dados filtrados pelo contexto ativo ──
-    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes, rmRes, dvRes, clRes, anRes] = await Promise.all([
+    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes, rmRes, dvRes, clRes, anRes, asRes] = await Promise.all([
       sb.from('months').select('*').eq('user_id', uid).eq('context_id', cid).order('created_at'),
       sb.from('banks').select('*').eq('user_id', uid).eq('context_id', cid),
       sb.from('transacoes').select('*').eq('user_id', uid).eq('context_id', cid),
@@ -61,6 +61,7 @@ async function loadAllFromSupabase() {
       sb.from('dev_users').select('*').order('added_at'),
       sb.from('changelog_entries').select('*').order('position', { ascending: false }).order('created_at', { ascending: false }),
       sb.from('announcements').select('*').order('created_at', { ascending: false }),
+      sb.from('app_settings').select('*'),
     ]);
 
     // ── Months + Banks (por mês) + Entries ──
@@ -77,7 +78,8 @@ async function loadAllFromSupabase() {
               date: t.entry_date, owner: t.owner, person: t.person,
               category: t.category, note: t.note, type: t.type || 'normal',
               installCurrent: t.install_current, installTotal: t.install_total,
-              groupId: t.group_id, autoInj: t.auto_injected
+              groupId: t.group_id, autoInj: t.auto_injected,
+              splitRatio: t.split_ratio ? parseFloat(t.split_ratio) : null
             }))
         }))
     }));
@@ -109,7 +111,7 @@ async function loadAllFromSupabase() {
       incomes[i.month_key].push({
         id: i.id, desc: i.description, amount: parseFloat(i.amount),
         date: i.entry_date, incType: i.income_type, from: i.from_source,
-        owner: i.owner, person: i.person
+        owner: i.owner, person: i.person, clientId: i.client_id || null
       });
     });
 
@@ -167,6 +169,14 @@ async function loadAllFromSupabase() {
 
     // profile já foi carregado na Fase 1; apenas atualiza anúncios
     S.announcements  = (anRes?.data || []).map(r => ({ id: r.id, message: r.message, active: r.active, createdAt: r.created_at }));
+
+    // ── App Settings ──
+    const settingsMap = {};
+    (asRes?.data || []).forEach(r => { settingsMap[r.key] = r.value; });
+    S.appSettings = {
+      pjAvailable:  settingsMap['pj_available']  === 'true',
+      updateNotify: settingsMap['update_notify'] === 'true',
+    };
     S.months       = months;
     sortMonths();
     S.pixEntries   = pixEntries;
@@ -178,6 +188,20 @@ async function loadAllFromSupabase() {
     S.receivableMarks = receivableMarks;
     S.devUsers     = devUsers;
     S.changelogEntries = changelogEntries;
+
+    // ── PJ: carrega clientes e impostos se contexto for PJ ──
+    if (S.activeContext?.type !== 'personal') {
+      S.pjClients = await dbLoadClients();
+      S.pjTaxes   = await dbLoadTaxes();
+    } else {
+      S.pjClients = [];
+      S.pjTaxes   = [];
+    }
+
+    // ── Mostra/oculta nav PJ + aplica identidade visual do contexto ──
+    const pjNav = document.getElementById('pjNav');
+    if (pjNav) pjNav.style.display = S.activeContext?.type !== 'personal' ? '' : 'none';
+    applyContext(S.activeContext);
 
     // ── Seeding: migra bancos existentes para banks_global na primeira vez ──
     if (S.globalBanks.length === 0 && months.length > 0 && !gbRes?.error) {
@@ -212,11 +236,12 @@ async function switchContext(ctxId) {
   if (!ctx || S.activeContext?.id === ctxId) return;
   S.activeContext = ctx;
   localStorage.setItem('fin_active_ctx', ctxId);
+  applyContext(ctx);
   // Limpa dados do contexto anterior
   S.months = []; S.currentMonth = null; S.currentBank = null;
   S.pixEntries = {}; S.recurrents = {}; S.incomes = {};
   S.subscriptions = []; S.installments = []; S.globalBanks = [];
-  S.receivableMarks = [];
+  S.receivableMarks = []; S.pjClients = []; S.pjTaxes = [];
   renderContextSwitcher();
   await loadAllFromSupabase();
   renderMonthList();
