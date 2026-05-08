@@ -2049,6 +2049,45 @@ tr:last-child td {
   padding: 6px 10px;
 }
 
+/* ── Multi-select / bulk delete ── */
+.entry-row.sel-on td {
+  background: rgba(100, 160, 255, 0.1) !important;
+}
+
+.sel-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  padding-bottom: max(12px, calc(12px + env(safe-area-inset-bottom, 0px)));
+  background: var(--bg3);
+  border-top: 1px solid var(--border2);
+  box-shadow: 0 -4px 20px var(--shadow);
+}
+
+.sel-bar-count {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sel-del-btn {
+  background: var(--red, #e55) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+.sel-mode-active {
+  color: var(--red, #e55) !important;
+  border-color: var(--red, #e55) !important;
+}
+
 /* Aviso de descontinuação (recurrents) */
 .dash-sec-deprecation {
   padding: 9px 16px;
