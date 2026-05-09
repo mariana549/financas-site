@@ -186,6 +186,7 @@ function _toggleCtxDropdown(e) {
 
 const VIEW_LABELS = {
   agenda:    ['Agenda de Pagamentos', 'boletos · assinaturas · contas a vencer'],
+  notes:     ['Notas Rápidas',        'anotações · lançar com IA'],
   subs:      ['Assinaturas',          'por banco · com datas'],
   banks:     ['Bancos',               'cadastro global · estatísticas por banco'],
   reports:   ['Relatórios',           'selecione um mês'],
@@ -230,6 +231,7 @@ function showView(v) {
   }
 
   if (v === 'agenda') { S._agendaMonth = null; renderAgenda(); }
+  if (v === 'notes') renderNotes();
   if (v === 'reports') {
     renderReports();
   }

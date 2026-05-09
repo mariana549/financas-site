@@ -156,6 +156,21 @@ function renderProfile() {
         </div>
         <span class="profile-badge-soon">em breve</span>
       </div>`}
+      <div class="profile-row" style="cursor:default">
+        <div class="profile-row-info">
+          <span class="profile-row-title">Avisos de vencimento</span>
+          <span class="profile-row-sub">Alertas no dashboard quando contas estão próximas do vencimento</span>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          ${[1,2,3,7].map(d => {
+            const active = (S.profile?.notifyDaysBefore ?? 3) === d;
+            return `<button onclick="_profileSaveNotifyDays(${d})" title="${d} dia(s)"
+              style="padding:4px 9px;border-radius:6px;border:1px solid ${active ? 'var(--accent)' : 'var(--border)'};
+              background:${active ? 'var(--accent)' : 'var(--bg3)'};color:${active ? '#000' : 'var(--text2)'};
+              font-size:12px;font-family:var(--mono);cursor:pointer;transition:all .15s">${d}d</button>`;
+          }).join('')}
+        </div>
+      </div>
       <div class="profile-row" style="cursor:default" id="profilePushRow">
         <div class="profile-row-info">
           <span class="profile-row-title">Notificações push</span>
@@ -380,6 +395,13 @@ function _profileExportData() {
   a.click();
   URL.revokeObjectURL(url);
   showToast('✓ Dados exportados');
+}
+
+async function _profileSaveNotifyDays(n) {
+  S.profile.notifyDaysBefore = n;
+  await dbSaveNotifyDays(n);
+  renderProfile();
+  showToast(`Avisos configurados para ${n} dia(s) antes`);
 }
 
 async function _profileTogglePush() {

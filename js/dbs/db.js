@@ -23,7 +23,8 @@ async function loadAllFromSupabase() {
     S.profile = {
       nickname: prRes?.data?.nickname || '',
       disabled: prRes?.data?.disabled || false,
-      pjEnabled: prRes?.data?.pj_enabled || false
+      pjEnabled: prRes?.data?.pj_enabled || false,
+      notifyDaysBefore: prRes?.data?.notify_days_before ?? 3
     };
 
     // Determina contexto ativo: respeita preferência salva ou usa pessoal
@@ -47,7 +48,7 @@ async function loadAllFromSupabase() {
     const cid = S.activeContext.id;
 
     // ── Fase 2: dados filtrados pelo contexto ativo ──
-    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes, rmRes, dvRes, clRes, anRes, asRes] = await Promise.all([
+    const [mRes, bRes, tRes, pRes, rRes, iRes, sRes, instRes, gbRes, rmRes, dvRes, clRes, anRes, asRes, ntRes] = await Promise.all([
       sb.from('months').select('*').eq('user_id', uid).eq('context_id', cid).order('created_at'),
       sb.from('banks').select('*').eq('user_id', uid).eq('context_id', cid),
       sb.from('transacoes').select('*').eq('user_id', uid).eq('context_id', cid),
@@ -62,6 +63,7 @@ async function loadAllFromSupabase() {
       sb.from('changelog_entries').select('*').order('position', { ascending: false }).order('created_at', { ascending: false }),
       sb.from('announcements').select('*').order('created_at', { ascending: false }),
       sb.from('app_settings').select('*'),
+      sb.from('notes').select('*').eq('user_id', uid).eq('context_id', cid).order('created_at', { ascending: false }),
     ]);
 
     // ── Months + Banks (por mês) + Entries ──
@@ -178,6 +180,13 @@ async function loadAllFromSupabase() {
       pjAvailable:  settingsMap['pj_available']  === 'true',
       updateNotify: settingsMap['update_notify'] === 'true',
     };
+    // ── Notas ──
+    const notes = (ntRes?.data || []).map(n => ({
+      id: n.id, text: n.text, monthKey: n.month_key || null,
+      archived: n.archived || false, convertedToEntry: n.converted_to_entry || false,
+      createdAt: n.created_at, updatedAt: n.updated_at
+    }));
+
     S.months       = months;
     sortMonths();
     S.pixEntries   = pixEntries;
@@ -189,6 +198,7 @@ async function loadAllFromSupabase() {
     S.receivableMarks = receivableMarks;
     S.devUsers     = devUsers;
     S.changelogEntries = changelogEntries;
+    S.notes        = notes;
 
     // ── PJ: carrega clientes e impostos se contexto for PJ ──
     if (S.activeContext?.type !== 'personal') {
@@ -242,7 +252,7 @@ async function switchContext(ctxId) {
   S.months = []; S.currentMonth = null; S.currentBank = null;
   S.pixEntries = {}; S.recurrents = {}; S.incomes = {};
   S.subscriptions = []; S.installments = []; S.globalBanks = [];
-  S.receivableMarks = []; S.pjClients = []; S.pjTaxes = [];
+  S.receivableMarks = []; S.pjClients = []; S.pjTaxes = []; S.notes = [];
   renderContextSwitcher();
   await loadAllFromSupabase();
   renderMonthList();

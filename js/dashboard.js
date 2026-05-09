@@ -148,14 +148,63 @@ function renderAlerts(m, metaGasto, recL) {
     if (metaGasto > m.goal)
       alerts += `<div class="alert-banner" style="background:#ff4d4d18;border-color:#ff4d4d44;color:var(--red)">🚨 Meta ultrapassada em R$ ${fmt(metaGasto - m.goal)}.</div>`;
   }
-  const today_d = new Date();
-  (recL || []).forEach(r => {
-    if (r.day) {
-      const diff = parseInt(r.day) - today_d.getDate();
-      if (diff >= 0 && diff <= 3)
-        alerts += `<div class="alert-banner">📅 ${r.desc} vence ${diff === 0 ? 'hoje' : diff === 1 ? 'amanhã' : `em ${diff} dias`} (dia ${r.day}).</div>`;
-    }
+
+  // ── Banner de vencimentos próximos (Lote D) ──
+  const n = S.profile?.notifyDaysBefore ?? 3;
+  const todayD   = new Date();
+  const todayStr = today();
+  const futureD  = new Date(); futureD.setDate(futureD.getDate() + n);
+  const futureStr = futureD.toISOString().split('T')[0];
+
+  const agendaMarks = (() => {
+    try { return JSON.parse(localStorage.getItem('fin_agenda_marks') || '{}'); } catch { return {}; }
+  })();
+
+  // Boletos pendentes que vencem até N dias
+  const allE = m.banks.flatMap(b => b.entries);
+  const boletosDue = allE.filter(e =>
+    e.type === 'boleto' && !e.paid && e.date && e.date >= todayStr && e.date <= futureStr
+  );
+  const boletosOverdue = allE.filter(e =>
+    e.type === 'boleto' && !e.paid && e.date && e.date < todayStr
+  );
+
+  // Assinaturas mensais não pagas que vencem até N dias
+  const curMonthKey = S.currentMonth;
+  const subsDue = (S.subscriptions || []).filter(s => {
+    if (s.cycle !== 'mensal' || (s.owner || 'mine') === 'other') return false;
+    if (!isSubActiveInMonth(s, curMonthKey)) return false;
+    const isPaid = !!agendaMarks[`${curMonthKey}:sub:${String(s.id)}`];
+    if (isPaid) return false;
+    const diff = parseInt(s.day || 1) - todayD.getDate();
+    return diff >= 0 && diff <= n;
   });
+
+  // Contas fixas não pagas que vencem até N dias (mantém alertas individuais)
+  const recDue = [];
+  (recL || []).forEach(r => {
+    if (!r.day) return;
+    const isPaid = !!agendaMarks[`${curMonthKey}:rec:${String(r.id)}`];
+    if (isPaid) return;
+    const diff = parseInt(r.day) - todayD.getDate();
+    if (diff >= 0 && diff <= n) recDue.push({ ...r, diff });
+  });
+
+  // Banner consolidado de vencimentos
+  const totalDue = boletosDue.length + subsDue.length + recDue.length;
+  const totalOverdue = boletosOverdue.length;
+  if (totalOverdue > 0) {
+    alerts += `<div class="alert-banner" onclick="S._agendaMonth='${curMonthKey}';showView('agenda')"
+      style="background:#ff4d4d18;border-color:#ff4d4d44;color:var(--red);cursor:pointer">
+      🚨 ${totalOverdue} boleto(s) vencido(s) sem pagamento — <strong>Ver agenda →</strong></div>`;
+  }
+  if (totalDue > 0) {
+    const label = n === 1 ? 'amanhã' : `nos próximos ${n} dias`;
+    alerts += `<div class="alert-banner" onclick="S._agendaMonth='${curMonthKey}';showView('agenda')"
+      style="cursor:pointer">
+      ⏰ ${totalDue} conta(s) vencem ${label} — <strong>Ver agenda →</strong></div>`;
+  }
+
   return alerts;
 }
 
