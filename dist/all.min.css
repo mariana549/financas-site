@@ -1254,7 +1254,19 @@ body.sb-desktop-hidden .sb-topbar-toggle .sb-icon-show { display: flex; }
   font-size: 11px;
   font-family: var(--mono);
   color: var(--text3);
-  margin-left: 6px;
+  margin-left: 2px;
+}
+.agenda-item-row:hover { background: var(--bg3); }
+.agenda-exp-row td { padding: 0 !important; }
+.agenda-type-nav { cursor: pointer; transition: opacity .15s; }
+.agenda-type-nav:hover { opacity: .75; }
+.agenda-check-btn:hover {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+.agenda-paid .agenda-check-btn {
+  border-color: var(--green) !important;
+  color: var(--green) !important;
 }
 
 /* ── PWA INSTALL BANNER ── */
