@@ -23,7 +23,7 @@ function _agendaSetMark(monthKey, type, id, paid) {
 // Toggle pago para qualquer item da agenda
 async function toggleAgendaItemPaid(type, id, monthKey, bankName) {
   if (type === 'boleto') {
-    await toggleBoletoPaid(id, bankName);
+    await toggleBoletoPaid(id, bankName, monthKey);
     return; // toggleBoletoPaid já chama renderAgenda()
   }
   const marks  = _agendaGetMarks();

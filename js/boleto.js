@@ -123,8 +123,9 @@ async function deleteBoletoCurrent() {
   await deleteBoleto(id);
 }
 
-async function toggleBoletoPaid(id, bankName) {
-  const m = getMonth();
+async function toggleBoletoPaid(id, bankName, monthKey) {
+  const key = monthKey || S.currentMonth;
+  const m = S.months.find(x => x.key === key);
   if (!m) return;
   const bk = m.banks.find(b => b.name === bankName);
   if (!bk) return;
@@ -133,7 +134,7 @@ async function toggleBoletoPaid(id, bankName) {
   entry.paid = !entry.paid;
   entry.paid_at = entry.paid ? today() : null;
   setSyncing(true);
-  await dbSaveEntry(S.currentMonth, bankName, entry);
+  await dbSaveEntry(key, bankName, entry);
   setSyncing(false);
   if (S.currentView === 'agenda') renderAgenda();
   else renderDash();
