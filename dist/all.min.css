@@ -619,6 +619,33 @@ body.sb-desktop-hidden .sb-topbar-toggle .sb-icon-show { display: flex; }
   color: var(--red);
 }
 
+/* ── Toggle extras sidebar ── */
+.sb-extras-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text3);
+  border-top: 1px solid var(--border);
+  transition: background .15s, color .15s;
+  user-select: none;
+}
+.sb-extras-toggle:hover {
+  background: var(--bg3);
+  color: var(--text2);
+}
+.sb-extras-dots {
+  font-size: 14px;
+  letter-spacing: 2px;
+  line-height: 1;
+  flex: 1;
+  text-align: center;
+}
+
 .sync-indicator {
   font-size: 10px;
   font-family: var(--mono);

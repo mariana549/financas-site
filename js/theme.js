@@ -2,6 +2,21 @@
 // THEME.JS — Tema dark/light + Sidebar + Views
 // ══════════════════════════════════════════════════
 
+// ── Extras da sidebar (itens abaixo do toggle) ──
+function _applySbExtras() {
+  const hidden = localStorage.getItem('fin_sb_extras') === 'hidden';
+  const el = document.getElementById('sbExtras');
+  const chevron = document.getElementById('sbExtrasChevron');
+  if (el) el.style.display = hidden ? 'none' : '';
+  if (chevron) chevron.style.transform = hidden ? 'rotate(180deg)' : '';
+}
+
+function toggleSbExtras() {
+  const hidden = localStorage.getItem('fin_sb_extras') === 'hidden';
+  localStorage.setItem('fin_sb_extras', hidden ? 'visible' : 'hidden');
+  _applySbExtras();
+}
+
 function toggleTheme() {
   S.theme = S.theme === 'dark' ? 'light' : 'dark';
   applyTheme();

@@ -257,6 +257,9 @@ async function onLoginSuccess() {
     S.changelogEntries = await dbLoadChangelogEntries();
   }
 
+  // Atualiza apelido/avatar agora que o perfil foi carregado
+  _profileUpdateSidebarAvatar();
+
   renderContextSwitcher();
   renderMonthList();
   renderSubs();

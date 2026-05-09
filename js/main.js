@@ -73,6 +73,9 @@ applyPrivacy(localStorage.getItem('fin_privacy') === 'on');
 // ── Restaurar estado da sidebar desktop ──
 if (localStorage.getItem('fin_sb_hidden') === '1') document.body.classList.add('sb-desktop-hidden');
 
+// ── Restaurar estado dos extras da sidebar ──
+_applySbExtras();
+
 // ── Inicializar color grid ──
 buildColorGrid();
 
