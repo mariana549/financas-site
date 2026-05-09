@@ -148,14 +148,63 @@ function renderAlerts(m, metaGasto, recL) {
     if (metaGasto > m.goal)
       alerts += `<div class="alert-banner" style="background:#ff4d4d18;border-color:#ff4d4d44;color:var(--red)">🚨 Meta ultrapassada em R$ ${fmt(metaGasto - m.goal)}.</div>`;
   }
-  const today_d = new Date();
-  (recL || []).forEach(r => {
-    if (r.day) {
-      const diff = parseInt(r.day) - today_d.getDate();
-      if (diff >= 0 && diff <= 3)
-        alerts += `<div class="alert-banner">📅 ${r.desc} vence ${diff === 0 ? 'hoje' : diff === 1 ? 'amanhã' : `em ${diff} dias`} (dia ${r.day}).</div>`;
-    }
+
+  // ── Banner de vencimentos próximos (Lote D) ──
+  const n = S.profile?.notifyDaysBefore ?? 3;
+  const todayD   = new Date();
+  const todayStr = today();
+  const futureD  = new Date(); futureD.setDate(futureD.getDate() + n);
+  const futureStr = futureD.toISOString().split('T')[0];
+
+  const agendaMarks = (() => {
+    try { return JSON.parse(localStorage.getItem('fin_agenda_marks') || '{}'); } catch { return {}; }
+  })();
+
+  // Boletos pendentes que vencem até N dias
+  const allE = m.banks.flatMap(b => b.entries);
+  const boletosDue = allE.filter(e =>
+    e.type === 'boleto' && !e.paid && e.date && e.date >= todayStr && e.date <= futureStr
+  );
+  const boletosOverdue = allE.filter(e =>
+    e.type === 'boleto' && !e.paid && e.date && e.date < todayStr
+  );
+
+  // Assinaturas mensais não pagas que vencem até N dias
+  const curMonthKey = S.currentMonth;
+  const subsDue = (S.subscriptions || []).filter(s => {
+    if (s.cycle !== 'mensal' || (s.owner || 'mine') === 'other') return false;
+    if (!isSubActiveInMonth(s, curMonthKey)) return false;
+    const isPaid = !!agendaMarks[`${curMonthKey}:sub:${String(s.id)}`];
+    if (isPaid) return false;
+    const diff = parseInt(s.day || 1) - todayD.getDate();
+    return diff >= 0 && diff <= n;
   });
+
+  // Contas fixas não pagas que vencem até N dias (mantém alertas individuais)
+  const recDue = [];
+  (recL || []).forEach(r => {
+    if (!r.day) return;
+    const isPaid = !!agendaMarks[`${curMonthKey}:rec:${String(r.id)}`];
+    if (isPaid) return;
+    const diff = parseInt(r.day) - todayD.getDate();
+    if (diff >= 0 && diff <= n) recDue.push({ ...r, diff });
+  });
+
+  // Banner consolidado de vencimentos
+  const totalDue = boletosDue.length + subsDue.length + recDue.length;
+  const totalOverdue = boletosOverdue.length;
+  if (totalOverdue > 0) {
+    alerts += `<div class="alert-banner" onclick="S._agendaMonth='${curMonthKey}';showView('agenda')"
+      style="background:#ff4d4d18;border-color:#ff4d4d44;color:var(--red);cursor:pointer">
+      🚨 ${totalOverdue} boleto(s) vencido(s) sem pagamento — <strong>Ver agenda →</strong></div>`;
+  }
+  if (totalDue > 0) {
+    const label = n === 1 ? 'amanhã' : `nos próximos ${n} dias`;
+    alerts += `<div class="alert-banner" onclick="S._agendaMonth='${curMonthKey}';showView('agenda')"
+      style="cursor:pointer">
+      ⏰ ${totalDue} conta(s) vencem ${label} — <strong>Ver agenda →</strong></div>`;
+  }
+
   return alerts;
 }
 
@@ -367,22 +416,28 @@ function renderPixSection(pixL) {
 
 function renderBoletosSection(boletoL) {
   if (!boletoL.length) return '';
+  const _todayBol = today();
   const brows = [...boletoL].sort((a, b_) => new Date(b_.date) - new Date(a.date)).map(bl => {
     const _blOnclick = _selectMode
       ? `onclick="_selToggle('boleto', '${bl.id}', '${bl.bankName}')"`
       : `onclick="openBoletoM('${bl.id}', '${bl.bankName}')"`;
-    const _blCls = _selected.has(`boleto:${bl.id}`) ? ' sel-on' : '';
+    const _blCls = (_selected.has(`boleto:${bl.id}`) ? ' sel-on' : '') + (bl.paid ? ' agenda-paid' : '');
+    const isOverdue = bl.date && bl.date < _todayBol && !bl.paid;
+    const statusCls = bl.paid ? 'bm-boleto-paid' : isOverdue ? 'bm-boleto-overdue' : 'bm-boleto-pending';
+    const statusTxt = bl.paid ? 'pago ✓' : isOverdue ? 'vencido' : 'boleto';
+    const statusClick = _selectMode ? '' : `onclick="event.stopPropagation();toggleBoletoPaid('${bl.id}','${bl.bankName}')"`;
+    const amtColor = bl.paid ? 'var(--text3)' : isOverdue ? 'var(--red)' : 'var(--orange)';
     return `
     <tr class="entry-row${_blCls}" data-boleto-id="${bl.id}" data-boleto-bank="${bl.bankName}" ${_blOnclick}>
       <td>${bl.desc}${bl.note ? ` <span style="color:var(--text3);font-size:11px">· ${bl.note}</span>` : ''}
         ${bl.bankName ? ` <span class="bm bm-cat">${bl.bankName}</span>` : ''}</td>
-      <td><span class="bm bm-boleto">boleto</span></td>
-      <td><span class="amt" style="color:var(--orange)">R$ ${fmt(bl.amount)}</span></td>
+      <td><span class="bm ${statusCls}" ${statusClick} title="Clique para marcar como ${bl.paid ? 'pendente' : 'pago'}">${statusTxt}</span></td>
+      <td><span class="amt" style="color:${amtColor}">R$ ${fmt(bl.amount)}</span></td>
     </tr>`;
   }).join('');
   return `
     <div class="tbl-block">
-      <table><thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th></tr></thead><tbody>${brows}</tbody></table>
+      <table><thead><tr><th>Descrição</th><th>Status</th><th>Valor</th></tr></thead><tbody>${brows}</tbody></table>
     </div>`;
 }
 
@@ -480,25 +535,52 @@ function renderEntradasSection(incL, incMyT, incOthT, incPplMap) {
       ? `onclick="_selToggle('income', '${_iId}')"`
       : `onclick="openIncomeM('${_iId}')"`;
     const _iCls = _selected.has(`income:${i.id}`) ? ' sel-on' : '';
+    const tagHtml = i.tags?.length
+      ? `<div style="margin-top:3px">${i.tags.map(t => `<span class="bm" style="font-size:10px;padding:1px 6px;margin-right:2px;background:var(--bg3);color:var(--text2);border:1px solid var(--border)">${t}</span>`).join('')}</div>`
+      : '';
+    const obsHtml = i.obs ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">💬 ${i.obs}</div>` : '';
     return `<tr class="entry-row${_iCls}" data-income-id="${i.id}" ${_iOnclick}>
-      <td>${i.desc} ${typeBadge}${i.from ? ` <span style="color:var(--text3);font-size:11px">· ${i.from}</span>` : ''}</td>
+      <td>
+        ${i.desc} ${typeBadge}${i.from ? ` <span style="color:var(--text3);font-size:11px">· ${i.from}</span>` : ''}
+        ${obsHtml}${tagHtml}
+      </td>
       <td>${i.owner === 'other' ? `<span class="bm bm-other">${i.person}</span>` : `<span class="bm bm-mine">meu</span>`}</td>
       <td><span class="amt" style="color:var(--green)">R$ ${fmt(i.amount)}</span></td>
     </tr>`;
   }).join('');
 
   let html = '';
-  if (Object.keys(incPplMap).length)
+  const incPplKeys = Object.keys(incPplMap);
+  if (incPplKeys.length) {
+    const personCards = incPplKeys.map(key => {
+      const d = incPplMap[key];
+      const isExp = S._incExpandedPerson === key;
+      const safeKey = key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const entries = incL.filter(i => i.owner === 'other' && (i.person || '').trim().toLowerCase() === key);
+      const detailRows = isExp ? entries.map(e =>
+        `<div class="pcard-detail-row">
+          <span>${e.desc}${e.obs ? ` <span style="color:var(--text3);font-size:10px">· ${e.obs}</span>` : ''}</span>
+          <span style="color:var(--green);font-family:var(--mono);font-size:12px;white-space:nowrap">R$ ${fmt(e.amount)}</span>
+        </div>`
+      ).join('') : '';
+      return `
+        <div class="pcard${isExp ? ' pcard-expanded' : ''}"
+             onclick="S._incExpandedPerson=S._incExpandedPerson==='${safeKey}'?null:'${safeKey}';renderDash()"
+             style="cursor:pointer" title="Toque para ver entradas de ${d.display}">
+          <div class="pcard-name">${d.display}</div>
+          <div class="pcard-val" style="color:var(--green)">R$ ${fmt(d.total)}</div>
+          <div class="pcard-sub">${d.count} entrada(s) · ${isExp ? 'fechar ▴' : 'ver ▾'}</div>
+          ${isExp ? `<div class="pcard-detail">${detailRows}</div>` : ''}
+        </div>`;
+    }).join('');
+
     html += `
-      <div class="sec-title" style="margin-bottom:10px">Quem me deve</div>
-      <div class="people-grid" style="margin-bottom:18px">
-        ${Object.entries(incPplMap).map(([n, t]) => `
-          <div class="pcard">
-            <div class="pcard-name">${n}</div>
-            <div class="pcard-val" style="color:var(--green)">R$ ${fmt(t)}</div>
-            <div class="pcard-sub">a receber</div>
-          </div>`).join('')}
-      </div>`;
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="sec-title" style="margin:0">Recebido de</div>
+        ${incPplKeys.length >= 2 ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openMergePersonsM()" style="font-size:11px">⟷ Mesclar</button>` : ''}
+      </div>
+      <div class="people-grid" style="margin-bottom:18px">${personCards}</div>`;
+  }
 
   html += `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -793,10 +875,19 @@ function _renderDashImpl() {
     pplMap[p].count += d.count;
   });
 
+  // incPplMap: agrupa por nome normalizado (case-insensitive), preserva melhor capitalização
   const incPplMap = {};
-  incL.filter(i => i.owner === 'other').forEach(i => {
-    if (!incPplMap[i.person]) incPplMap[i.person] = 0;
-    incPplMap[i.person] += i.amount;
+  incL.filter(i => i.owner === 'other' && i.person).forEach(i => {
+    const key = i.person.trim().toLowerCase();
+    if (!incPplMap[key]) incPplMap[key] = { display: i.person, total: 0, count: 0 };
+    else {
+      // prefere nome com capitalização mista sobre tudo maiúsculo/minúsculo
+      const cur = incPplMap[key].display;
+      if (cur === cur.toUpperCase() && i.person !== i.person.toUpperCase())
+        incPplMap[key].display = i.person;
+    }
+    incPplMap[key].total += i.amount;
+    incPplMap[key].count++;
   });
 
   const bk = m.banks.find(b => b.name === S.currentBank) || m.banks[0];

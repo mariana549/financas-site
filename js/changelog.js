@@ -3,7 +3,7 @@
 // Adicionar nova entrada aqui antes de cada deploy.
 // ══════════════════════════════════════════════════
 
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.5.1';
 
 // Chave pública VAPID para notificações push.
 // Gere em: https://vapidkeys.com/ ou rode: npx web-push generate-vapid-keys
@@ -48,6 +48,21 @@ const CHANGELOG = [
     items: [
       { type: 'feat', text: 'Banner aparece uma vez após cada atualização com link para ver as novidades' },
       { type: 'feat', text: 'Página de histórico acessível pelo menu a qualquer momento' },
+    ]
+  },
+  {
+    version: '1.5.1',
+    date: 'Maio 2026',
+    title: 'Notas Rápidas, Alertas e Notificações Push',
+    summary: 'Três novas funcionalidades para você nunca mais esquecer uma conta.',
+    items: [
+      { type: 'feat',    text: 'Notas Rápidas: bloco de anotações com suporte a lançamento por IA diretamente da nota' },
+      { type: 'feat',    text: 'Alertas de vencimento no dashboard: banner amarelo/vermelho para contas próximas do vencimento' },
+      { type: 'feat',    text: 'Notificações push reais via Service Worker para PWA instalado' },
+      { type: 'feat',    text: 'Configuração de aviso (1, 2, 3 ou 7 dias antes) no perfil do usuário' },
+      { type: 'improve', text: 'Agenda com checkbox visual para marcar pagamento com mais clareza' },
+      { type: 'fix',     text: 'Datas na agenda exibidas corretamente (sem "undefined")' },
+      { type: 'fix',     text: 'Valor de assinaturas na agenda corrigido para assinaturas compartilhadas' },
     ]
   },
 ];

@@ -2,6 +2,23 @@
 // THEME.JS — Tema dark/light + Sidebar + Views
 // ══════════════════════════════════════════════════
 
+// ── Extras da sidebar (itens abaixo do toggle) ──
+function _applySbExtras() {
+  const hidden = localStorage.getItem('fin_sb_extras') === 'hidden';
+  const el = document.getElementById('sbExtras');
+  const chevron = document.getElementById('sbExtrasChevron');
+  if (el) el.style.display = hidden ? 'none' : '';
+  // chevron aponta para cima quando visível (sugestão de colapsar),
+  // e para baixo quando escondido (sugestão de expandir)
+  if (chevron) chevron.style.transform = hidden ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+function toggleSbExtras() {
+  const hidden = localStorage.getItem('fin_sb_extras') === 'hidden';
+  localStorage.setItem('fin_sb_extras', hidden ? 'visible' : 'hidden');
+  _applySbExtras();
+}
+
 function toggleTheme() {
   S.theme = S.theme === 'dark' ? 'light' : 'dark';
   applyTheme();
@@ -168,6 +185,8 @@ function _toggleCtxDropdown(e) {
 }
 
 const VIEW_LABELS = {
+  agenda:    ['Agenda de Pagamentos', 'boletos · assinaturas · contas a vencer'],
+  notes:     ['Notas Rápidas',        'anotações · lançar com IA'],
   subs:      ['Assinaturas',          'por banco · com datas'],
   banks:     ['Bancos',               'cadastro global · estatísticas por banco'],
   reports:   ['Relatórios',           'selecione um mês'],
@@ -211,6 +230,8 @@ function showView(v) {
       tbActions.innerHTML = '<button class="btn btn-primary btn-sm" onclick="openGlobalBankM()">+ Adicionar</button>';
   }
 
+  if (v === 'agenda') { S._agendaMonth = null; renderAgenda(); }
+  if (v === 'notes') renderNotes();
   if (v === 'reports') {
     renderReports();
   }

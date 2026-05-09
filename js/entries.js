@@ -344,6 +344,7 @@ async function saveEntry() {
   if (S.entryOwner === 'split' && splitPeople.length === 0) { alert('Informe ao menos um nome para dividir.'); return; }
 
   const m = getMonth();
+  if (!m) { alert('Nenhum mês selecionado.'); return; }
   const bank = m.banks.find(b => b.name === bankName);
   if (!bank) { alert('Banco não encontrado. Selecione um banco válido.'); return; }
 

@@ -53,6 +53,16 @@ async function dbLogError(message, stack, url) {
   }).then(({ error }) => { if (error) console.warn('[dbLogError]', error); });
 }
 
+async function dbSaveNotifyDays(n) {
+  if (!currentUser) return false;
+  const { error } = await sb.from('user_profiles').upsert(
+    { user_id: currentUser.id, notify_days_before: n, updated_at: new Date().toISOString() },
+    { onConflict: 'user_id' }
+  );
+  if (error) { console.error('[dbSaveNotifyDays]', error); return false; }
+  return true;
+}
+
 async function dbDeleteAccount() {
   if (!currentUser) return false;
   const { error } = await sb.rpc('delete_my_account');

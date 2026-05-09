@@ -6,11 +6,11 @@ function defaultState() {
   return {
     months: [], currentMonth: null, currentBank: null, currentInnerTab: 'gastos',
     subscriptions: [], pixEntries: {}, recurrents: {}, incomes: {}, installments: [],
-    globalBanks: [], receivableMarks: [],
+    globalBanks: [], receivableMarks: [], notes: [],
     devUsers: [], changelogEntries: [], announcements: [], isDev: false,
     contexts: [], activeContext: null,
     pjClients: [], pjTaxes: [],
-    profile: { nickname: '', pjEnabled: false },
+    profile: { nickname: '', pjEnabled: false, notifyDaysBefore: 3 },
     appSettings: { pjAvailable: false, updateNotify: false },
     currentView: 'dash', entryOwner: 'mine', entryType: 'normal',
     incomeOwner: 'mine', incomeType: 'Salário', pickedColor: 'azure',
