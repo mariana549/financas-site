@@ -1109,6 +1109,48 @@ html[data-privacy="on"] .detail-amount {
   border-color: rgba(74, 222, 128, .35) !important;
   background: rgba(74, 222, 128, .04);
 }
+.pcard-expanded {
+  border-color: var(--accent, var(--blue)) !important;
+  background: rgba(100, 160, 255, .04);
+}
+.pcard-detail {
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+.pcard-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text2);
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.pcard-detail-row:last-child { border-bottom: none; }
+
+/* ── Autocomplete de pessoa (entradas) ── */
+.inc-ac-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0; right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  z-index: 60;
+  box-shadow: 0 6px 20px var(--shadow);
+  overflow: hidden;
+}
+.inc-ac-item {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.inc-ac-item:last-child { border-bottom: none; }
+.inc-ac-item:hover { background: var(--bg3); }
 /* ── Profile Area ── */
 .user-avatar {
   width: 30px;

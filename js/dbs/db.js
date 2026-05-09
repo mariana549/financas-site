@@ -111,7 +111,8 @@ async function loadAllFromSupabase() {
       incomes[i.month_key].push({
         id: i.id, desc: i.description, amount: parseFloat(i.amount),
         date: i.entry_date, incType: i.income_type, from: i.from_source,
-        owner: i.owner, person: i.person, clientId: i.client_id || null
+        owner: i.owner, person: i.person, clientId: i.client_id || null,
+        obs: i.obs || null, tags: i.tags || null
       });
     });
 

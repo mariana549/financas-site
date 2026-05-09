@@ -486,25 +486,52 @@ function renderEntradasSection(incL, incMyT, incOthT, incPplMap) {
       ? `onclick="_selToggle('income', '${_iId}')"`
       : `onclick="openIncomeM('${_iId}')"`;
     const _iCls = _selected.has(`income:${i.id}`) ? ' sel-on' : '';
+    const tagHtml = i.tags?.length
+      ? `<div style="margin-top:3px">${i.tags.map(t => `<span class="bm" style="font-size:10px;padding:1px 6px;margin-right:2px;background:var(--bg3);color:var(--text2);border:1px solid var(--border)">${t}</span>`).join('')}</div>`
+      : '';
+    const obsHtml = i.obs ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">💬 ${i.obs}</div>` : '';
     return `<tr class="entry-row${_iCls}" data-income-id="${i.id}" ${_iOnclick}>
-      <td>${i.desc} ${typeBadge}${i.from ? ` <span style="color:var(--text3);font-size:11px">· ${i.from}</span>` : ''}</td>
+      <td>
+        ${i.desc} ${typeBadge}${i.from ? ` <span style="color:var(--text3);font-size:11px">· ${i.from}</span>` : ''}
+        ${obsHtml}${tagHtml}
+      </td>
       <td>${i.owner === 'other' ? `<span class="bm bm-other">${i.person}</span>` : `<span class="bm bm-mine">meu</span>`}</td>
       <td><span class="amt" style="color:var(--green)">R$ ${fmt(i.amount)}</span></td>
     </tr>`;
   }).join('');
 
   let html = '';
-  if (Object.keys(incPplMap).length)
+  const incPplKeys = Object.keys(incPplMap);
+  if (incPplKeys.length) {
+    const personCards = incPplKeys.map(key => {
+      const d = incPplMap[key];
+      const isExp = S._incExpandedPerson === key;
+      const safeKey = key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const entries = incL.filter(i => i.owner === 'other' && (i.person || '').trim().toLowerCase() === key);
+      const detailRows = isExp ? entries.map(e =>
+        `<div class="pcard-detail-row">
+          <span>${e.desc}${e.obs ? ` <span style="color:var(--text3);font-size:10px">· ${e.obs}</span>` : ''}</span>
+          <span style="color:var(--green);font-family:var(--mono);font-size:12px;white-space:nowrap">R$ ${fmt(e.amount)}</span>
+        </div>`
+      ).join('') : '';
+      return `
+        <div class="pcard${isExp ? ' pcard-expanded' : ''}"
+             onclick="S._incExpandedPerson=S._incExpandedPerson==='${safeKey}'?null:'${safeKey}';renderDash()"
+             style="cursor:pointer" title="Toque para ver entradas de ${d.display}">
+          <div class="pcard-name">${d.display}</div>
+          <div class="pcard-val" style="color:var(--green)">R$ ${fmt(d.total)}</div>
+          <div class="pcard-sub">${d.count} entrada(s) · ${isExp ? 'fechar ▴' : 'ver ▾'}</div>
+          ${isExp ? `<div class="pcard-detail">${detailRows}</div>` : ''}
+        </div>`;
+    }).join('');
+
     html += `
-      <div class="sec-title" style="margin-bottom:10px">Quem me deve</div>
-      <div class="people-grid" style="margin-bottom:18px">
-        ${Object.entries(incPplMap).map(([n, t]) => `
-          <div class="pcard">
-            <div class="pcard-name">${n}</div>
-            <div class="pcard-val" style="color:var(--green)">R$ ${fmt(t)}</div>
-            <div class="pcard-sub">a receber</div>
-          </div>`).join('')}
-      </div>`;
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="sec-title" style="margin:0">Recebido de</div>
+        ${incPplKeys.length >= 2 ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openMergePersonsM()" style="font-size:11px">⟷ Mesclar</button>` : ''}
+      </div>
+      <div class="people-grid" style="margin-bottom:18px">${personCards}</div>`;
+  }
 
   html += `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -799,10 +826,19 @@ function _renderDashImpl() {
     pplMap[p].count += d.count;
   });
 
+  // incPplMap: agrupa por nome normalizado (case-insensitive), preserva melhor capitalização
   const incPplMap = {};
-  incL.filter(i => i.owner === 'other').forEach(i => {
-    if (!incPplMap[i.person]) incPplMap[i.person] = 0;
-    incPplMap[i.person] += i.amount;
+  incL.filter(i => i.owner === 'other' && i.person).forEach(i => {
+    const key = i.person.trim().toLowerCase();
+    if (!incPplMap[key]) incPplMap[key] = { display: i.person, total: 0, count: 0 };
+    else {
+      // prefere nome com capitalização mista sobre tudo maiúsculo/minúsculo
+      const cur = incPplMap[key].display;
+      if (cur === cur.toUpperCase() && i.person !== i.person.toUpperCase())
+        incPplMap[key].display = i.person;
+    }
+    incPplMap[key].total += i.amount;
+    incPplMap[key].count++;
   });
 
   const bk = m.banks.find(b => b.name === S.currentBank) || m.banks[0];
