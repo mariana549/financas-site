@@ -229,7 +229,7 @@ function showView(v) {
       tbActions.innerHTML = '<button class="btn btn-primary btn-sm" onclick="openGlobalBankM()">+ Adicionar</button>';
   }
 
-  if (v === 'agenda') renderAgenda();
+  if (v === 'agenda') { S._agendaMonth = null; renderAgenda(); }
   if (v === 'reports') {
     renderReports();
   }
