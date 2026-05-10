@@ -234,15 +234,28 @@ window._pwaPushDecline = function () {
     if (document.getElementById('pwaBanner')) return;
     const banner = document.createElement('div');
     banner.id = 'pwaBanner';
-    banner.className = 'pwa-banner';
+    banner.className = isIOS ? 'pwa-banner pwa-banner-ios' : 'pwa-banner';
     if (isIOS) {
       banner.innerHTML = `
-        <div class="pwa-banner-icon">📲</div>
-        <div class="pwa-banner-text">
-          <div class="pwa-banner-title">Instale o app no celular</div>
-          <div class="pwa-banner-sub">Toque em <span class="pwa-share-icon">↑</span> depois em <strong>"Adicionar à Tela de Início"</strong></div>
+        <button class="pwa-banner-close" onclick="this.closest('.pwa-banner').remove();localStorage.setItem('pwa_dismissed',Date.now())" title="Fechar">×</button>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div class="pwa-banner-icon">📲</div>
+          <div>
+            <div class="pwa-banner-title">Instale o Finanças no iPhone</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:1px">Acesso rápido + lembretes de contas</div>
+          </div>
         </div>
-        <button class="pwa-banner-close" onclick="this.closest('.pwa-banner').remove();localStorage.setItem('pwa_dismissed',Date.now())" title="Fechar">×</button>`;
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="width:22px;height:22px;border-radius:5px;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">1</div>
+          <div style="font-size:12px;color:var(--text)">Toque em
+            <svg style="display:inline;vertical-align:middle;margin:0 2px" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            na barra inferior do Safari
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:22px;height:22px;border-radius:5px;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">2</div>
+          <div style="font-size:12px;color:var(--text)">Toque em <strong>"Adicionar à Tela de Início"</strong></div>
+        </div>`;
     } else {
       banner.innerHTML = `
         <div class="pwa-banner-icon">📲</div>

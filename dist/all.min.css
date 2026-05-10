@@ -1325,6 +1325,12 @@ body.sb-desktop-hidden .sb-topbar-toggle .sb-icon-show { display: flex; }
   box-shadow: 0 -4px 20px var(--shadow);
   animation: slideUp .25s ease;
 }
+.pwa-banner.pwa-banner-ios {
+  display: block;
+  padding: 14px 16px 20px;
+  border-top: 2px solid var(--accent);
+  position: relative; /* para o close absoluto */
+}
 @keyframes slideUp {
   from { transform: translateY(100%); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
@@ -1344,6 +1350,11 @@ body.sb-desktop-hidden .sb-topbar-toggle .sb-icon-show { display: flex; }
   padding: 0 4px;
   line-height: 1;
   flex-shrink: 0;
+}
+.pwa-banner-ios .pwa-banner-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
 }
 .pwa-banner-close:hover { color: var(--text); }
 
