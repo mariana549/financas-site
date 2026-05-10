@@ -90,7 +90,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
+    overscroll-behavior: none; /* bloqueia rubber-band no iOS → sem fundo preto */
     padding: 16px 12px 80px; /* padding extra embaixo para não ficar atrás do banner PWA */
   }
 

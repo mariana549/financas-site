@@ -64,6 +64,7 @@
 /* iOS Safari: -webkit-fill-available evita o espaço preto causado pela barra de URL */
 html {
   height: -webkit-fill-available;
+  background: var(--bg); /* impede fundo preto no overscroll do iOS */
 }
 
 body {
@@ -3613,7 +3614,7 @@ textarea {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
+    overscroll-behavior: none; /* bloqueia rubber-band no iOS → sem fundo preto */
     padding: 16px 12px 80px; /* padding extra embaixo para não ficar atrás do banner PWA */
   }
 

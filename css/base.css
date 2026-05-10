@@ -11,6 +11,7 @@
 /* iOS Safari: -webkit-fill-available evita o espaço preto causado pela barra de URL */
 html {
   height: -webkit-fill-available;
+  background: var(--bg); /* impede fundo preto no overscroll do iOS */
 }
 
 body {
