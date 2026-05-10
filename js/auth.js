@@ -200,31 +200,69 @@ async function handleRecoveryPwd() {
 
 // ── Trocar senha (usuário logado) ───────────────────
 function openChangePwdModal() {
+  // Limpa campos e mensagem ao abrir
+  ['changePwdCurrent','changePwd','changePwdConfirm'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const msg = document.getElementById('changePwdMsg');
+  if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
   openModal('mChangePwd');
 }
 
+function _changePwdMsg(text, isErr) {
+  const el = document.getElementById('changePwdMsg');
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = 'block';
+  el.style.background = isErr ? 'rgba(255,77,77,.12)' : 'rgba(77,255,145,.1)';
+  el.style.color = isErr ? 'var(--red)' : 'var(--green)';
+  el.style.border = isErr ? '1px solid rgba(255,77,77,.25)' : '1px solid rgba(77,255,145,.2)';
+}
+
 async function handleChangePwd() {
+  const current = (document.getElementById('changePwdCurrent').value || '');
   const pwd     = (document.getElementById('changePwd').value || '');
   const confirm = (document.getElementById('changePwdConfirm').value || '');
   const btn     = document.getElementById('changePwdBtn');
 
-  if (!pwd || pwd.length < 6)  { showToast('A senha precisa ter pelo menos 6 caracteres.', 'error'); return; }
-  if (pwd !== confirm)          { showToast('As senhas não coincidem.', 'error'); return; }
+  if (!current)               { _changePwdMsg('Informe sua senha atual.', true); return; }
+  if (!pwd || pwd.length < 6) { _changePwdMsg('A nova senha precisa ter pelo menos 6 caracteres.', true); return; }
+  if (pwd !== confirm)        { _changePwdMsg('As senhas não coincidem.', true); return; }
+  if (current === pwd)        { _changePwdMsg('A nova senha deve ser diferente da atual.', true); return; }
+
+  btn.textContent = 'Verificando...';
+  btn.disabled = true;
+
+  // Reautentica com a senha atual para confirmar identidade
+  const { error: signInErr } = await sb.auth.signInWithPassword({
+    email: currentUser.email,
+    password: current
+  });
+
+  if (signInErr) {
+    _changePwdMsg('Senha atual incorreta.', true);
+    btn.textContent = 'Salvar';
+    btn.disabled = false;
+    return;
+  }
 
   btn.textContent = 'Salvando...';
-  btn.disabled = true;
 
   const { error } = await sb.auth.updateUser({ password: pwd });
 
   btn.textContent = 'Salvar';
   btn.disabled = false;
 
-  if (error) { showToast(_authErrMsg(error), 'error'); return; }
+  if (error) { _changePwdMsg(_authErrMsg(error), true); return; }
 
-  closeModal('mChangePwd');
-  document.getElementById('changePwd').value = '';
-  document.getElementById('changePwdConfirm').value = '';
-  showToast('✓ Senha alterada com sucesso');
+  _changePwdMsg('✓ Senha alterada com sucesso!', false);
+  setTimeout(() => {
+    closeModal('mChangePwd');
+    ['changePwdCurrent','changePwd','changePwdConfirm'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+  }, 1500);
 }
 
 // ── Login bem-sucedido ──────────────────────────────

@@ -411,6 +411,14 @@ function injectModals() {
 <!-- Trocar Senha -->
 <div class="modal-overlay" id="mChangePwd"><div class="modal modal-sm">
   <div class="modal-title">Trocar senha <button class="modal-close" onclick="closeModal('mChangePwd')">×</button></div>
+  <div id="changePwdMsg" style="display:none;padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:8px"></div>
+  <div class="fg auth-pwd-wrap">
+    <label>Senha atual</label>
+    <input type="password" id="changePwdCurrent" placeholder="sua senha atual" autocomplete="current-password">
+    <button type="button" class="auth-eye" onclick="toggleAuthEye('changePwdCurrent',this)" tabindex="-1">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+  </div>
   <div class="fg auth-pwd-wrap">
     <label>Nova senha</label>
     <input type="password" id="changePwd" placeholder="mínimo 6 caracteres" autocomplete="new-password">
@@ -420,7 +428,7 @@ function injectModals() {
   </div>
   <div class="fg auth-pwd-wrap">
     <label>Confirmar nova senha</label>
-    <input type="password" id="changePwdConfirm" placeholder="repita a senha" autocomplete="new-password" onkeydown="if(event.key==='Enter')handleChangePwd()">
+    <input type="password" id="changePwdConfirm" placeholder="repita a nova senha" autocomplete="new-password" onkeydown="if(event.key==='Enter')handleChangePwd()">
     <button type="button" class="auth-eye" onclick="toggleAuthEye('changePwdConfirm',this)" tabindex="-1">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
     </button>
