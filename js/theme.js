@@ -49,13 +49,28 @@ function toggleActMenu(e) {
     closeActMenu();
     return;
   }
-  // Posiciona o dropdown fixo perto do botão trigger
-  const btn = e.currentTarget;
-  const rect = btn.getBoundingClientRect();
-  list.style.top  = (rect.bottom + 6) + 'px';
-  list.style.right = (window.innerWidth - rect.right) + 'px';
+  // currentTarget pode ser null no iOS — usa target ou o elemento mais próximo com a classe
+  const btn = (e && (e.currentTarget || e.target))
+    ? (e.currentTarget || e.target).closest('.act-trigger') || (e.currentTarget || e.target)
+    : null;
+  if (btn) {
+    const rect = btn.getBoundingClientRect();
+    list.style.top   = (rect.bottom + 6) + 'px';
+    list.style.right = (window.innerWidth - rect.right) + 'px';
+  }
   list.classList.add('open');
-  setTimeout(() => document.addEventListener('click', closeActMenu, { once: true }), 0);
+  // iOS não dispara click fora de elementos interativos — usa touchstart + click
+  setTimeout(() => {
+    const close = (ev) => {
+      if (!list.contains(ev.target)) {
+        closeActMenu();
+        document.removeEventListener('click',      close, true);
+        document.removeEventListener('touchstart', close, true);
+      }
+    };
+    document.addEventListener('click',      close, { capture: true, once: false });
+    document.addEventListener('touchstart', close, { capture: true, once: false, passive: true });
+  }, 0);
 }
 
 function closeActMenu() {
