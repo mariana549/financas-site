@@ -3856,6 +3856,18 @@ textarea {
   }
 }
 
+/* ── iOS PWA: empurra o topbar e sidebar para baixo da barra de status ── */
+/* Só ativa quando instalado como app (standalone) — não afeta browser nem Android */
+@media (display-mode: standalone) {
+  .topbar {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+  }
+
+  .sidebar {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
 /* ── css/pj/pj-variables.css ── */
 /* ══════════════════════════════════════════════════
    PJ — Paleta de cores
