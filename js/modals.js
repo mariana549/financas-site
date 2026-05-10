@@ -128,7 +128,7 @@ function injectModals() {
     <div class="fg"><label>Valor (R$)</label><input type="number" id="incAmt" step="0.01" placeholder="0,00"></div>
     <div class="fg"><label>Data</label><input type="date" id="incDate"></div>
   </div>
-  <div class="fg"><label>Tipo</label>
+  <div class="fg"><label>Tipo de transferência</label>
     <div class="chips" id="incTypeChips">
       <div class="chip sel" onclick="pickIncType(this)">Salário</div>
       <div class="chip" onclick="pickIncType(this)">Freela</div>
@@ -139,18 +139,45 @@ function injectModals() {
       <div class="chip" onclick="pickIncType(this)">Outros</div>
     </div>
   </div>
+  <div class="fg"><label>Etiquetas <span class="tip" data-tip="Categorias livres — diferentes do tipo de transferência.&#10;Ex: Renda extra, Reembolso, Troca...">?</span></label>
+    <div class="chips" id="incTagChips"></div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <input type="text" id="incTagInput" placeholder="nova etiqueta personalizada..." style="flex:1;min-width:0;font-size:13px">
+      <button class="btn btn-ghost btn-sm" onclick="_incTagAdd()" style="white-space:nowrap">+ Adicionar</button>
+    </div>
+  </div>
   <div class="fg"><label>Origem (opcional)</label><input type="text" id="incFrom" placeholder="empresa, cliente..."></div>
+  <div class="fg"><label>Obs (opcional)</label><textarea id="incObs" rows="2" placeholder="anotação rápida, contexto..." style="resize:vertical;font-size:13px"></textarea></div>
   <div class="fg"><label>É dinheiro seu ou de outra pessoa? <span class="tip" data-tip="Meu = entra no seu saldo do mês.&#10;De outra pessoa = registra que&#10;alguém te deve, mas não conta&#10;como sua renda.">?</span></label>
     <div class="tgl"><div class="tgl-o active" id="incMine" onclick="setIncOwner('mine')">Meu</div><div class="tgl-o" id="incOther" onclick="setIncOwner('other')">De outra pessoa</div></div>
   </div>
   <div id="incPersonGroup" style="display:none">
-    <div class="fg"><label>Nome da pessoa</label><input type="text" id="incPerson" placeholder="quem vai me pagar..."></div>
+    <div class="fg">
+      <label>Nome da pessoa</label>
+      <div style="position:relative">
+        <input type="text" id="incPerson" placeholder="comece a digitar para sugestões..." oninput="_incAutoInput(this.value)" autocomplete="off">
+        <div id="incPersonAC" class="inc-ac-dropdown" style="display:none"></div>
+      </div>
+    </div>
   </div>
   <input type="hidden" id="editIncomeId">
   <div class="modal-actions">
     <button id="incDeleteBtn" class="btn btn-danger btn-sm" style="display:none" onclick="deleteIncomeCurrent()">Excluir</button>
     <button class="btn btn-ghost btn-sm" onclick="closeModal('mIncome')">Cancelar</button>
     <button class="btn btn-primary btn-sm" onclick="saveIncome()">Salvar</button>
+  </div>
+</div></div>
+
+<!-- Mesclar pessoas de entradas -->
+<div class="modal-overlay" id="mMergePersons"><div class="modal modal-sm">
+  <div class="modal-title">Mesclar Pessoas <button class="modal-close" onclick="closeModal('mMergePersons')">×</button></div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5">Unifica entradas de duas pessoas em um só nome. Aplica em <strong>todos os meses</strong>.</div>
+  <div class="fg"><label>Pessoa A</label><select id="mergePersonA"></select></div>
+  <div class="fg"><label>Pessoa B</label><select id="mergePersonB"></select></div>
+  <div class="fg"><label>Nome final <span class="tip" data-tip="Deixe em branco para usar o nome da Pessoa B.">?</span></label><input type="text" id="mergePersonCanonical" placeholder="ex: Maria Silva (deixe vazio para usar Pessoa B)"></div>
+  <div class="modal-actions">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('mMergePersons')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="mergePersons()">Mesclar</button>
   </div>
 </div></div>
 
@@ -199,8 +226,12 @@ function injectModals() {
   </div>
   <div class="fg"><label>Banco</label><select id="blBank"></select></div>
   <div class="fg"><label>Observação (opcional)</label><input type="text" id="blObs" placeholder="vencimento, referência..."></div>
+  <div id="boletoStatusRow" style="display:none;margin-top:4px">
+    <button id="blPaidBtn" class="btn btn-ghost btn-sm" onclick="toggleBlPaid()">Marcar como pago</button>
+  </div>
   <input type="hidden" id="editBoletoId">
   <input type="hidden" id="editBoletoBank">
+  <input type="hidden" id="blPaid" value="0">
   <div class="modal-actions">
     <button id="boletoDeleteBtn" class="btn btn-danger btn-sm" style="display:none" onclick="deleteBoletoCurrent()">Excluir</button>
     <button class="btn btn-ghost btn-sm" onclick="closeModal('mBoleto')">Cancelar</button>
@@ -216,7 +247,6 @@ function injectModals() {
     <div class="fg"><label>Valor (R$)</label><input type="number" id="dnAmt" step="0.01" placeholder="0,00"></div>
     <div class="fg"><label>Data</label><input type="date" id="dnDate"></div>
   </div>
-  <div class="fg"><label>Banco (de onde saiu)</label><select id="dnBank"></select></div>
   <div class="fg"><label>Observação (opcional)</label><input type="text" id="dnObs" placeholder="detalhe, motivo..."></div>
   <input type="hidden" id="editDinheiroId">
   <input type="hidden" id="editDinheiroBank">

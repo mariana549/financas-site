@@ -6,7 +6,6 @@
 function openDinheiroM(editId = null, editBank = null) {
   const m = getMonth();
   if (!m) { alert('Selecione um mês.'); return; }
-  fillSel('dnBank', m.banks.map(b => b.name));
   document.getElementById('editDinheiroId').value = '';
   document.getElementById('editDinheiroBank').value = '';
   clr('dnDesc', 'dnAmt', 'dnObs');
@@ -27,7 +26,6 @@ function openDinheiroM(editId = null, editBank = null) {
       document.getElementById('dnDesc').value = dn.desc;
       document.getElementById('dnAmt').value = dn.amount;
       document.getElementById('dnDate').value = dn.date || today();
-      document.getElementById('dnBank').value = bankName;
       document.getElementById('dnObs').value = dn.note || '';
       if (delBtn) delBtn.style.display = '';
     }
@@ -39,7 +37,6 @@ async function saveDinheiro() {
   const desc = document.getElementById('dnDesc').value.trim();
   const amt = parseFloat(document.getElementById('dnAmt').value);
   const date = document.getElementById('dnDate').value;
-  const bankName = document.getElementById('dnBank').value;
   const obs = document.getElementById('dnObs').value.trim();
   const editId = document.getElementById('editDinheiroId').value;
   const editBank = document.getElementById('editDinheiroBank').value;
@@ -50,12 +47,13 @@ async function saveDinheiro() {
   if (!m) return;
 
   if (editId) {
-    const oldBankName = editBank || bankName;
-    const oldBk = m.banks.find(b => b.name === oldBankName);
+    const oldBk = m.banks.find(b => b.name === editBank);
     if (oldBk) oldBk.entries = oldBk.entries.filter(e => String(e.id) !== String(editId));
     await dbDeleteEntry(editId);
   }
 
+  // Sempre salva no banco virtual "Dinheiro"
+  const bankName = 'Dinheiro';
   let bk = m.banks.find(b => b.name === bankName);
   if (!bk) {
     const newBank = { name: bankName, color: 'azure', entries: [] };
