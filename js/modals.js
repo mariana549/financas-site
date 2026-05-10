@@ -344,53 +344,63 @@ function injectModals() {
 <div class="modal-overlay" id="mAI"><div class="modal">
   <div class="modal-title">📄 Importar Extrato <button class="modal-close" onclick="closeModal('mAI')">×</button></div>
 
-  <!-- Tipo de extrato -->
-  <div class="fg" style="margin-bottom:8px">
-    <label style="margin-bottom:6px">Tipo de extrato</label>
-    <div id="aiTypeChips" class="ai-type-chips">
-      <button class="ai-chip ai-chip--active" onclick="setAIType('auto',this)">Auto</button>
-      <button class="ai-chip" onclick="setAIType('cartao',this)">Cartão</button>
-      <button class="ai-chip" onclick="setAIType('debito',this)">Débito</button>
-      <button class="ai-chip" onclick="setAIType('pixout',this)">Pix enviado</button>
-      <button class="ai-chip" onclick="setAIType('pixin',this)">Pix recebido</button>
-      <button class="ai-chip" onclick="setAIType('boleto',this)">Boleto</button>
+  <!-- FASE 1: Input -->
+  <div id="aiInputPhase">
+    <!-- Tipo de extrato -->
+    <div class="fg" style="margin-bottom:8px">
+      <label style="margin-bottom:6px">Tipo de extrato</label>
+      <div id="aiTypeChips" class="ai-type-chips">
+        <button class="ai-chip ai-chip--active" onclick="setAIType('auto',this)">Auto</button>
+        <button class="ai-chip" onclick="setAIType('cartao',this)">Cartão</button>
+        <button class="ai-chip" onclick="setAIType('debito',this)">Débito</button>
+        <button class="ai-chip" onclick="setAIType('pixout',this)">Pix enviado</button>
+        <button class="ai-chip" onclick="setAIType('pixin',this)">Pix recebido</button>
+        <button class="ai-chip" onclick="setAIType('boleto',this)">Boleto</button>
+      </div>
+    </div>
+
+    <!-- Seção A: Leitor de PDF -->
+    <div class="ai-section-label">📎 Leitor de PDF</div>
+    <div class="ai-pdf-zone" id="aiPdfZone"
+         onclick="document.getElementById('aiPdfInput').click()"
+         ondragover="event.preventDefault()"
+         ondrop="event.preventDefault();handleAIPdfFiles(event.dataTransfer.files)">
+      <input type="file" id="aiPdfInput" accept=".pdf" multiple style="display:none"
+             onchange="handleAIPdfFiles(this.files)">
+      <span class="ai-pdf-zone-icon">📎</span>
+      <span class="ai-pdf-zone-label">Solte PDFs aqui ou clique para selecionar</span>
+    </div>
+    <div id="aiPdfStatus" class="ai-pdf-status" style="display:none"></div>
+    <div id="aiPdfSections" style="display:none;margin-bottom:4px"></div>
+
+    <!-- Divisor entre as seções -->
+    <div style="height:1px;background:var(--border);margin:14px 0 12px"></div>
+
+    <!-- Seção B: Interpretar com IA -->
+    <div class="ai-section-label">✨ Interpretar com IA</div>
+    <div class="fg"><label>Mês de destino</label><select id="aiMonthSel" onchange="updateAIBankSel()"></select></div>
+    <div class="fg" id="aiiBankRow"><label>Banco</label><select id="aiBankSel"></select></div>
+    <div class="fg">
+      <label>Cole o texto do extrato</label>
+      <textarea id="aiText" placeholder="Cole aqui o texto extraído do PDF ou digite manualmente..." style="min-height:120px"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('mAI')">Fechar</button>
+      <button class="btn btn-primary btn-sm" id="aiRunBtn" onclick="runAI()" style="flex:1;justify-content:center">
+        <span id="aiBtnText">✨ Interpretar</span>
+      </button>
     </div>
   </div>
 
-  <!-- PDF upload zone -->
-  <div class="ai-pdf-zone" id="aiPdfZone"
-       onclick="document.getElementById('aiPdfInput').click()"
-       ondragover="event.preventDefault()"
-       ondrop="event.preventDefault();handleAIPdfFiles(event.dataTransfer.files)">
-    <input type="file" id="aiPdfInput" accept=".pdf" multiple style="display:none"
-           onchange="handleAIPdfFiles(this.files)">
-    <span class="ai-pdf-zone-icon">📎</span>
-    <span class="ai-pdf-zone-label">Solte PDFs aqui ou clique para selecionar</span>
-  </div>
-  <div id="aiPdfStatus" class="ai-pdf-status" style="display:none"></div>
-
-  <!-- PDF sections extracted -->
-  <div id="aiPdfSections" style="display:none;margin-bottom:8px"></div>
-
-  <div class="fg"><label>Mês de destino</label><select id="aiMonthSel" onchange="updateAIBankSel()"></select></div>
-  <div class="fg" id="aiiBankRow"><label>Banco</label><select id="aiBankSel"></select></div>
-  <div class="fg">
-    <label>Cole o texto do extrato</label>
-    <textarea id="aiText" placeholder="Cole aqui o texto extraído do PDF ou digite manualmente..." style="min-height:120px"></textarea>
-  </div>
-  <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:10px" onclick="runAI()">
-    <span id="aiBtnText">✨ Interpretar</span>
-  </button>
-  <div id="aiResult" style="display:none">
+  <!-- FASE 2: Resultados -->
+  <div id="aiResultPhase" style="display:none">
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:10px;font-size:12px" onclick="_aiBackToInput()">← Nova interpretação</button>
     <div class="ai-box-title" style="margin-bottom:6px">Selecione os que deseja importar:</div>
     <div id="aiEntryList" class="ai-entry-list"></div>
     <div class="modal-actions" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('mAI')">Cancelar</button>
-      <button class="btn btn-primary btn-sm" onclick="importAIEntries()">Importar Selecionados</button>
+      <button class="btn btn-primary btn-sm" id="aiImportBtn" onclick="importAIEntries()">Importar Selecionados</button>
     </div>
-  </div>
-  <div class="modal-actions" id="aiBaseActions">
-    <button class="btn btn-ghost btn-sm" onclick="closeModal('mAI')">Fechar</button>
   </div>
 </div></div>
 

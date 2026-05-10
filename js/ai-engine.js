@@ -14,15 +14,26 @@ function openAI() {
   ms.value = S.currentMonth || S.months[0].key;
   updateAIBankSel();
   document.getElementById('aiText').value = '';
-  document.getElementById('aiResult').style.display = 'none';
-  document.getElementById('aiBaseActions').style.display = 'flex';
-  document.getElementById('aiBtnText').textContent = '✨ Interpretar';
   document.getElementById('aiPdfSections').style.display = 'none';
   document.getElementById('aiPdfSections').innerHTML = '';
   document.getElementById('aiPdfStatus').style.display = 'none';
+  document.getElementById('aiBtnText').textContent = '✨ Interpretar';
+  document.getElementById('aiInputPhase').style.display = '';
+  document.getElementById('aiResultPhase').style.display = 'none';
+  const runBtn = document.getElementById('aiRunBtn');
+  if (runBtn) runBtn.disabled = false;
   S.aiParsed = [];
   setAIType('auto', document.querySelector('#aiTypeChips .ai-chip'));
   openModal('mAI');
+}
+
+// ── Voltar para a fase de input ──
+function _aiBackToInput() {
+  document.getElementById('aiInputPhase').style.display = '';
+  document.getElementById('aiResultPhase').style.display = 'none';
+  document.getElementById('aiBtnText').textContent = '✨ Interpretar';
+  const runBtn = document.getElementById('aiRunBtn');
+  if (runBtn) runBtn.disabled = false;
 }
 
 function updateAIBankSel() {
@@ -647,8 +658,6 @@ function _usePdfSections() {
   if (!all.length) { showToast('Marque ao menos uma seção.'); return; }
 
   S.aiParsed = all;
-  document.getElementById('aiBaseActions').style.display = 'none';
-  document.getElementById('aiBtnText').textContent = '✨ Interpretar novamente';
   renderAIEntries();
 }
 
@@ -872,8 +881,9 @@ async function runAI() {
   const text = document.getElementById('aiText').value.trim();
   if (!text) { alert('Cole o texto do extrato primeiro.'); return; }
 
+  const runBtn = document.getElementById('aiRunBtn');
+  if (runBtn) runBtn.disabled = true;
   document.getElementById('aiBtnText').innerHTML = '<span class="spinner"></span>Interpretando...';
-  document.getElementById('aiBaseActions').style.display = 'none';
 
   setTimeout(() => {
     try {
@@ -882,7 +892,7 @@ async function runAI() {
     } catch (e) {
       alert('Erro ao interpretar o texto.');
       document.getElementById('aiBtnText').textContent = '✨ Interpretar';
-      document.getElementById('aiBaseActions').style.display = 'flex';
+      if (runBtn) runBtn.disabled = false;
     }
   }, 300);
 }
@@ -925,11 +935,12 @@ function _aiToggleMine(i) {
 }
 
 function renderAIEntries() {
-  document.getElementById('aiBtnText').textContent = '✨ Interpretar novamente';
-  document.getElementById('aiBaseActions').style.display = 'none';
+  document.getElementById('aiInputPhase').style.display = 'none';
+  document.getElementById('aiResultPhase').style.display = '';
+  const importBtn = document.getElementById('aiImportBtn');
+  if (importBtn) importBtn.disabled = false;
 
   if (!S.aiParsed.length) {
-    document.getElementById('aiResult').style.display = 'block';
     document.getElementById('aiEntryList').innerHTML =
       '<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:10px">Nenhum lançamento identificado. Tente ajustar o tipo ou reformatar o texto.</div>';
     return;
@@ -1000,19 +1011,29 @@ function renderAIEntries() {
     </div>`;
   }).join('');
 
-  document.getElementById('aiResult').style.display = 'block';
 }
 
 async function importAIEntries() {
+  const importBtn = document.getElementById('aiImportBtn');
+  if (importBtn) importBtn.disabled = true;
+
   const monthKey = document.getElementById('aiMonthSel').value;
   const bankName = document.getElementById('aiBankSel').value || 'Importado';
   const m = S.months.find(x => x.key === monthKey);
-  if (!m) { alert('Mês não encontrado.'); return; }
+  if (!m) {
+    alert('Mês não encontrado.');
+    if (importBtn) importBtn.disabled = false;
+    return;
+  }
 
   const checked = S.aiParsed.filter((e, i) => document.getElementById('aic' + i)?.checked && e.amount > 0);
   // Pix recebidos: sempre importar todos (não aparecem na lista com checkbox)
   const pixInItems = S.aiParsed.filter(e => e.entryType === 'pixin' && e.amount > 0);
-  if (!checked.length && !pixInItems.length) { alert('Nenhum item selecionado.'); return; }
+  if (!checked.length && !pixInItems.length) {
+    alert('Nenhum item selecionado.');
+    if (importBtn) importBtn.disabled = false;
+    return;
+  }
 
   const bankItems   = checked.filter(e => !['pixin', 'pixout'].includes(e.entryType));
   const pixOutItems = checked.filter(e => e.entryType === 'pixout');
