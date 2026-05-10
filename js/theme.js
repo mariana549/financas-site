@@ -32,8 +32,12 @@ function applyTheme() {
 }
 
 function toggleSidebar() {
-  document.getElementById('sb').classList.toggle('open');
-  document.getElementById('sbOverlay').classList.toggle('open');
+  const sb      = document.getElementById('sb');
+  const overlay = document.getElementById('sbOverlay');
+  const isOpen  = sb.classList.toggle('open');
+  overlay.classList.toggle('open', isOpen);
+  // iOS: bloqueia scroll do fundo enquanto menu está aberto
+  document.body.style.overflow = isOpen ? 'hidden' : '';
 }
 
 function toggleDesktopSidebar() {

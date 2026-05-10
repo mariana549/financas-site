@@ -8,12 +8,18 @@
   box-sizing: border-box;
 }
 
+/* iOS Safari: -webkit-fill-available evita o espaço preto causado pela barra de URL */
+html {
+  height: -webkit-fill-available;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
   font-size: 14px;
   min-height: 100vh;
+  min-height: -webkit-fill-available;
   overflow-x: hidden;
   transition: background .2s, color .2s;
 }
@@ -21,6 +27,7 @@ body {
 .app {
   display: flex;
   min-height: 100vh;
+  min-height: -webkit-fill-available;
 }
 
 /* ── Scrollbar ── */

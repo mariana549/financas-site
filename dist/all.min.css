@@ -61,12 +61,18 @@
   box-sizing: border-box;
 }
 
+/* iOS Safari: -webkit-fill-available evita o espaço preto causado pela barra de URL */
+html {
+  height: -webkit-fill-available;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
   font-size: 14px;
   min-height: 100vh;
+  min-height: -webkit-fill-available;
   overflow-x: hidden;
   transition: background .2s, color .2s;
 }
@@ -74,6 +80,7 @@ body {
 .app {
   display: flex;
   min-height: 100vh;
+  min-height: -webkit-fill-available;
 }
 
 /* ── Scrollbar ── */
@@ -3570,7 +3577,7 @@ textarea {
   /* ── Constrain app height so .content becomes the scroll container ── */
   .app {
     height: 100vh;
-    height: 100dvh;
+    height: 100dvh;           /* iOS 15.4+ — exclui a barra de URL dinamicamente */
     display: flex;
     overflow: hidden;
   }
@@ -3582,6 +3589,8 @@ textarea {
     left: -80vw;
     overflow-y: auto;
     overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; /* scroll com momentum no iOS */
+    overscroll-behavior: contain;      /* impede scroll vazar para a página */
   }
 
   .sidebar.open {
@@ -3604,7 +3613,8 @@ textarea {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    padding: 16px 12px 24px;
+    overscroll-behavior-y: contain;
+    padding: 16px 12px 80px; /* padding extra embaixo para não ficar atrás do banner PWA */
   }
 
   .sb-overlay.open {
