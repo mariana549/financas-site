@@ -348,16 +348,41 @@ async function confirmLogout() {
   showMsg('authMsg', '', '');
 }
 
-// ── Verificar sessão existente ao carregar ──────────
-// Checa hash da URL ANTES de qualquer coisa — link de recovery tem type=recovery no hash
-const _hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-const _isRecovery = _hashParams.get('type') === 'recovery';
+// ── Verificar sessão ao carregar ──────────────────────
+// Detecta se a URL tem um código/token de email (recovery, confirmação, magic link)
+// Tanto PKCE (?code=) quanto implicit (#access_token= ou #type=recovery)
+const _urlSearch = window.location.search;
+const _urlHash   = window.location.hash;
+const _hasAuthCallback = _urlSearch.includes('code=')
+  || _urlHash.includes('access_token=')
+  || _urlHash.includes('type=recovery');
 
-if (_isRecovery) {
-  // Mostra painel de nova senha imediatamente, sem deixar entrar no app
+// onAuthStateChange é registrado ANTES de qualquer getSession/processamento
+// para garantir que PASSWORD_RECOVERY seja capturado sem race condition
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    // Usuário clicou no link de recuperação — exibe painel de nova senha
+    document.getElementById('authScreen').style.display = 'flex';
+    showAuthPanel('recovery');
+    return;
+  }
+  if (event === 'SIGNED_IN' && _hasAuthCallback && !currentUser) {
+    // Login via link de email (confirmação de cadastro, magic link) — entra no app
+    currentUser = session.user;
+    onLoginSuccess();
+    return;
+  }
+  if (event === 'SIGNED_OUT') {
+    document.getElementById('authScreen').style.display = 'flex';
+  }
+});
+
+if (_hasAuthCallback) {
+  // Há um callback de email na URL — mostra tela de auth enquanto o Supabase processa
+  // O onAuthStateChange acima vai cuidar do redirecionamento correto
   document.getElementById('authScreen').style.display = 'flex';
-  showAuthPanel('recovery');
 } else {
+  // Sem callback — verifica sessão salva normalmente (page refresh / retorno ao app)
   sb.auth.getSession().then(({ data: { session } }) => {
     if (session) {
       currentUser = session.user;
@@ -367,14 +392,3 @@ if (_isRecovery) {
     }
   });
 }
-
-sb.auth.onAuthStateChange((event, session) => {
-  if (event === 'PASSWORD_RECOVERY') {
-    // Garante que o painel de recovery está visível mesmo se o hash já foi limpo
-    document.getElementById('authScreen').style.display = 'flex';
-    showAuthPanel('recovery');
-  }
-  if (event === 'SIGNED_OUT') {
-    document.getElementById('authScreen').style.display = 'flex';
-  }
-});
