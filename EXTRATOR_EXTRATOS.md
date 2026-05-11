@@ -1,4 +1,4 @@
-# Extrator de Extratos Bancários
+# Extratora — Leitor de Extratos Bancários
 
 > Documento vivo — atualizar sempre que houver mudança de arquitetura, banco novo ou decisão de produto.
 > Última atualização: 2026-05-11
@@ -7,11 +7,9 @@
 
 ## Nome da Ferramenta
 
-**[AGUARDANDO ESCOLHA DO USUÁRIO]**
+**Extratora** ✅ — definido em 2026-05-11
 
-Candidatos apresentados: Extratora, Lupa, Prisma, Cifra, Alquimia, Radar, Íris, Decifrax, Átomo, Reluz.
-
-> Quando o nome for definido, atualizar aqui, no CLAUDE.md e nos comentários dos arquivos.
+> Nome a usar em: comentários de código, título do modal no app ("📄 Extratora"), toasts, mensagens de erro e documentação.
 
 ---
 
