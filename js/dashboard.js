@@ -38,8 +38,47 @@ function _selToggle(type, id, bankName) {
   _selUpdateBar();
 }
 
+function _selGetAllItems() {
+  const m = getMonth();
+  if (!m) return [];
+  const allE = m.banks.flatMap(b => b.entries.map(e => ({ ...e, bankName: b.name })));
+  const items = [];
+  allE.filter(e => e.type !== 'boleto' && e.type !== 'cash').forEach(e => {
+    items.push({ type: 'entry', id: String(e.id), bankName: e.bankName });
+  });
+  (S.pixEntries[S.currentMonth] || []).forEach(p => {
+    items.push({ type: 'pix', id: String(p.id), bankName: '' });
+  });
+  allE.filter(e => e.type === 'boleto').forEach(e => {
+    items.push({ type: 'boleto', id: String(e.id), bankName: e.bankName });
+  });
+  allE.filter(e => e.type === 'cash').forEach(e => {
+    items.push({ type: 'dinheiro', id: String(e.id), bankName: e.bankName });
+  });
+  (S.recurrents[S.currentMonth] || []).forEach(r => {
+    items.push({ type: 'rec', id: String(r.id), bankName: '' });
+  });
+  (S.incomes[S.currentMonth] || []).forEach(i => {
+    items.push({ type: 'income', id: String(i.id), bankName: '' });
+  });
+  return items;
+}
+
+function _selSelectAll() {
+  const items = _selGetAllItems();
+  const allSelected = items.length > 0 && items.every(it => _selected.has(`${it.type}:${it.id}`));
+  if (allSelected) {
+    _selected.clear();
+  } else {
+    items.forEach(it => _selected.set(`${it.type}:${it.id}`, it));
+  }
+  renderDash();
+}
+
 function _selUpdateBar() {
   const count = _selected.size;
+  const total = _selGetAllItems().length;
+  const allSelected = total > 0 && count === total;
   let bar = document.getElementById('selBar');
   if (!bar) {
     bar = document.createElement('div');
@@ -47,10 +86,11 @@ function _selUpdateBar() {
     bar.className = 'sel-bar';
     document.body.appendChild(bar);
   }
+  const selAllBtn = `<button class="btn btn-ghost btn-sm" onclick="_selSelectAll()">${allSelected ? 'Desmarcar tudo' : 'Selecionar tudo'}</button>`;
   if (count === 0) {
-    bar.innerHTML = `<span class="sel-bar-count">selecione itens</span><button class="btn btn-ghost btn-sm" onclick="_selModeToggle()">Cancelar</button>`;
+    bar.innerHTML = `<span class="sel-bar-count">selecione itens</span><div style="display:flex;gap:8px">${selAllBtn}<button class="btn btn-ghost btn-sm" onclick="_selModeToggle()">Cancelar</button></div>`;
   } else {
-    bar.innerHTML = `<span class="sel-bar-count">${count} selecionado${count !== 1 ? 's' : ''}</span><div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" onclick="_selModeToggle()">Cancelar</button><button class="btn btn-sm sel-del-btn" onclick="_selDeleteAll()">Excluir ${count}</button></div>`;
+    bar.innerHTML = `<span class="sel-bar-count">${count} selecionado${count !== 1 ? 's' : ''}</span><div style="display:flex;gap:8px">${selAllBtn}<button class="btn btn-ghost btn-sm" onclick="_selModeToggle()">Cancelar</button><button class="btn btn-sm sel-del-btn" onclick="_selDeleteAll()">Excluir ${count}</button></div>`;
   }
 }
 
@@ -114,6 +154,7 @@ function setInnerTab(t) {
   if (c) {
     c.style.display = 'block';
   }
+  if (t === 'notas' && typeof renderMonthNotesInline === 'function') renderMonthNotesInline();
 }
 
 // ── Sub-funções extraídas de renderDash() ──
@@ -932,6 +973,7 @@ function _renderDashImpl() {
     <div class="inner-tabs">
       <div class="itab active" id="itab-gastos" onclick="setInnerTab('gastos')">Gastos</div>
       <div class="itab" id="itab-entradas" onclick="setInnerTab('entradas')">Entradas</div>
+      <div class="itab" id="itab-notas" onclick="setInnerTab('notas')">📝 Notas</div>
     </div>
     <div class="itab-content" id="itabc-gastos">
       <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px">
@@ -944,13 +986,20 @@ function _renderDashImpl() {
       </div>
       ${gastoHTML}
     </div>
-    <div class="itab-content" id="itabc-entradas" style="display:none">${renderEntradasSection(incL, incMyT, incOthT, incPplMap)}</div>`;
+    <div class="itab-content" id="itabc-entradas" style="display:none">${renderEntradasSection(incL, incMyT, incOthT, incPplMap)}</div>
+    <div class="itab-content" id="itabc-notas" style="display:none"></div>`;
 
   if (S.currentInnerTab === 'entradas') {
     document.getElementById('itab-entradas')?.classList.add('active');
     document.getElementById('itab-gastos')?.classList.remove('active');
     document.getElementById('itabc-gastos').style.display = 'none';
     document.getElementById('itabc-entradas').style.display = 'block';
+  } else if (S.currentInnerTab === 'notas') {
+    document.getElementById('itab-notas')?.classList.add('active');
+    document.getElementById('itab-gastos')?.classList.remove('active');
+    document.getElementById('itabc-gastos').style.display = 'none';
+    document.getElementById('itabc-notas').style.display = 'block';
+    if (typeof renderMonthNotesInline === 'function') renderMonthNotesInline();
   }
 
   if (!_selectMode) initSwipeRows();

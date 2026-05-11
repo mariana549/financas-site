@@ -1124,6 +1124,17 @@ async function importAIEntries() {
 
   setSyncing(false);
 
+  // Marcar nota de origem como convertida (quando veio de "Lançar c/ IA" do bloco de notas)
+  if (S._aiNoteId) {
+    const noteToMark = (S.notes || []).find(n => n.id === S._aiNoteId);
+    if (noteToMark) {
+      noteToMark.convertedToEntry = true;
+      noteToMark.updatedAt = new Date().toISOString();
+      dbSaveNote(noteToMark);
+    }
+    S._aiNoteId = null;
+  }
+
   S.currentMonth = monthKey;
   S.currentBank  = bankName;
   save();
