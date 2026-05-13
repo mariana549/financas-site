@@ -1607,6 +1607,7 @@ body.sb-desktop-hidden .sb-topbar-toggle .sb-icon-show { display: flex; }
   justify-content: center;
   padding: 52px 24px;
   text-align: center;
+  height: 70vh;
 }
 
 .empty-state-icon {

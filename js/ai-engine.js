@@ -17,6 +17,9 @@ function openAI() {
   document.getElementById('aiPdfSections').style.display = 'none';
   document.getElementById('aiPdfSections').innerHTML = '';
   document.getElementById('aiPdfStatus').style.display = 'none';
+  const pdfBankSel = document.getElementById('aiPdfBank');
+  if (pdfBankSel) pdfBankSel.value = 'auto';
+  window._aiPdfEntries = [];
   document.getElementById('aiBtnText').textContent = '✨ Interpretar';
   document.getElementById('aiInputPhase').style.display = '';
   document.getElementById('aiResultPhase').style.display = 'none';
@@ -515,7 +518,7 @@ async function handleAIPdfFiles(files) {
 
   statusEl.style.display = 'block';
   statusEl.className = 'ai-pdf-status info';
-  statusEl.textContent = `Carregando PDF.js…`;
+  statusEl.textContent = 'Carregando PDF.js…';
 
   try {
     await _loadPdfJs();
@@ -527,24 +530,44 @@ async function handleAIPdfFiles(files) {
 
   statusEl.textContent = `Processando ${files.length} arquivo(s)…`;
 
-  const merged = { cartao: {}, debitos: [], boletos: [], pixIn: [], pixOut: [] };
+  const allEntries = []; // new contract format (extMakeEntry)
   const errors = [];
+  const detectedBanks = [];
 
   for (const f of files) {
     if (!/\.pdf$/i.test(f.name) && f.type !== 'application/pdf') {
       errors.push(`${f.name}: não é um PDF`); continue;
     }
     try {
-      const { result } = await _processPdf(f);
-      // Merge cartao
-      for (const [mo, items] of Object.entries(result.cartao)) {
-        if (!merged.cartao[mo]) merged.cartao[mo] = [];
-        merged.cartao[mo].push(...items);
+      const lines = await _extractLinesFromPdf(f);
+
+      // Validação (lança se não é extrato)
+      try { extValidateStatement(lines); } catch (ve) {
+        errors.push(`${f.name}: ${ve.message}`); continue;
       }
-      merged.debitos.push(...result.debitos);
-      merged.boletos.push(...result.boletos);
-      merged.pixIn.push(...result.pixIn);
-      merged.pixOut.push(...result.pixOut);
+
+      // Detecção de banco — considera seleção manual do usuário
+      const bankSelEl = document.getElementById('aiPdfBank');
+      const manualBank = bankSelEl && bankSelEl.value !== 'auto' ? bankSelEl.value : null;
+      const detected = extDetectBank(lines);
+      const bankKey = manualBank || (detected !== 'unknown' ? detected : 'generic');
+
+      if (detected !== 'unknown') {
+        detectedBanks.push(detected);
+        // Avisar se banco detectado difere da seleção manual
+        if (manualBank && manualBank !== detected) {
+          const dLabel = EXT_BANK_LABELS[detected] || detected;
+          const mLabel = EXT_BANK_LABELS[manualBank] || manualBank;
+          showToast(`⚠️ PDF parece ser ${dLabel}, mas você selecionou ${mLabel}. Usando ${mLabel}.`);
+        }
+        // Atualizar dropdown com o banco detectado (se estava em auto)
+        if (!manualBank && bankSelEl) bankSelEl.value = detected !== 'unknown' ? detected : 'auto';
+      }
+
+      const docKind = extDetectDocKind(lines);
+      const parser = BANK_PARSERS[bankKey] || BANK_PARSERS.generic;
+      const entries = parser(lines, docKind);
+      allEntries.push(...entries);
     } catch (e) {
       errors.push(`${f.name}: ${e.message}`);
     }
@@ -555,37 +578,38 @@ async function handleAIPdfFiles(files) {
     statusEl.textContent = errors.join(' · ');
     if (errors.length === files.length) return;
   } else {
+    const bankLabel = detectedBanks.length ? ` — ${EXT_BANK_LABELS[detectedBanks[0]] || detectedBanks[0]}` : '';
     statusEl.className = 'ai-pdf-status ok';
-    statusEl.textContent = `✓ ${files.length} arquivo(s) processado(s) — selecione uma seção para importar`;
+    statusEl.textContent = `✓ ${files.length} arquivo(s) processado(s)${bankLabel} — selecione seções para importar`;
   }
 
-  // Montar cards de seções
-  const MONTH_ORDER = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const cartaoItems = Object.values(merged.cartao).flat();
+  // Agrupar por entryType para mostrar seções
   const fmtBRL = n => 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const SECTION_META = [
+    { key: 'cartao',  label: 'Cartão crédito',   color: 'var(--accent)' },
+    { key: 'debito',  label: 'Débitos em conta',  color: 'var(--red)'    },
+    { key: 'boleto',  label: 'Boletos pagos',      color: 'var(--orange)' },
+    { key: 'pixin',   label: 'Pix recebidos',      color: 'var(--green)'  },
+    { key: 'pixout',  label: 'Pix enviados',        color: 'var(--blue)'   },
+  ];
 
-  const sections = [
-    { key: 'cartao', label: 'Cartão crédito', type: 'cartao', count: cartaoItems.length, total: cartaoItems.reduce((s, i) => s + i.valor, 0), data: merged.cartao },
-    { key: 'debitos', label: 'Débitos em conta', type: 'debito', count: merged.debitos.length, total: merged.debitos.reduce((s, i) => s + i.valor, 0), data: merged.debitos },
-    { key: 'boletos', label: 'Boletos pagos', type: 'boleto', count: merged.boletos.length, total: merged.boletos.reduce((s, i) => s + i.valor, 0), data: merged.boletos },
-    { key: 'pixIn',  label: 'Pix recebidos', type: 'pixin', count: merged.pixIn.length, total: merged.pixIn.reduce((s, i) => s + i.valor, 0), data: merged.pixIn },
-    { key: 'pixOut', label: 'Pix enviados', type: 'pixout', count: merged.pixOut.length, total: merged.pixOut.reduce((s, i) => s + i.valor, 0), data: merged.pixOut },
-  ].filter(s => s.count > 0);
+  const sections = SECTION_META.map(sm => {
+    const items = allEntries.filter(e => e.entryType === sm.key);
+    return { ...sm, count: items.length, total: items.reduce((s, e) => s + e.amount, 0) };
+  }).filter(s => s.count > 0);
 
   if (!sections.length) {
     statusEl.className = 'ai-pdf-status error';
-    statusEl.textContent = 'Nenhum lançamento encontrado no(s) PDF(s).';
+    statusEl.textContent = 'Nenhum lançamento encontrado no(s) PDF(s). Tente selecionar o banco manualmente.';
     sectEl.style.display = 'none';
     return;
   }
-
-  const colorMap = { cartao: 'var(--accent)', debitos: 'var(--red)', boletos: 'var(--orange)', pixIn: 'var(--green)', pixOut: 'var(--blue)' };
 
   sectEl.innerHTML = '<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px">SEÇÕES EXTRAÍDAS — marque as que deseja importar</div>' +
     sections.map(sec => `
       <label class="ai-pdf-sec" style="cursor:pointer">
         <input type="checkbox" id="aiSec_${sec.key}" checked style="width:auto;accent-color:var(--accent);flex-shrink:0">
-        <div class="ai-pdf-sec-dot" style="background:${colorMap[sec.key] || 'var(--accent)'}"></div>
+        <div class="ai-pdf-sec-dot" style="background:${sec.color}"></div>
         <div class="ai-pdf-sec-info">
           <div class="ai-pdf-sec-name">${sec.label}</div>
           <div class="ai-pdf-sec-count">${sec.count} item(s) · ${fmtBRL(sec.total)}</div>
@@ -595,9 +619,7 @@ async function handleAIPdfFiles(files) {
        Usar seções marcadas
      </button>`;
 
-  // Guardar para uso em _usePdfSections
-  window._aiPdfMerged = merged;
-  window._aiPdfSectionsList = sections;
+  window._aiPdfEntries = allEntries;
   sectEl.style.display = 'block';
 }
 
@@ -643,16 +665,16 @@ function _sectionToEntries(key, merged) {
   return [];
 }
 
-// ── Usar seções marcadas: junta todas as seções selecionadas em S.aiParsed ──
+// ── Usar seções marcadas: filtra entradas selecionadas e envia para revisão ──
 function _usePdfSections() {
-  const merged = window._aiPdfMerged;
-  const sects  = window._aiPdfSectionsList || [];
-  if (!merged || !sects.length) return;
+  const entries = window._aiPdfEntries || [];
+  if (!entries.length) return;
 
+  const types = ['cartao', 'debito', 'boleto', 'pixin', 'pixout'];
   const all = [];
-  sects.forEach(sec => {
-    const cb = document.getElementById('aiSec_' + sec.key);
-    if (cb && cb.checked) all.push(..._sectionToEntries(sec.key, merged));
+  types.forEach(type => {
+    const cb = document.getElementById('aiSec_' + type);
+    if (cb && cb.checked) all.push(...entries.filter(e => e.entryType === type));
   });
 
   if (!all.length) { showToast('Marque ao menos uma seção.'); return; }

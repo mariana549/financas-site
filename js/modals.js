@@ -342,7 +342,7 @@ function injectModals() {
 
 <!-- AI Import -->
 <div class="modal-overlay" id="mAI"><div class="modal">
-  <div class="modal-title">📄 Importar Extrato <button class="modal-close" onclick="closeModal('mAI')">×</button></div>
+  <div class="modal-title">📄 Extratora <button class="modal-close" onclick="closeModal('mAI')">×</button></div>
 
   <!-- FASE 1: Input -->
   <div id="aiInputPhase">
@@ -361,6 +361,25 @@ function injectModals() {
 
     <!-- Seção A: Leitor de PDF -->
     <div class="ai-section-label">📎 Leitor de PDF</div>
+    <div class="fg" style="margin-bottom:8px">
+      <label style="margin-bottom:4px">Banco</label>
+      <select id="aiPdfBank" style="font-size:13px">
+        <option value="auto">🔍 Auto-detectar</option>
+        <option value="nubank">Nubank</option>
+        <option value="inter">Banco Inter</option>
+        <option value="itau">Itaú</option>
+        <option value="bradesco">Bradesco</option>
+        <option value="caixa">Caixa Econômica</option>
+        <option value="bb">Banco do Brasil</option>
+        <option value="santander">Santander</option>
+        <option value="c6">C6 Bank</option>
+        <option value="mercadopago">Mercado Pago</option>
+        <option value="picpay">PicPay</option>
+        <option value="sicredi">Sicredi</option>
+        <option value="sicoob">Sicoob</option>
+        <option value="generic">Outro banco</option>
+      </select>
+    </div>
     <div class="ai-pdf-zone" id="aiPdfZone"
          onclick="document.getElementById('aiPdfInput').click()"
          ondragover="event.preventDefault()"
